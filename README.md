@@ -10,6 +10,10 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
 * **Grupo:** AGUA Y ACEITE
 
 ---
+## Integrantes del Equipo
+* Mariano Infante [FAI-3823]
+* Verónica López [FAI-5481]
+---
 
 ## Características Principales (MVP)
 
