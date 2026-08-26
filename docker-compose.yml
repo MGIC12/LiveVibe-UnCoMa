@@ -1,0 +1,59 @@
+version: "3.9" # Usamos una versión reciente y estable del formato compose
+
+services:
+  # -----------------------------------------------------------
+  # BASE DE DATOS: PostgreSQL
+  # -----------------------------------------------------------
+  db:
+    image: postgres:16
+    container_name: livevibe-db
+    restart: always # Si el contenedor falla, Docker intentará levantarlo de nuevo
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password123 # ¡Cambia esto en producción!
+      POSTGRES_DB: livevibe_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Persistencia de datos
+
+  # -----------------------------------------------------------
+  # BACKEND: Node.js + Express
+  # -----------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+    container_name: livevibe-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://root:password123@db:5432/livevibe_db
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    command: npm run dev
+
+  # -----------------------------------------------------------
+  # FRONTEND: React
+  # -----------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+    container_name: livevibe-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5000 # Variable de entorno para que React llame al Backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+# Declaración para la persistencia de la base de datos
+volumes:
+  pgdata:
