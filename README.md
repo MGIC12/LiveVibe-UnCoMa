@@ -4,14 +4,14 @@
 
 ---
 
-## 🏛️ Contexto Académico
+## Contexto Académico
 Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Universitaria en Desarrollo Web** (Año 2026). 
 * **Institución:** Universidad Nacional del Comahue - Facultad de Informática
 * **Grupo:** AGUA Y ACEITE
 
 ---
 
-## ✨ Características Principales (MVP)
+## Características Principales (MVP)
 
 1. **Catálogo y Reserva de Eventos:** 
    * Los usuarios pueden descubrir las fechas de los próximos conciertos en su zona.
@@ -21,13 +21,13 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
    * Perfiles de usuario donde pueden exhibir su canción preferida.
    * Muro (Feed) para conectar con la comunidad mediante publicaciones de texto, comentarios y "me gusta".
 
-3. **🤖 Asistente Virtual del Fan (IA):**
+3. **Asistente Virtual del Fan (IA):**
    * Integración significativa de Inteligencia Artificial mediante un chatbot conversacional.
    * El asistente responde dudas sobre fechas de eventos, recintos, transporte y ayuda con la gestión de reservas.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 El proyecto cumple con los requisitos de la cátedra utilizando frameworks comerciales y tecnologías modernas:
 
