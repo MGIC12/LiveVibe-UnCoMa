@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animación de scroll infinito suave */
+@keyframes infinite-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  /* Se desplaza exactamente la mitad del contenedor (que será nuestra primera lista) */
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-infinite-scroll {
+  /* 30 segundos es un tiempo cómodo, 'linear' hace que no acelere ni frene, 'infinite' lo repite por siempre */
+  animation: infinite-scroll 30s linear infinite;
+  width: max-content; /* Necesario para que el contenedor abarque todos los elementos en una sola línea */
+}
+
+/* Pausar el movimiento al pasar el mouse (Mejor Experiencia de Usuario) */
+.animate-infinite-scroll:hover {
+  animation-play-state: paused;
+}
