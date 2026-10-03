@@ -1,14 +1,12 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import EventoDetalle from "./pages/EventoDetalle";
 
 // Temporales
 const Login = () => (
   <div className="text-white p-8">
     Página de Inicio de Sesión (En construcción)
   </div>
-);
-const EventDetail = () => (
-  <div className="text-white p-8">Detalle del Evento (En construcción)</div>
 );
 const NotFound = () => (
   <div className="text-white p-8">Error 404: Página no encontrada</div>
@@ -28,7 +26,7 @@ function App() {
         <Route path="/registro" element={<Login />} />
 
         {/* Ruta con parámetro dinámico (el ID del evento) */}
-        <Route path="/evento/:id" element={<EventDetail />} />
+        <Route path="/evento/:id" element={<EventoDetalle />} />
 
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
