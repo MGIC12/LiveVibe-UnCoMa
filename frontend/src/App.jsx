@@ -1,12 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 // Temporales
-const Login = () => (
-  <div className="text-white p-8">
-    Página de Inicio de Sesión (En construcción)
-  </div>
-);
 const EventDetail = () => (
   <div className="text-white p-8">Detalle del Evento (En construcción)</div>
 );
@@ -25,8 +22,8 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Ruta de registro */}
-        <Route path="/registro" element={<Login />} />
-
+        <Route path="/registro" element={<Register />} />
+        
         {/* Ruta con parámetro dinámico (el ID del evento) */}
         <Route path="/evento/:id" element={<EventDetail />} />
 
