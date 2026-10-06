@@ -29,6 +29,7 @@ services:
       - "5000:5000"
     environment:
       DATABASE_URL: postgresql://root:password123@db:5432/livevibe_db
+      JWT_SECRET: hola_live_es_nuestro_proyecto_para_el_tp_final_gracias
     volumes:
       - ./backend:/app
       - /app/node_modules
