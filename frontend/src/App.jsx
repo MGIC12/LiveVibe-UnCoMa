@@ -1,11 +1,16 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import EventoDetalle from "./pages/EventoDetalle";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Perfil from "./pages/Perfil";
 import RutaProtegida from "./components/RutaProtegida";
 
 // Temporales
+const Login = () => (
+  <div className="text-white p-8">
+    Página de Inicio de Sesión (En construcción)
+  </div>
 const EventDetail = () => (
   <div className="text-white p-8">Detalle del Evento (En construcción)</div>
 );
@@ -30,7 +35,7 @@ function App() {
         <Route path="/perfil" element={ <RutaProtegida> <Perfil /> </RutaProtegida> } />
         
         {/* Ruta con parámetro dinámico (el ID del evento) */}
-        <Route path="/evento/:id" element={<EventDetail />} />
+        <Route path="/evento/:id" element={<EventoDetalle />} />
 
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
