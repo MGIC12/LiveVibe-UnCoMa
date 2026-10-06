@@ -63,8 +63,26 @@ export function AuthProvider({ children }) {
     setUsuario(null);
   }
 
+  async function editarPerfil(datos) {
+    const res = await fetch(`${API}/api/perfil`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(datos),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Ocurrió un error");
+
+    // Actualiza el usuario en memoria: toda la app ve los cambios sin recargar
+    setUsuario((actual) => ({ ...actual, ...data }));
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, token, cargando, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ usuario, token, cargando, login, register, logout, editarPerfil }}
+    >
       {children}
     </AuthContext.Provider>
   );

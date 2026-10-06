@@ -143,8 +143,11 @@ router.post("/login", async (req, res) => {
 router.get("/me", verificarToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT nombre_usuario, email, rol, biografia, fecha_alta
-         FROM usuario WHERE nombre_usuario = $1`,
+      `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
+              f.cancion_favorita
+         FROM usuario u
+         LEFT JOIN fan f ON f.nombre_usuario = u.nombre_usuario
+        WHERE u.nombre_usuario = $1`,
       [req.user.nombre_usuario]
     );
     if (!rows[0]) return res.status(404).json({ error: "Usuario no encontrado" });

@@ -14,6 +14,8 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", require("./routes/auth"));
 
+app.use("/api/perfil", require("./routes/perfil"));
+
 // Crear las tablas antes de empezar a escuchar
 initDb()
   .then(() => app.listen(5000, () => console.log("Servidor escuchando en el puerto 5000")))
