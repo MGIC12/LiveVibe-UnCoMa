@@ -1,7 +1,9 @@
 function App() {
   return (
     <>
-      <div>LiveVibe</div>
+      <div>
+        <p>Entrega 25%</p>
+      </div>
     </>
   );
 }
