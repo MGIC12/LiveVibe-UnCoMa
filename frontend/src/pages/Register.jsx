@@ -2,25 +2,27 @@ import { useState } from "react";
 import { Link, useNavigate} from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../components/Navbar";
-
-const inputClase = "mt-1 w-full px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500";
-const labelClase = "block text-sm text-gray-300";
+import CamposFan from "../components/CamposFan";
+import CamposArtista from "../components/CamposArtista";
+import { inputClase, labelClase } from "../utils/formularios";
+import CampoContrasena from "../components/CampoContrasena";
 
 const INICIAL = {
-  rol: "fan",
+  rol: "", // vacío = todavía no eligió
   nombre_usuario: "",
   email: "",
   contrasenia: "",
   confirmar: "",
   fecha_nac: "",
   biografia: "",
+  // fan
+  cancion_favorita: "",
   // artista
   nombre_artistico: "",
   nacionalidad: "",
   genero: "",
-  tipo_artista: "",
-  // fan
-  cancion_favorita: "",
+  tipo_artista: "solista", // por defecto
+  integrantes: [],
 };
 
 export default function Register() {
@@ -30,8 +32,8 @@ export default function Register() {
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  function cambiar(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  function cambiarCampo(nombre, valor) {
+    setForm((actual) => ({ ...actual, [nombre]: valor }));
   }
 
   async function handleSubmit(e) {
@@ -45,9 +47,30 @@ export default function Register() {
       return setError("Las contraseñas no coinciden");
     }
 
+    // Se arma solo lo que corresponde al tipo de cuenta elegido
+    const comunes = {
+      rol: form.rol,
+      nombre_usuario: form.nombre_usuario,
+      email: form.email,
+      contrasenia: form.contrasenia,
+      fecha_nac: form.fecha_nac,
+      biografia: form.biografia,
+    };
+
+    const datos =
+      form.rol === "fan"
+        ? { ...comunes, cancion_favorita: form.cancion_favorita }
+        : {
+            ...comunes,
+            nombre_artistico: form.nombre_artistico,
+            nacionalidad: form.nacionalidad,
+            genero: form.genero,
+            tipo_artista: form.tipo_artista,
+            integrantes: form.tipo_artista === "banda" ? form.integrantes : [],
+          };
+
     setEnviando(true);
     try {
-      const { confirmar, ...datos } = form;
       await register(datos);
       navigate("/");
     } catch (err) {
@@ -57,6 +80,60 @@ export default function Register() {
     }
   }
 
+  const piePagina = (
+    <p className="text-center text-sm text-gray-400">
+      ¿Ya tenés cuenta?{" "}
+      <Link to="/login" className="text-purple-400 hover:text-purple-300">
+        Iniciá sesión
+      </Link>
+    </p>
+  );
+
+  /* ---------- PASO 1: elegir tipo de cuenta ---------- */
+  if (!form.rol) {
+    return (
+      <>
+        <Navbar />
+        <main className="flex justify-center px-4 py-12">
+          <div className="w-full max-w-lg bg-gray-800 border border-gray-700 rounded-2xl p-8 space-y-6">
+            <h1 className="text-3xl font-bold text-white text-center">
+              ¿Cómo querés registrarte?
+            </h1>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => cambiarCampo("rol", "fan")}
+                className="p-6 rounded-2xl border border-gray-600 bg-gray-700 hover:border-purple-500 hover:bg-gray-600 transition text-center"
+              >
+                <span className="block text-4xl mb-2">🎧</span>
+                <span className="block text-xl font-bold text-white">Fan</span>
+                <span className="block text-sm text-gray-400 mt-1">
+                  Quiero descubrir conciertos y artistas
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => cambiarCampo("rol", "artista")}
+                className="p-6 rounded-2xl border border-gray-600 bg-gray-700 hover:border-purple-500 hover:bg-gray-600 transition text-center"
+              >
+                <span className="block text-4xl mb-2">🎤</span>
+                <span className="block text-xl font-bold text-white">Artista</span>
+                <span className="block text-sm text-gray-400 mt-1">
+                  Quiero mostrar mi música y mis eventos
+                </span>
+              </button>
+            </div>
+
+            {piePagina}
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  /* ---------- PASO 2: formulario según el tipo ---------- */
   const esArtista = form.rol === "artista";
 
   return (
@@ -68,46 +145,25 @@ export default function Register() {
           onSubmit={handleSubmit}
           className="w-full max-w-lg bg-gray-800 border border-gray-700 rounded-2xl p-8 space-y-5"
         >
+          <button
+            type="button"
+            onClick={() => cambiarCampo("rol", "")}
+            className="text-sm text-gray-400 hover:text-purple-300"
+          >
+            ← Cambiar tipo de cuenta
+          </button>
+
           <h1 className="text-3xl font-bold text-white text-center">
-            Crear cuenta
+            {esArtista ? "Cuenta de artista" : "Cuenta de fan"}
           </h1>
 
-          {/* Selector fan / artista */}
-          <fieldset>
-            <legend className="text-sm text-gray-300 mb-2">
-              Quiero registrarme como
-            </legend>
-            <div className="grid grid-cols-2 gap-3">
-              {["fan", "artista"].map((opcion) => (
-                <label
-                  key={opcion}
-                  className={`cursor-pointer text-center py-3 rounded-xl border font-semibold transition ${
-                    form.rol === opcion
-                      ? "bg-purple-600 border-purple-500 text-white"
-                      : "bg-gray-700 border-gray-600 text-gray-300 hover:border-purple-500"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="rol"
-                    value={opcion}
-                    checked={form.rol === opcion}
-                    onChange={cambiar}
-                    className="sr-only"
-                  />
-                  {opcion === "fan" ? "🎧 Fan" : "🎤 Artista"}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          {/* Datos de cuenta */}
+          {/* Datos de cuenta (comunes) */}
           <label className={labelClase}>
             Nombre de usuario
             <input
               name="nombre_usuario"
               value={form.nombre_usuario}
-              onChange={cambiar}
+              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
               maxLength={30}
               required
               className={inputClase}
@@ -120,37 +176,27 @@ export default function Register() {
               type="email"
               name="email"
               value={form.email}
-              onChange={cambiar}
+              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
               required
               className={inputClase}
             />
           </label>
 
-          <label className={labelClase}>
-            Contraseña (mínimo 8 caracteres)
-            <input
-              type="password"
-              name="contrasenia"
-              value={form.contrasenia}
-              onChange={cambiar}
-              autoComplete="new-password"
-              required
-              className={inputClase}
-            />
-          </label>
+          <CampoContrasena
+            etiqueta="Contraseña (mínimo 8 caracteres)"
+            name="contrasenia"
+            value={form.contrasenia}
+            onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+            autoComplete="new-password"
+          />
 
-          <label className={labelClase}>
-            Repetir contraseña
-            <input
-              type="password"
-              name="confirmar"
-              value={form.confirmar}
-              onChange={cambiar}
-              autoComplete="new-password"
-              required
-              className={inputClase}
-            />
-          </label>
+          <CampoContrasena
+            etiqueta="Repetir contraseña"
+            name="confirmar"
+            value={form.confirmar}
+            onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+            autoComplete="new-password"
+          />
 
           <label className={labelClase}>
             Fecha de nacimiento
@@ -158,7 +204,7 @@ export default function Register() {
               type="date"
               name="fecha_nac"
               value={form.fecha_nac}
-              onChange={cambiar}
+              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
               className={`${inputClase} [color-scheme:dark]`}
             />
           </label>
@@ -168,74 +214,18 @@ export default function Register() {
             <textarea
               name="biografia"
               value={form.biografia}
-              onChange={cambiar}
+              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
               rows={3}
               className="mt-1 w-full px-4 py-2 rounded-2xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </label>
 
-          {/* Datos según el tipo de cuenta */}
-          <div className="border-t border-gray-700 pt-5 space-y-5">
-            <h2 className="text-purple-400 font-semibold">
-              {esArtista ? "Datos de artista" : "Datos de fan"}
-            </h2>
-
-            {esArtista ? (
-              <>
-                <label className={labelClase}>
-                  Nombre artístico
-                  <input
-                    name="nombre_artistico"
-                    value={form.nombre_artistico}
-                    onChange={cambiar}
-                    required
-                    className={inputClase}
-                  />
-                </label>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <label className={labelClase}>
-                    Nacionalidad
-                    <input
-                      name="nacionalidad"
-                      value={form.nacionalidad}
-                      onChange={cambiar}
-                      className={inputClase}
-                    />
-                  </label>
-                  <label className={labelClase}>
-                    Género musical
-                    <input
-                      name="genero"
-                      value={form.genero}
-                      onChange={cambiar}
-                      className={inputClase}
-                    />
-                  </label>
-                </div>
-
-                <label className={labelClase}>
-                  Tipo de artista (solista, banda, DJ...)
-                  <input
-                    name="tipo_artista"
-                    value={form.tipo_artista}
-                    onChange={cambiar}
-                    className={inputClase}
-                  />
-                </label>
-              </>
-            ) : (
-              <label className={labelClase}>
-                Canción favorita
-                <input
-                  name="cancion_favorita"
-                  value={form.cancion_favorita}
-                  onChange={cambiar}
-                  className={inputClase}
-                />
-              </label>
-            )}
-          </div>
+          {/* Campos propios del tipo de cuenta */}
+          {esArtista ? (
+            <CamposArtista valores={form} onChange={cambiarCampo} />
+          ) : (
+            <CamposFan valores={form} onChange={cambiarCampo} />
+          )}
 
           {error && (
             <p className="text-red-400 text-sm" role="alert">
@@ -251,12 +241,7 @@ export default function Register() {
             {enviando ? "Creando cuenta..." : "Registrarme"}
           </button>
 
-          <p className="text-center text-sm text-gray-400">
-            ¿Ya tenés cuenta?{" "}
-            <Link to="/login" className="text-purple-400 hover:text-purple-300">
-              Iniciá sesión
-            </Link>
-          </p>
+          {piePagina}
         </form>
       </main>
     </>

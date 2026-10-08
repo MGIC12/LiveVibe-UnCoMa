@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../components/Navbar";
+import CampoContrasena from "../components/CampoContrasena";
 
 export default function Login() {
   const { login } = useAuth();
@@ -50,17 +51,12 @@ export default function Login() {
             />
           </label>
 
-          <label className="block text-sm text-gray-300">
-            Contraseña
-            <input
-              type="password"
-              value={contrasenia}
-              onChange={(e) => setContrasenia(e.target.value)}
-              autoComplete="current-password"
-              required
-              className="mt-1 w-full px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </label>
+          <CampoContrasena
+            etiqueta="Contraseña"
+            value={contrasenia}
+            onChange={(e) => setContrasenia(e.target.value)}
+            autoComplete="current-password"
+          />
 
           {error && (
             <p className="text-red-400 text-sm" role="alert">
