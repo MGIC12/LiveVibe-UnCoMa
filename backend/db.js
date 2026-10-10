@@ -33,6 +33,21 @@ CREATE TABLE IF NOT EXISTS admin (
   nombre_usuario VARCHAR(30) PRIMARY KEY
                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE
 );
+
+CREATE TABLE eventos (
+    id_evento SERIAL PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    genero VARCHAR(100),
+    ciudad VARCHAR(100),
+    pais VARCHAR(100),
+    lugar VARCHAR(255),
+    fecha DATE NOT NULL,
+    hora_apertura TIME,
+    cant_entradas INT,
+    clasificacion VARCHAR(100),
+    gira VARCHAR(255),
+    id_artista INT
+);
 `;
 
 async function initDb() {

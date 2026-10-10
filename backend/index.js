@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { initDb } = require("./db");
+const eventosRoutes = require("./routes/eventos");
 const app = express();
 const port = 5000;
 
@@ -16,9 +17,15 @@ app.use("/api/auth", require("./routes/auth"));
 
 app.use("/api/perfil", require("./routes/perfil"));
 
+app.use("/api/eventos", eventosRoutes);
+
 // Crear las tablas antes de empezar a escuchar
 initDb()
-  .then(() => app.listen(5000, () => console.log("Servidor escuchando en el puerto 5000")))
+  .then(() =>
+    app.listen(5000, () =>
+      console.log("Servidor escuchando en el puerto 5000"),
+    ),
+  )
   .catch((err) => {
     console.error("No se pudo conectar a la base de datos", err);
     process.exit(1);
