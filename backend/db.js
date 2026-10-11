@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS admin (
                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE
 );
 
-CREATE TABLE eventos (
+CREATE TABLE IF NOT EXISTS eventos (
     id_evento SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     genero VARCHAR(100),
