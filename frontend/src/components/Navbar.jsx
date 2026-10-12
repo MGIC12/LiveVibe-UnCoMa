@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import Avatar from "./Avatar";
 import { useState, useEffect } from "react";
 
 const Navbar = () => {
@@ -188,7 +189,7 @@ const Navbar = () => {
                 onClick={() => setMenuAbierto(false)}
                 className="block px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
               >
-                Mi Perfil
+                <Avatar usuario={usuario} />
               </Link>
               <button
                 onClick={handleLogout}

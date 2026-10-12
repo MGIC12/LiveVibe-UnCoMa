@@ -8,6 +8,9 @@ const router = express.Router();
 
 // Desde el registro público solo se puede elegir fan o artista (nunca admin)
 const ROLES_PUBLICOS = ["fan", "artista"];
+const TIPOS_ARTISTA = ["solista", "banda"];
+const MIN_INTEGRANTES = 2;
+const MAX_INTEGRANTES = 10;
 
 function firmarToken(usuario) {
   return jwt.sign(
@@ -32,7 +35,8 @@ router.post("/register", async (req, res) => {
     nombre_artistico,
     nacionalidad,
     genero,
-    tipo_artista,
+    tipo_artista = "solista",
+    integrantes = [],
     // datos de fan
     cancion_favorita,
   } = req.body;
@@ -46,8 +50,47 @@ router.post("/register", async (req, res) => {
   if (contrasenia.length < 8) {
     return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
   }
-  if (rol === "artista" && !nombre_artistico) {
-    return res.status(400).json({ error: "Los artistas deben indicar su nombre artístico" });
+
+  // Validaciones propias del artista
+  let listaIntegrantes = [];
+  if (rol === "artista") {
+    if (!nombre_artistico) {
+      return res.status(400).json({ error: "Los artistas deben indicar su nombre artístico" });
+    }
+    if (!TIPOS_ARTISTA.includes(tipo_artista)) {
+      return res.status(400).json({ error: "El tipo de artista debe ser solista o banda" });
+    }
+
+    if (tipo_artista === "solista" && integrantes.length > 0) {
+      return res.status(400).json({ error: "Un solista no puede tener integrantes" });
+    }
+
+    if (tipo_artista === "banda") {
+      if (
+        !Array.isArray(integrantes) ||
+        integrantes.length < MIN_INTEGRANTES ||
+        integrantes.length > MAX_INTEGRANTES
+      ) {
+        return res.status(400).json({
+          error: `Una banda debe tener entre ${MIN_INTEGRANTES} y ${MAX_INTEGRANTES} integrantes`,
+        });
+      }
+
+      for (const i of integrantes) {
+        if (!i.nombre?.trim() || !i.apellido?.trim()) {
+          return res.status(400).json({ error: "Completá nombre y apellido de todos los integrantes" });
+        }
+      }
+
+      // Se arma la lista limpia: sin espacios de más y con vacíos como NULL
+      listaIntegrantes = integrantes.map((i) => ({
+        nombre: i.nombre.trim(),
+        apellido: i.apellido.trim(),
+        instrumento: i.instrumento?.trim() || null,
+        fecha_nac: i.fecha_nac || null,
+        nacionalidad: i.nacionalidad?.trim() || null,
+      }));
+    }
   }
 
   const client = await pool.connect();
@@ -73,8 +116,16 @@ router.post("/register", async (req, res) => {
       await client.query(
         `INSERT INTO artista (nombre_usuario, nombre_artistico, nacionalidad, genero, tipo_artista)
          VALUES ($1, $2, $3, $4, $5)`,
-        [nombre_usuario.trim(), nombre_artistico, nacionalidad || null, genero || null, tipo_artista || null]
+        [nombre_usuario.trim(), nombre_artistico, nacionalidad || null, genero || null, tipo_artista]
       );
+
+      for (const i of listaIntegrantes) {
+        await client.query(
+          `INSERT INTO integrante (nombre_usuario, nombre, apellido, instrumento, fecha_nac, nacionalidad)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [nombre_usuario.trim(), i.nombre, i.apellido, i.instrumento, i.fecha_nac, i.nacionalidad]
+        );
+      }
     } else {
       await client.query(
         `INSERT INTO fan (nombre_usuario, cancion_favorita) VALUES ($1, $2)`,
@@ -92,7 +143,6 @@ router.post("/register", async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     if (err.code === "23505") {
-      // violación de UNIQUE / PRIMARY KEY
       return res.status(409).json({ error: "Ese usuario o email ya está registrado" });
     }
     console.error(err);
@@ -143,9 +193,11 @@ router.post("/login", async (req, res) => {
 router.get("/me", verificarToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
+            `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
+              i.url AS foto_url, i.descripcion AS foto_descripcion,
               f.cancion_favorita
          FROM usuario u
+         LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
          LEFT JOIN fan f ON f.nombre_usuario = u.nombre_usuario
         WHERE u.nombre_usuario = $1`,
       [req.user.nombre_usuario]

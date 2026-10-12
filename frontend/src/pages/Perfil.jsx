@@ -1,35 +1,40 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Avatar from "../components/Avatar";
+import FotoPerfil from "../components/FotoPerfil";
 import { useAuth } from "../../context/AuthContext";
-
-const inputClase =
-  "mt-1 w-full px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500";
+import { FOTO_VACIA, inputClase } from "../utils/formularios";
+import { urlImagen } from "../utils/api";
 
 export default function Perfil() {
-  const { usuario, editarPerfil } = useAuth();
+  const { usuario, editarPerfil, cambiarFoto, quitarFoto } = useAuth();
+  const { state } = useLocation();
+  const aviso = state?.aviso; // viene del registro si falló la foto
   const esFan = usuario.rol === "fan";
 
   const [editando, setEditando] = useState(false);
 
-  // Borrador: lo que se está escribiendo en el formulario
+  // Borrador: lo que se está editando en el formulario
   const [biografia, setBiografia] = useState("");
   const [cancion, setCancion] = useState("");
+  const [foto, setFoto] = useState(FOTO_VACIA);
 
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
 
   function empezarEdicion() {
-    // Copia los datos guardados al borrador
     setBiografia(usuario.biografia ?? "");
     setCancion(usuario.cancion_favorita ?? "");
+    setFoto(FOTO_VACIA);
     setMensaje("");
     setError("");
     setEditando(true);
   }
 
   function cancelar() {
-    // El borrador se descarta; los datos guardados no cambiaron
+    // El borrador se descarta; lo guardado no cambió
     setError("");
     setEditando(false);
   }
@@ -39,9 +44,16 @@ export default function Perfil() {
     setError("");
     setGuardando(true);
     try {
-      await editarPerfil({ biografia, cancion_favorita: cancion });
+      if (esFan) {
+        await editarPerfil({ biografia, cancion_favorita: cancion });
+      }
+      if (foto.archivo) {
+        await cambiarFoto(foto.archivo);
+      } else if (foto.quitar) {
+        await quitarFoto();
+      }
       setMensaje("Perfil actualizado correctamente");
-      setEditando(false); // vuelve al modo vista
+      setEditando(false);
     } catch (err) {
       setError(err.message); // se queda en edición para poder corregir
     } finally {
@@ -56,9 +68,7 @@ export default function Perfil() {
       <main className="max-w-xl mx-auto px-4 py-12 text-white space-y-6">
         {/* Cabecera: siempre visible */}
         <section className="bg-gray-800 border border-gray-700 rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center text-3xl">
-            👤
-          </div>
+          <Avatar usuario={usuario} clases="w-16 h-16 text-3xl" />
           <div>
             <h1 className="text-2xl font-bold">{usuario.nombre_usuario}</h1>
             <p className="text-gray-400 text-sm">{usuario.email}</p>
@@ -76,27 +86,42 @@ export default function Perfil() {
           >
             <h2 className="text-xl font-semibold">Editar mi perfil</h2>
 
-            <label className="block text-sm text-gray-300">
-              Biografía
-              <textarea
-                value={biografia}
-                onChange={(e) => setBiografia(e.target.value)}
-                rows={4}
-                maxLength={500}
-                className="mt-1 w-full px-4 py-2 rounded-2xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <span className="text-xs text-gray-500">{biografia.length}/500</span>
-            </label>
+            <FotoPerfil
+              urlActual={urlImagen(usuario.foto_url)}
+              valor={foto}
+              onChange={setFoto}
+              descripcion={usuario.foto_descripcion || "Foto de perfil"}
+            />
 
-            <label className="block text-sm text-gray-300">
-              Canción favorita
-              <input
-                value={cancion}
-                onChange={(e) => setCancion(e.target.value)}
-                maxLength={150}
-                className={inputClase}
-              />
-            </label>
+            {esFan ? (
+              <>
+                <label className="block text-sm text-gray-300">
+                  Biografía
+                  <textarea
+                    value={biografia}
+                    onChange={(e) => setBiografia(e.target.value)}
+                    rows={4}
+                    maxLength={500}
+                    className="mt-1 w-full px-4 py-2 rounded-2xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <span className="text-xs text-gray-500">{biografia.length}/500</span>
+                </label>
+
+                <label className="block text-sm text-gray-300">
+                  Canción favorita
+                  <input
+                    value={cancion}
+                    onChange={(e) => setCancion(e.target.value)}
+                    maxLength={150}
+                    className={inputClase}
+                  />
+                </label>
+              </>
+            ) : (
+              <p className="text-xs text-gray-500">
+                Por ahora, las cuentas de artista pueden cambiar su foto desde acá.
+              </p>
+            )}
 
             {error && (
               <p className="text-red-400 text-sm" role="alert">
@@ -125,6 +150,7 @@ export default function Perfil() {
         ) : (
           /* ---------- MODO VISTA ---------- */
           <section className="bg-gray-800 border border-gray-700 rounded-2xl p-6 space-y-5">
+            {aviso && <p className="text-yellow-400 text-sm">{aviso}</p>}
             {mensaje && <p className="text-green-400 text-sm">{mensaje}</p>}
 
             <div>
@@ -159,14 +185,12 @@ export default function Perfil() {
               </p>
             )}
 
-            {esFan && (
-              <button
-                onClick={empezarEdicion}
-                className="w-full py-2 rounded-full bg-purple-600 hover:bg-purple-500 font-bold"
-              >
-                Editar perfil
-              </button>
-            )}
+            <button
+              onClick={empezarEdicion}
+              className="w-full py-2 rounded-full bg-purple-600 hover:bg-purple-500 font-bold"
+            >
+              Editar perfil
+            </button>
           </section>
         )}
       </main>
