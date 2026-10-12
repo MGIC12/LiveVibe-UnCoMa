@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -6,51 +6,104 @@ import Footer from "../components/Footer";
 const EventoDetalle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [evento, setEvento] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isReserving, setIsReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(false);
 
-  // Mock data del evento
-  const eventoMock = {
-    id: id,
-    titulo: "LOS FUNDAMENTALES DEL ROCK",
-    fechaHora: "2026-10-15T21:00:00",
-    lugar: "Estadio Único",
-    disponibles: 342,
-    descripcion:
-      "La gira de despedida más esperada del año. Un repaso histórico por los himnos que marcaron a más de tres generaciones en una noche que promete ser inolvidable. Cierre con artistas invitados sorpresa.",
-    // Usamos una imagen ancha y oscura para el efecto inmersivo
-    imagenHero:
-      "https://images.pexels.com/photos/14591832/pexels-photo-14591832.jpeg",
-    precio: "$15.000",
+  // Función auxiliar para asignar una imagen según el género
+  const getImagenPorGenero = (genero) => {
+    const generosBuscados = genero ? genero.toLowerCase() : "";
+
+    if (generosBuscados.includes("rock")) {
+      return "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=2000&auto=format&fit=crop"; // Concierto de rock, guitarras
+    } else if (generosBuscados.includes("jazz")) {
+      return "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=2000&auto=format&fit=crop"; // Banda de jazz, saxofón
+    } else if (
+      generosBuscados.includes("urbano") ||
+      generosBuscados.includes("trap")
+    ) {
+      return "https://images.unsplash.com/photo-1470229722913-7c090be01246?q=80&w=2000&auto=format&fit=crop"; // Escenario con luces de colores neón
+    } else if (generosBuscados.includes("indie")) {
+      return "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2000&auto=format&fit=crop"; // Festival al aire libre o ambiente relajado
+    } else {
+      // Imagen por defecto (la que tenías antes)
+      return "https://images.unsplash.com/photo-1540039155732-d674d6e3f0be?q=80&w=2000&auto=format&fit=crop";
+    }
   };
 
-  const handleReserva = () => {
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/eventos/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setEvento({
+          ...data,
+          // Ahora usamos la función para determinar la imagen
+          imagenHero: getImagenPorGenero(data.genero),
+          precio: "$15.000",
+          disponibles: data.cant_entradas,
+        });
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error al cargar el evento:", error);
+        setLoading(false);
+      });
+  }, [id]);
+
+  const handleReserva = async () => {
     setIsReserving(true);
-    setTimeout(() => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/eventos/${id}/reservar`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario_id: 1, cantidad_entradas: 1 }),
+        },
+      );
+
+      if (response.ok) {
+        setReservationSuccess(true);
+      } else {
+        alert("Hubo un problema al procesar la reserva.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
       setIsReserving(false);
-      setReservationSuccess(true);
-    }, 1500);
+    }
   };
 
-  const fechaFormateada = new Date(eventoMock.fechaHora).toLocaleDateString(
-    "es-AR",
-    {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+        Cargando evento...
+      </div>
+    );
+  }
+
+  if (!evento || evento.error) {
+    return (
+      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+        Evento no encontrado.
+      </div>
+    );
+  }
+
+  const fechaFormateada = new Date(evento.fecha).toLocaleDateString("es-AR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="min-h-screen bg-neutral-900 text-white font-sans flex flex-col">
       <Navbar />
 
-      <main className="grow">
+      <main className="flex-grow">
         {reservationSuccess ? (
-          // VISTA DE ÉXITO
           <div className="container mx-auto p-4 md:p-8 mt-10">
             <div className="bg-neutral-800 rounded-2xl p-10 text-center shadow-2xl max-w-2xl mx-auto border border-neutral-700">
               <div className="text-6xl mb-6 text-green-500">✅</div>
@@ -59,7 +112,7 @@ const EventoDetalle = () => {
               </h2>
               <p className="text-gray-400 mb-8 text-lg">
                 Ya tienes tu lugar asegurado para{" "}
-                <strong className="text-white">{eventoMock.titulo}</strong>.
+                <strong className="text-white">{evento.nombre}</strong>.
               </p>
               <div className="bg-neutral-900 p-6 rounded-xl inline-block mb-8 text-left border border-neutral-800 w-full max-w-md">
                 <p className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-3">
@@ -67,12 +120,14 @@ const EventoDetalle = () => {
                 </p>
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-gray-400">📍</span>
-                  <p className="font-semibold text-lg">{eventoMock.lugar}</p>
+                  <p className="font-semibold text-lg">
+                    {evento.lugar}, {evento.ciudad}
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-gray-400">📅</span>
                   <p className="font-semibold text-lg text-green-400 capitalize">
-                    {fechaFormateada}
+                    {fechaFormateada} {evento.hora_apertura}
                   </p>
                 </div>
               </div>
@@ -86,11 +141,10 @@ const EventoDetalle = () => {
             </div>
           </div>
         ) : (
-          // VISTA DETALLE DE EVENTO
           <div className="relative">
             <div
               className="absolute top-0 left-0 w-full h-[50vh] bg-cover bg-center opacity-40"
-              style={{ backgroundImage: `url('${eventoMock.imagenHero}')` }}
+              style={{ backgroundImage: `url('${evento.imagenHero}')` }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 to-transparent"></div>
             </div>
@@ -104,27 +158,26 @@ const EventoDetalle = () => {
               </Link>
 
               <div className="flex flex-col lg:flex-row gap-12">
-                {/* Info del Evento */}
                 <div className="lg:w-2/3">
-                  <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight drop-shadow-lg">
-                    {eventoMock.titulo}
+                  <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight drop-shadow-lg uppercase">
+                    {evento.nombre}
                   </h1>
 
                   <div className="flex flex-wrap items-center gap-6 mb-8 text-gray-300 font-medium text-lg">
                     <div className="flex items-center gap-2">
-                      <span>📍</span> <span>{eventoMock.lugar}</span>
+                      <span>📍</span> <span>{evento.lugar}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span>📅</span>{" "}
                       <span className="capitalize">{fechaFormateada}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span>🎟️</span>{" "}
-                      <span className="text-green-400 font-bold">
-                        {eventoMock.precio}
+                      <span className="text-xs bg-neutral-800 px-3 py-1 rounded-full border border-neutral-700">
+                        {evento.clasificacion}
                       </span>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-6 mb-12">
                     <button
                       onClick={handleReserva}
@@ -135,58 +188,31 @@ const EventoDetalle = () => {
                           : "bg-green-500 hover:bg-green-400 text-black transform hover:scale-105"
                       }`}
                     >
-                      {isReserving ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 h-5 w-5 text-gray-400"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Procesando...
-                        </>
-                      ) : (
-                        "Reservar Entrada"
-                      )}
+                      {isReserving ? "Procesando..." : "Reservar Entrada"}
                     </button>
 
                     {!isReserving && (
                       <span className="text-sm text-gray-400 font-medium">
-                        Solo quedan{" "}
+                        Disponibles:{" "}
                         <strong className="text-white">
-                          {eventoMock.disponibles}
-                        </strong>{" "}
-                        lugares
+                          {evento.disponibles}
+                        </strong>
                       </span>
                     )}
                   </div>
 
-                  {/* Descripción */}
                   <div>
                     <h3 className="text-xl font-bold text-white mb-3">
-                      Sobre el concierto
+                      Género Principal
                     </h3>
                     <p className="text-gray-400 leading-relaxed text-lg max-w-3xl">
-                      {eventoMock.descripcion}
+                      {evento.genero}{" "}
+                      {evento.gira ? `- Tour: ${evento.gira}` : ""}
                     </p>
                   </div>
                 </div>
 
-                {/* COLUMNA DERECHA: La Playlist Sugerida */}
+                {/* Columna Derecha: Playlist */}
                 <div className="lg:w-1/3">
                   <div className="bg-neutral-800/80 backdrop-blur-md rounded-2xl p-6 border border-neutral-700 sticky top-24 shadow-2xl">
                     <div className="flex items-center gap-3 mb-6">
@@ -202,12 +228,10 @@ const EventoDetalle = () => {
                         </p>
                       </div>
                     </div>
-
                     <p className="text-sm text-gray-400 mb-6">
                       Música de los artistas y temas favoritos de los fans que
                       ya reservaron.
                     </p>
-
                     <ul className="space-y-4 mb-6">
                       <li className="flex items-center gap-4 group cursor-pointer">
                         <div className="text-gray-500 font-medium w-4 text-center group-hover:hidden">
@@ -218,9 +242,11 @@ const EventoDetalle = () => {
                         </div>
                         <div>
                           <p className="text-white font-medium group-hover:text-green-400 transition">
-                            Juguetes Perdidos
+                            Tema Principal
                           </p>
-                          <p className="text-gray-500 text-sm">Los Redondos</p>
+                          <p className="text-gray-500 text-sm">
+                            Artista del Evento
+                          </p>
                         </div>
                       </li>
                       <li className="flex items-center gap-4 group cursor-pointer">
@@ -232,29 +258,14 @@ const EventoDetalle = () => {
                         </div>
                         <div>
                           <p className="text-white font-medium group-hover:text-green-400 transition">
-                            Crimen
+                            Sugerencia IA
                           </p>
                           <p className="text-gray-500 text-sm">
-                            Gustavo Cerati (Fan Fav)
+                            Basado en {evento.genero}
                           </p>
-                        </div>
-                      </li>
-                      <li className="flex items-center gap-4 group cursor-pointer">
-                        <div className="text-gray-500 font-medium w-4 text-center group-hover:hidden">
-                          3
-                        </div>
-                        <div className="text-green-500 font-medium w-4 text-center hidden group-hover:block">
-                          ▶
-                        </div>
-                        <div>
-                          <p className="text-white font-medium group-hover:text-green-400 transition">
-                            Seminare
-                          </p>
-                          <p className="text-gray-500 text-sm">Serú Girán</p>
                         </div>
                       </li>
                     </ul>
-
                     <button className="w-full bg-transparent hover:bg-neutral-700 text-white font-bold py-3 rounded-full border border-gray-600 hover:border-gray-400 transition text-sm flex items-center justify-center gap-2">
                       <span className="text-green-500">Spotify</span> Abrir
                       Playlist
