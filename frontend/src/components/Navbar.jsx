@@ -26,21 +26,6 @@ const Navbar = () => {
     setMenuAbierto(false);
   }
 
-  // Función auxiliar para obtener la inicial del usuario
-  const getInicial = () => {
-    if (!usuario) return "U";
-    return (
-      usuario.nombre_usuario ||
-      usuario.nombre_completo ||
-      usuario.nombre ||
-      usuario.email ||
-      "U"
-    ).charAt(0);
-  };
-
-  // Buscamos si el usuario tiene una foto guardada (ajusta el nombre de la propiedad según tu backend)
-  const fotoUsuario = usuario?.foto_perfil || usuario?.foto || usuario?.avatar;
-
   return (
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
@@ -115,18 +100,11 @@ const Navbar = () => {
                   Mi Perfil
                 </Link>
                 <div className="flex items-center gap-3">
-                  {/* LÓGICA DE LA FOTO O INICIAL */}
-                  {fotoUsuario ? (
-                    <img
-                      src={fotoUsuario}
-                      alt="Perfil"
-                      className="w-8 h-8 rounded-full object-cover border border-neutral-700"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-neutral-800 rounded-full flex items-center justify-center border border-neutral-700 text-xs text-white uppercase font-bold">
-                      {getInicial()}
-                    </div>
-                  )}
+                  <Avatar
+                    usuario={usuario}
+                    clases="w-8 h-8 text-xs"
+                    fondo="bg-neutral-800 border border-neutral-700"
+                  />
 
                   <button
                     onClick={handleLogout}
@@ -187,9 +165,14 @@ const Navbar = () => {
               <Link
                 to="/perfil"
                 onClick={() => setMenuAbierto(false)}
-                className="block px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
+                className="flex items-center gap-3 px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
               >
-                <Avatar usuario={usuario} />
+                <Avatar
+                  usuario={usuario}
+                  clases="w-8 h-8 text-xs"
+                  fondo="bg-neutral-800 border border-neutral-700"
+                />
+                Mi Perfil
               </Link>
               <button
                 onClick={handleLogout}
