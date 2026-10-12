@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import Avatar from "./Avatar";
 
 const Navbar = () => {
   const { usuario, logout } = useAuth();
@@ -34,7 +35,7 @@ const Navbar = () => {
         {usuario ? (
             <>
               <Link to="/perfil" className="hover:text-purple-400">
-                Mi Perfil
+                <Avatar usuario={usuario} />
               </Link>
               <button
                 onClick={handleLogout}

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { API } from "../src/utils/api";
 
 const AuthContext = createContext(null);
 
@@ -33,6 +33,20 @@ export function AuthProvider({ children }) {
       .finally(() => setCargando(false));
   }, [token]);
 
+  async function enviarFoto(tokenSesion, archivo) {
+  const formData = new FormData();
+  formData.append("imagen", archivo); // el backend espera el campo "imagen"
+
+  const res = await fetch(`${API}/api/perfil/foto`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${tokenSesion}` }, // sin Content-Type
+    body: formData,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "No se pudo subir la imagen");
+  return data; // { foto_url, foto_descripcion }
+}
+
   function guardarSesion({ token, usuario }) {
     localStorage.setItem("token", token);
     setToken(token);
@@ -48,13 +62,26 @@ export function AuthProvider({ children }) {
     guardarSesion(data);
   }
 
-  async function register(datos) {
+   async function register(datos, foto) {
     const data = await pedir("/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(datos),
     });
-    guardarSesion(data);
+
+    // La foto es opcional: se sube con el token de la cuenta recién creada
+    let imagen = {};
+    let fotoError = null;
+    if (foto) {
+      try {
+        imagen = await enviarFoto(data.token, foto);
+      } catch (err) {
+        fotoError = err.message; // la cuenta ya existe; solo falló la foto
+      }
+    }
+
+    guardarSesion({ token: data.token, usuario: { ...data.usuario, ...imagen } });
+    return { fotoError };
   }
 
   function logout() {
@@ -79,9 +106,24 @@ export function AuthProvider({ children }) {
     setUsuario((actual) => ({ ...actual, ...data }));
   }
 
+    async function cambiarFoto(archivo) {
+    const data = await enviarFoto(token, archivo);
+    setUsuario((actual) => ({ ...actual, ...data }));
+  }
+
+  async function quitarFoto() {
+    const res = await fetch(`${API}/api/perfil/foto`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "No se pudo quitar la foto");
+    setUsuario((actual) => ({ ...actual, ...data }));
+  }
+
   return (
-    <AuthContext.Provider
-      value={{ usuario, token, cargando, login, register, logout, editarPerfil }}
+   <AuthContext.Provider
+      value={{ usuario, token, cargando, login, register, logout, editarPerfil, cambiarFoto, quitarFoto }}
     >
       {children}
     </AuthContext.Provider>

@@ -3,6 +3,13 @@ const { Pool } = require("pg");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const schema = `
+
+CREATE TABLE IF NOT EXISTS imagen (
+  id_imagen   SERIAL       PRIMARY KEY,
+  descripcion VARCHAR(200),
+  url         VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS usuario (
   nombre_usuario   VARCHAR(30)  PRIMARY KEY,
   email            VARCHAR(255) NOT NULL UNIQUE,
@@ -12,6 +19,10 @@ CREATE TABLE IF NOT EXISTS usuario (
   biografia        TEXT,
   rol              VARCHAR(10)  NOT NULL CHECK (rol IN ('fan', 'artista', 'admin'))
 );
+
+ALTER TABLE usuario
+  ADD COLUMN IF NOT EXISTS id_imagen INTEGER
+  REFERENCES imagen(id_imagen) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS artista (
   nombre_usuario  VARCHAR(30) PRIMARY KEY

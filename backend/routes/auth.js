@@ -193,9 +193,11 @@ router.post("/login", async (req, res) => {
 router.get("/me", verificarToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
+            `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
+              i.url AS foto_url, i.descripcion AS foto_descripcion,
               f.cancion_favorita
          FROM usuario u
+         LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
          LEFT JOIN fan f ON f.nombre_usuario = u.nombre_usuario
         WHERE u.nombre_usuario = $1`,
       [req.user.nombre_usuario]

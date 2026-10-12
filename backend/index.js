@@ -3,8 +3,11 @@ const cors = require("cors");
 const { initDb } = require("./db");
 const app = express();
 const port = 5000;
+const path = require("path");
 
 app.use(cors({ origin: "http://localhost:3000" }));
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use(express.json());
 

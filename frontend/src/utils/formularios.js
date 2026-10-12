@@ -13,3 +13,10 @@ export const INTEGRANTE_VACIO = {
   fecha_nac: "",
   nacionalidad: "",
 };
+
+// Tienen que coincidir con el backend (middleware/subida.js)
+export const TIPOS_IMAGEN = ["image/jpeg", "image/png", "image/webp"];
+export const MAX_BYTES_IMAGEN = 2 * 1024 * 1024; // 2 MB
+
+// Estado inicial de una foto "sin tocar"
+export const FOTO_VACIA = { archivo: null, previa: null, quitar: false };

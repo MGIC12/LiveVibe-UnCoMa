@@ -4,10 +4,12 @@ import { useAuth } from "../../context/AuthContext";
 import Navbar from "../components/Navbar";
 import CamposFan from "../components/CamposFan";
 import CamposArtista from "../components/CamposArtista";
-import { inputClase, labelClase } from "../utils/formularios";
+import { inputClase, labelClase, FOTO_VACIA} from "../utils/formularios";
 import CampoContrasena from "../components/CampoContrasena";
+import FotoPerfil from "../components/FotoPerfil";
 
 const INICIAL = {
+  foto: FOTO_VACIA,
   rol: "", // vacío = todavía no eligió
   nombre_usuario: "",
   email: "",
@@ -71,8 +73,18 @@ export default function Register() {
 
     setEnviando(true);
     try {
-      await register(datos);
-      navigate("/");
+      const { fotoError } = await register(datos, form.foto.archivo);
+
+      if (fotoError) {
+        // La cuenta se creó, pero la foto falló: se avisa en el perfil
+        navigate("/perfil", {
+          state: {
+            aviso: `Tu cuenta se creó, pero no pudimos subir la foto (${fotoError}). Podés intentarlo de nuevo desde acá.`,
+          },
+        });
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -156,6 +168,13 @@ export default function Register() {
           <h1 className="text-3xl font-bold text-white text-center">
             {esArtista ? "Cuenta de artista" : "Cuenta de fan"}
           </h1>
+
+          <FotoPerfil
+            urlActual={null}
+            valor={form.foto}
+            onChange={(v) => cambiarCampo("foto", v)}
+            titulo="Foto de perfil (opcional)"
+          />
 
           {/* Datos de cuenta (comunes) */}
           <label className={labelClase}>
