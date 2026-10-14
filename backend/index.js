@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { initDb } = require("./db");
 const eventosRoutes = require("./routes/eventos");
+const buscarRoutes = require("./routes/buscar");
 const app = express();
 const port = 5000;
 const path = require("path");
@@ -21,6 +22,8 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/perfil", require("./routes/perfil"));
 
 app.use("/api/eventos", eventosRoutes);
+
+app.use("/api/buscar", buscarRoutes);
 
 // Crear las tablas antes de empezar a escuchar
 initDb()

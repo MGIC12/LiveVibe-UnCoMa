@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Perfil from "./pages/Perfil";
 import RutaProtegida from "./components/RutaProtegida";
+import Buscador from "./pages/Buscador";
 
 // Temporales
 const NotFound = () => (
@@ -37,6 +38,8 @@ function App() {
 
         {/* Ruta con parámetro dinámico (el ID del evento) */}
         <Route path="/evento/:id" element={<EventoDetalle />} />
+
+        <Route path="/buscar" element={<Buscador />} />
 
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />

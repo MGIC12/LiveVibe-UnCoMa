@@ -1,6 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import Avatar from "./Avatar";
 import { useState, useEffect } from "react";
 
 const Navbar = () => {
@@ -11,6 +10,9 @@ const Navbar = () => {
 
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  // Estado para el término de búsqueda (Feature 7)
+  const [terminoBusqueda, setTerminoBusqueda] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +27,32 @@ const Navbar = () => {
     navigate("/");
     setMenuAbierto(false);
   }
+
+  // Lógica para obtener la inicial del usuario
+  const getInicial = () => {
+    if (!usuario) return "U";
+    return (
+      usuario.nombre_usuario ||
+      usuario.nombre_completo ||
+      usuario.nombre ||
+      usuario.email ||
+      "U"
+    )
+      .charAt(0)
+      .toUpperCase();
+  };
+
+  // Validación de foto de perfil
+  const fotoUsuario = usuario?.foto_perfil || usuario?.foto || usuario?.avatar;
+
+  // Función para ejecutar la búsqueda al presionar Enter
+  const handleBuscar = (e) => {
+    if (e.key === "Enter" && terminoBusqueda.trim() !== "") {
+      navigate(`/buscar?q=${encodeURIComponent(terminoBusqueda)}`);
+      setMenuAbierto(false);
+      setTerminoBusqueda(""); // Limpiamos el input después de buscar
+    }
+  };
 
   return (
     <nav
@@ -43,16 +71,21 @@ const Navbar = () => {
             LiveVibe
           </Link>
 
+          {/* Barra de Búsqueda (Escritorio) */}
           <div className="flex-1 mx-4 hidden md:flex justify-center">
             <div className="relative w-full max-w-md">
               <input
                 type="text"
-                placeholder="Buscar artistas o eventos..."
+                placeholder="Buscar artistas, eventos, géneros..."
+                value={terminoBusqueda}
+                onChange={(e) => setTerminoBusqueda(e.target.value)}
+                onKeyDown={handleBuscar}
                 className="w-full pl-6 pr-4 py-2 rounded-full bg-neutral-800/80 border border-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-neutral-800 transition placeholder-gray-400 font-medium text-sm"
               />
             </div>
           </div>
 
+          {/* Botón Menú Móvil */}
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setMenuAbierto(!menuAbierto)}
@@ -83,6 +116,7 @@ const Navbar = () => {
             </button>
           </div>
 
+          {/* Enlaces de Navegación (Escritorio) */}
           <div className="hidden md:flex items-center space-x-6 text-gray-300 font-bold text-sm">
             <Link
               to="/"
@@ -100,11 +134,18 @@ const Navbar = () => {
                   Mi Perfil
                 </Link>
                 <div className="flex items-center gap-3">
-                  <Avatar
-                    usuario={usuario}
-                    clases="w-8 h-8 text-xs"
-                    fondo="bg-neutral-800 border border-neutral-700"
-                  />
+                  {/* Foto o inicial del usuario */}
+                  {fotoUsuario ? (
+                    <img
+                      src={fotoUsuario}
+                      alt="Perfil"
+                      className="w-8 h-8 rounded-full object-cover border border-neutral-700"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-neutral-800 rounded-full flex items-center justify-center border border-neutral-700 text-xs text-white uppercase font-bold">
+                      {getInicial()}
+                    </div>
+                  )}
 
                   <button
                     onClick={handleLogout}
@@ -136,6 +177,7 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* Menú Móvil Desplegable */}
       <div
         className={`md:hidden absolute w-full left-0 top-16 transition-all duration-300 overflow-hidden ${
           menuAbierto
@@ -144,10 +186,14 @@ const Navbar = () => {
         }`}
       >
         <div className="bg-neutral-900/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-4">
+          {/* Barra de Búsqueda (Móvil) */}
           <div className="relative w-full mb-6">
             <input
               type="text"
               placeholder="Buscar..."
+              value={terminoBusqueda}
+              onChange={(e) => setTerminoBusqueda(e.target.value)}
+              onKeyDown={handleBuscar}
               className="w-full pl-6 pr-4 py-2 rounded-full bg-neutral-800 border border-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
             />
           </div>
@@ -165,13 +211,8 @@ const Navbar = () => {
               <Link
                 to="/perfil"
                 onClick={() => setMenuAbierto(false)}
-                className="flex items-center gap-3 px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
+                className="block px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
               >
-                <Avatar
-                  usuario={usuario}
-                  clases="w-8 h-8 text-xs"
-                  fondo="bg-neutral-800 border border-neutral-700"
-                />
                 Mi Perfil
               </Link>
               <button
