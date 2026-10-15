@@ -1,5 +1,37 @@
 @import "tailwindcss";
 
+/* ---------- Paleta LiveVibe (graffiti) ---------- */
+@theme {
+  --color-tinta: #0F0D14;     /* fondo principal y texto sobre colores vivos */
+  --color-crema: #FFF4E3;     /* texto sobre fondo oscuro */
+  --color-fucsia: #FF2E93;    /* primario: botones */
+  --color-sol: #FFC62E;       /* precios, estrellas, destacados */
+  --color-cielo: #3DB4F2;     /* links, íconos y hover */
+  --color-mandarina: #FF7A1A; /* tags y detalles de energía */
+  --color-chicle: #FF9ACB;    /* fondos suaves y recomendaciones */
+}
+
+/* ---------- Base global ---------- */
+@layer base {
+  html {
+    color-scheme: dark; /* inputs de fecha, scrollbars y menús nativos en oscuro */
+  }
+
+  body {
+    @apply bg-tinta text-crema;
+  }
+
+  ::selection {
+    @apply bg-fucsia text-tinta;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-cielo);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- Lo que ya tenían ---------- */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

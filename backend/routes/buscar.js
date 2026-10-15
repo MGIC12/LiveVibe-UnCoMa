@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
     // 1. Buscar coincidencias en EVENTOS
     const sqlEventos = `
       SELECT id_evento AS id, nombre AS titulo, genero, ciudad AS ubicacion, 'evento' AS tipo_resultado 
-      FROM eventos
+      FROM evento
       WHERE nombre ILIKE $1 
          OR genero ILIKE $1 
          OR pais ILIKE $1 

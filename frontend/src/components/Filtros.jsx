@@ -10,7 +10,7 @@ const Filtros = ({
   return (
     <div className="mb-8 space-y-6">
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <h3 className="text-sm font-semibold text-crema/70 uppercase tracking-wider mb-3">
           Filtrar por Género
         </h3>
         <div className="flex flex-wrap gap-3">
@@ -24,8 +24,8 @@ const Filtros = ({
                 onClick={() => setFiltroGenero(valor)}
                 className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
                   isActive
-                    ? "bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.3)]"
-                    : "bg-neutral-800 text-gray-300 hover:bg-neutral-700 hover:text-white border border-neutral-700 hover:border-neutral-500"
+                    ? "bg-green-500 text-tinta shadow-[0_0_15px_rgba(34,197,94,0.3)]"
+                    : "bg-neutral-800 text-crema/80  hover:bg-neutral-700 hover:text-crema borderborder-crema/20 hover:border-neutral-500"
                 }`}
               >
                 {genero}
@@ -35,7 +35,7 @@ const Filtros = ({
         </div>
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <h3 className="text-sm font-semibold text-crema/70 uppercase tracking-wider mb-3">
           Ubicación
         </h3>
         <div className="flex flex-wrap gap-3">
@@ -49,8 +49,8 @@ const Filtros = ({
                 onClick={() => setFiltroCiudad(valor)}
                 className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
                   isActive
-                    ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.3)]" // Usamos morado para diferenciar la ubicación
-                    : "bg-neutral-800 text-gray-300 hover:bg-neutral-700 hover:text-white border border-neutral-700 hover:border-neutral-500"
+                    ? "bg-sol text-tinta text-crema shadow-[0_0_15px_rgba(147,51,234,0.3)]" // Usamos morado para diferenciar la ubicación
+                    : "bg-neutral-800 text-crema/80  hover:bg-neutral-700 hover:text-crema borderborder-crema/20 hover:border-neutral-500"
                 }`}
               >
                 {ciudad}

@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS admin (
                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS eventos (
+CREATE TABLE IF NOT EXISTS evento (
     id_evento SERIAL PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     genero VARCHAR(100),
@@ -82,7 +82,19 @@ CREATE TABLE IF NOT EXISTS eventos (
     cant_entradas INT,
     clasificacion VARCHAR(100),
     gira VARCHAR(255),
-    id_artista INT
+    nombre_artista VARCHAR(30)
+      REFERENCES artista(nombre_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS entrada (
+    id_entrada     SERIAL PRIMARY KEY,
+    id_evento      INT NOT NULL REFERENCES evento(id_evento) ON DELETE CASCADE,
+    tipo_acceso    VARCHAR(60) NOT NULL DEFAULT 'General',
+    zona           VARCHAR(60),
+    fila           VARCHAR(10),
+    numero_asiento INT,
+    precio         NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+    stock          INT NOT NULL CHECK (stock >= 0)
 );
 `;
 

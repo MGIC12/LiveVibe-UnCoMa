@@ -1,6 +1,6 @@
 const Footer = () => {
   return (
-    <footer className="bg-gray-950 text-gray-400 py-8 mt-12 border-t border-gray-800">
+    <footer className="bg-gray-950 text-crema/70 py-8 mt-12 border-t border-gray-800">
       <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
         <div className="mb-4 md:mb-0 text-center md:text-left">
           <h2 className="text-2xl font-bold text-purple-500 mb-1">LiveVibe</h2>
@@ -8,13 +8,13 @@ const Footer = () => {
         </div>
 
         <div className="flex space-x-6 text-sm">
-          <a href="#" className="hover:text-purple-400 transition">
+          <a href="#" className="hover:text-cielo hover:text-crematransition">
             Términos y Condiciones
           </a>
-          <a href="#" className="hover:text-purple-400 transition">
+          <a href="#" className="hover:text-cielo hover:text-crematransition">
             Privacidad
           </a>
-          <a href="#" className="hover:text-purple-400 transition">
+          <a href="#" className="hover:text-cielo hover:text-crematransition">
             Contacto
           </a>
         </div>

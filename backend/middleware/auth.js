@@ -17,7 +17,7 @@ function verificarToken(req, res, next) {
   }
 }
 
-// Uso: router.post("/eventos", verificarToken, requerirRol("artista"), ...)
+// Uso: router.post("/evento", verificarToken, requerirRol("artista"), ...)
 function requerirRol(...rolesPermitidos) {
   return (req, res, next) => {
     if (!req.user || !rolesPermitidos.includes(req.user.rol)) {

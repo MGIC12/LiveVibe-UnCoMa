@@ -33,13 +33,13 @@ export default function Login() {
       <main className="flex justify-center px-4 py-12">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-md bg-gray-800 border border-gray-700 rounded-2xl p-8 space-y-5"
+          className="w-full max-w-md bg-crema/5border border-crema/20rounded-2xl p-8 space-y-5"
         >
-          <h1 className="text-3xl font-bold text-white text-center">
+          <h1 className="text-3xl font-bold text-crema text-center">
             Iniciar sesión
           </h1>
 
-          <label className="block text-sm text-gray-300">
+          <label className="block text-sm text-crema/80 ">
             Usuario o email
             <input
               type="text"
@@ -47,7 +47,7 @@ export default function Login() {
               onChange={(e) => setUsuario(e.target.value)}
               autoComplete="username"
               required
-              className="mt-1 w-full px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="mt-1 w-full px-4 py-2 rounded-full bg-crema/10text-crema focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </label>
 
@@ -59,7 +59,7 @@ export default function Login() {
           />
 
           {error && (
-            <p className="text-red-400 text-sm" role="alert">
+            <p className="text-mandarina text-sm" role="alert">
               {error}
             </p>
           )}
@@ -67,14 +67,14 @@ export default function Login() {
           <button
             type="submit"
             disabled={enviando}
-            className="w-full py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold disabled:opacity-50"
+            className="w-full py-2 rounded-full bg-fucsia hover:bg-chicle text-crema font-bold disabled:opacity-50"
           >
             {enviando ? "Ingresando..." : "Ingresar"}
           </button>
 
-          <p className="text-center text-sm text-gray-400">
+          <p className="text-center text-sm text-crema/70">
             ¿No tenés cuenta?{" "}
-            <Link to="/registro" className="text-purple-400 hover:text-purple-300">
+            <Link to="/registro" className="text-cielo hover:text-cremahover:text-purple-300">
               Registrate
             </Link>
           </p>
