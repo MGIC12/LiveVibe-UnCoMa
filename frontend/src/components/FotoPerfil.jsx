@@ -49,7 +49,7 @@ export default function FotoPerfil({
 
   return (
     <div>
-      <p className="text-sm text-gray-300 mb-2">{titulo}</p>
+      <p className="text-sm text-crema/80  mb-2">{titulo}</p>
 
       <div className="flex items-center gap-4">
         <div className="w-24 h-24 shrink-0 rounded-full overflow-hidden bg-gray-600 flex items-center justify-center text-4xl">
@@ -73,7 +73,7 @@ export default function FotoPerfil({
             <button
               type="button"
               onClick={() => inputRef.current.click()}
-              className="px-4 py-1.5 rounded-full bg-purple-600 hover:bg-purple-500 text-sm font-semibold text-white"
+              className="px-4 py-1.5 rounded-full bg-fucsia hover:bg-chicle text-sm font-semibold text-crema"
             >
               {mostrada ? "Cambiar foto" : "Elegir foto"}
             </button>
@@ -82,7 +82,7 @@ export default function FotoPerfil({
               <button
                 type="button"
                 onClick={quitar}
-                className="px-4 py-1.5 rounded-full border border-gray-600 text-sm text-gray-300 hover:border-red-400 hover:text-red-400"
+                className="px-4 py-1.5 rounded-full border border-crema/30 text-sm text-crema/80  hover:border-red-400 hover:text-mandarina"
               >
                 {valor.previa ? "Descartar" : "Quitar"}
               </button>
@@ -90,21 +90,21 @@ export default function FotoPerfil({
           </div>
 
           {valor.quitar && urlActual && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-crema/70">
               La foto se quitará al guardar.{" "}
               <button
                 type="button"
                 onClick={deshacer}
-                className="text-purple-400 hover:text-purple-300"
+                className="text-cielo hover:text-cremahover:text-purple-300"
               >
                 Deshacer
               </button>
             </p>
           )}
 
-          <p className="text-xs text-gray-500">JPG, PNG o WebP, hasta 2 MB.</p>
+          <p className="text-xs text-crema/60">JPG, PNG o WebP, hasta 2 MB.</p>
           {error && (
-            <p className="text-red-400 text-xs" role="alert">
+            <p className="text-mandarina text-xs" role="alert">
               {error}
             </p>
           )}

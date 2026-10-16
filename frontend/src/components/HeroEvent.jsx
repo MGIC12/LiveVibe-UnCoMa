@@ -39,8 +39,8 @@ const HeroEvent = () => {
 
   if (cargando) {
     return (
-      <header className="h-[70vh] min-h-[500px] flex items-center justify-center bg-neutral-900 border-b border-neutral-800">
-        <div className="text-gray-400 text-xl font-bold">
+      <header className="h-[70vh] min-h-[500px] flex items-center justify-centerbg-tinta border-b border-neutral-800">
+        <div className="text-crema/70 text-xl font-bold">
           Cargando evento destacado...
         </div>
       </header>
@@ -49,8 +49,8 @@ const HeroEvent = () => {
 
   if (!eventoDestacado) {
     return (
-      <header className="h-[70vh] min-h-[500px] flex items-center justify-center bg-neutral-900 border-b border-neutral-800">
-        <div className="text-gray-400 text-xl font-bold">
+      <header className="h-[70vh] min-h-[500px] flex items-center justify-centerbg-tinta border-b border-neutral-800">
+        <div className="text-crema/70 text-xl font-bold">
           No hay eventos destacados en este momento.
         </div>
       </header>
@@ -77,17 +77,17 @@ const HeroEvent = () => {
       <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/60 to-transparent"></div>
 
       <div className="relative z-10 container mx-auto px-4 pb-12 md:pb-16">
-        <span className="text-green-400 font-bold tracking-widest text-sm uppercase drop-shadow-md mb-2 block">
+        <span className="text-cielo font-bold tracking-widest text-sm uppercase drop-shadow-md mb-2 block">
           NUEVO SHOW DESTACADO
         </span>
-        <h1 className="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-lg leading-tight uppercase line-clamp-2">
+        <h1 className="text-5xl md:text-7xl font-black text-crema mb-4 drop-shadow-lg leading-tight uppercase line-clamp-2">
           {eventoDestacado.nombre}
         </h1>
-        <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-8 drop-shadow-md font-medium">
+        <p className="text-crema/80  text-lg md:text-xl max-w-2xl mb-8 drop-shadow-md font-medium">
           <span className="capitalize">{fechaFormateada}</span>{" "}
           {eventoDestacado.hora_apertura} | {eventoDestacado.lugar},{" "}
           {eventoDestacado.ciudad} <br />
-          <span className="text-sm mt-2 block text-gray-400">
+          <span className="text-sm mt-2 block text-crema/70">
             Género: {eventoDestacado.genero}
           </span>
         </p>
@@ -100,7 +100,7 @@ const HeroEvent = () => {
                 "La reserva directa estará disponible pronto. Ve a Más Información para reservar.",
               )
             }
-            className="bg-neutral-600 cursor-not-allowed text-gray-300 font-bold py-3 px-8 rounded-full flex items-center gap-2"
+            className="bg-neutral-600 cursor-not-allowed text-crema/80  font-bold py-3 px-8 rounded-full flex items-center gap-2"
             title="Próximamente"
           >
             RESERVAR AHORA
@@ -109,7 +109,7 @@ const HeroEvent = () => {
           {/* Botón Más Información activo que lleva al detalle */}
           <Link
             to={`/evento/${eventoDestacado.id_evento}`}
-            className="bg-green-500 hover:bg-green-400 text-black font-bold py-3 px-8 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.4)] transition flex items-center gap-2"
+            className="bg-fucsia hover:bg-chicle text-tinta font-bold py-3 px-8 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.4)] transition flex items-center gap-2"
           >
             Más Información
           </Link>

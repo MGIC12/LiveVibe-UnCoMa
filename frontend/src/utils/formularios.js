@@ -1,6 +1,6 @@
 export const inputClase =
-  "mt-1 w-full px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500";
-export const labelClase = "block text-sm text-gray-300";
+  "mt-1 w-full px-4 py-2 rounded-full bg-crema/10 border border-crema/25 text-crema placeholder-crema/60 focus:outline-none focus:ring-2 focus:ring-cielo";
+export const labelClase = "block text-sm text-crema/80";
 
 // Tienen que coincidir con las constantes del backend (routes/auth.js)
 export const MIN_INTEGRANTES = 2;

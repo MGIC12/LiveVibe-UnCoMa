@@ -25,24 +25,24 @@ export default function IntegrantesEditor({ integrantes, onChange }) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-white">
+      <h3 className="text-sm font-semibold text-crema">
         Integrantes ({integrantes.length}/{MAX_INTEGRANTES})
       </h3>
 
       {integrantes.map((it, indice) => (
         <div
           key={indice}
-          className="bg-gray-900 border border-gray-700 rounded-xl p-4 space-y-3"
+          className="bg-tinta border border-crema-10 rounded-xl p-4 space-y-3"
         >
           <div className="flex items-center justify-between">
-            <span className="text-purple-400 text-sm font-semibold">
+            <span className="text-cielo hover:text-crematext-sm font-semibold">
               Integrante {indice + 1}
             </span>
             {integrantes.length > MIN_INTEGRANTES && (
               <button
                 type="button"
                 onClick={() => quitar(indice)}
-                className="text-xs text-gray-400 hover:text-red-400"
+                className="text-xs text-crema/70 hover:text-mandarina"
               >
                 Quitar
               </button>
@@ -109,7 +109,7 @@ export default function IntegrantesEditor({ integrantes, onChange }) {
         type="button"
         onClick={agregar}
         disabled={integrantes.length >= MAX_INTEGRANTES}
-        className="w-full py-2 rounded-full border border-dashed border-gray-600 text-gray-300 hover:border-purple-500 hover:text-white disabled:opacity-50"
+        className="w-full py-2 rounded-full border border-dashed border-crema/30 text-crema/80  hover:border-fucsia hover:text-crema disabled:opacity-50"
       >
         + Agregar integrante
       </button>

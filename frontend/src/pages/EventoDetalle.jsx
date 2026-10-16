@@ -77,7 +77,7 @@ const EventoDetalle = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+      <div className="min-h-screenbg-tinta text-crema flex items-center justify-center">
         Cargando evento...
       </div>
     );
@@ -85,7 +85,7 @@ const EventoDetalle = () => {
 
   if (!evento || evento.error) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
+      <div className="min-h-screenbg-tinta text-crema flex items-center justify-center">
         Evento no encontrado.
       </div>
     );
@@ -99,34 +99,34 @@ const EventoDetalle = () => {
   });
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-white font-sans flex flex-col">
+    <div className="min-h-screenbg-tinta text-crema font-sans flex flex-col">
       <Navbar />
 
       <main className="flex-grow">
         {reservationSuccess ? (
           <div className="container mx-auto p-4 md:p-8 mt-10">
-            <div className="bg-neutral-800 rounded-2xl p-10 text-center shadow-2xl max-w-2xl mx-auto border border-neutral-700">
+            <div className="bg-neutral-800 rounded-2xl p-10 text-center shadow-2xl max-w-2xl mx-auto borderborder-crema/20">
               <div className="text-6xl mb-6 text-green-500">✅</div>
-              <h2 className="text-4xl font-black text-white mb-2">
+              <h2 className="text-4xl font-black text-crema mb-2">
                 ¡Reserva Confirmada!
               </h2>
-              <p className="text-gray-400 mb-8 text-lg">
+              <p className="text-crema/70 mb-8 text-lg">
                 Ya tienes tu lugar asegurado para{" "}
-                <strong className="text-white">{evento.nombre}</strong>.
+                <strong className="text-crema">{evento.nombre}</strong>.
               </p>
               <div className="bg-neutral-900 p-6 rounded-xl inline-block mb-8 text-left border border-neutral-800 w-full max-w-md">
-                <p className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-3">
+                <p className="text-sm text-crema/60 uppercase font-bold tracking-wider mb-3">
                   Detalles de tu ticket
                 </p>
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-gray-400">📍</span>
+                  <span className="text-crema/70">📍</span>
                   <p className="font-semibold text-lg">
                     {evento.lugar}, {evento.ciudad}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-400">📅</span>
-                  <p className="font-semibold text-lg text-green-400 capitalize">
+                  <span className="text-crema/70">📅</span>
+                  <p className="font-semibold text-lgtext-cielo hover:text-crema capitalize">
                     {fechaFormateada} {evento.hora_apertura}
                   </p>
                 </div>
@@ -134,7 +134,7 @@ const EventoDetalle = () => {
               <br />
               <Link
                 to="/"
-                className="bg-green-500 hover:bg-green-400 text-black font-bold py-4 px-10 rounded-full transition shadow-lg inline-block text-lg"
+                className="bg-fucsia hover:bg-chicle text-tinta font-bold py-4 px-10 rounded-full transition shadow-lg inline-block text-lg"
               >
                 Volver al Catálogo
               </Link>
@@ -152,18 +152,18 @@ const EventoDetalle = () => {
             <div className="relative z-10 container mx-auto px-4 pt-8 md:pt-16 pb-12">
               <Link
                 to="/"
-                className="text-gray-400 hover:text-white flex items-center gap-2 mb-10 transition w-fit font-semibold uppercase text-sm tracking-wider"
+                className="text-crema/70 hover:text-crema flex items-center gap-2 mb-10 transition w-fit font-semibold uppercase text-sm tracking-wider"
               >
                 <span>&larr;</span> Volver
               </Link>
 
               <div className="flex flex-col lg:flex-row gap-12">
                 <div className="lg:w-2/3">
-                  <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight drop-shadow-lg uppercase">
+                  <h1 className="text-5xl md:text-7xl font-black text-crema mb-6 leading-tight drop-shadow-lg uppercase">
                     {evento.nombre}
                   </h1>
 
-                  <div className="flex flex-wrap items-center gap-6 mb-8 text-gray-300 font-medium text-lg">
+                  <div className="flex flex-wrap items-center gap-6 mb-8 text-crema/80  font-medium text-lg">
                     <div className="flex items-center gap-2">
                       <span>📍</span> <span>{evento.lugar}</span>
                     </div>
@@ -172,7 +172,7 @@ const EventoDetalle = () => {
                       <span className="capitalize">{fechaFormateada}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-neutral-800 px-3 py-1 rounded-full border border-neutral-700">
+                      <span className="text-xsbg-crema/5 px-3 py-1 rounded-full borderborder-crema/20">
                         {evento.clasificacion}
                       </span>
                     </div>
@@ -184,17 +184,17 @@ const EventoDetalle = () => {
                       disabled={isReserving}
                       className={`font-bold py-4 px-10 rounded-full transition shadow-xl text-lg flex justify-center items-center gap-3 ${
                         isReserving
-                          ? "bg-neutral-700 cursor-not-allowed text-gray-400"
-                          : "bg-green-500 hover:bg-green-400 text-black transform hover:scale-105"
+                          ? "bg-neutral-700 cursor-not-allowed text-crema/70"
+                          : "bg-fucsia hover:bg-chicle text-tinta transform hover:scale-105"
                       }`}
                     >
                       {isReserving ? "Procesando..." : "Reservar Entrada"}
                     </button>
 
                     {!isReserving && (
-                      <span className="text-sm text-gray-400 font-medium">
+                      <span className="text-sm text-crema/70 font-medium">
                         Disponibles:{" "}
-                        <strong className="text-white">
+                        <strong className="text-crema">
                           {evento.disponibles}
                         </strong>
                       </span>
@@ -202,10 +202,10 @@ const EventoDetalle = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-3">
+                    <h3 className="text-xl font-bold text-crema mb-3">
                       Género Principal
                     </h3>
-                    <p className="text-gray-400 leading-relaxed text-lg max-w-3xl">
+                    <p className="text-crema/70 leading-relaxed text-lg max-w-3xl">
                       {evento.genero}{" "}
                       {evento.gira ? `- Tour: ${evento.gira}` : ""}
                     </p>
@@ -214,59 +214,59 @@ const EventoDetalle = () => {
 
                 {/* Columna Derecha: Playlist */}
                 <div className="lg:w-1/3">
-                  <div className="bg-neutral-800/80 backdrop-blur-md rounded-2xl p-6 border border-neutral-700 sticky top-24 shadow-2xl">
+                  <div className="bg-neutral-800/80 backdrop-blur-md rounded-2xl p-6 borderborder-crema/20 sticky top-24 shadow-2xl">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="w-12 h-12 bg-neutral-900 rounded-full flex items-center justify-center text-2xl">
+                      <div className="w-12 h-12bg-tinta rounded-full flex items-center justify-center text-2xl">
                         🎧
                       </div>
                       <div>
-                        <h4 className="font-bold text-white text-lg">
+                        <h4 className="font-bold text-crema text-lg">
                           Playlist del Evento
                         </h4>
-                        <p className="text-xs text-green-400 font-semibold uppercase tracking-wider">
+                        <p className="text-xstext-cielo hover:text-crema font-semibold uppercase tracking-wider">
                           Generada por IA
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400 mb-6">
+                    <p className="text-sm text-crema/70 mb-6">
                       Música de los artistas y temas favoritos de los fans que
                       ya reservaron.
                     </p>
                     <ul className="space-y-4 mb-6">
                       <li className="flex items-center gap-4 group cursor-pointer">
-                        <div className="text-gray-500 font-medium w-4 text-center group-hover:hidden">
+                        <div className="text-crema/60 font-medium w-4 text-center group-hover:hidden">
                           1
                         </div>
                         <div className="text-green-500 font-medium w-4 text-center hidden group-hover:block">
                           ▶
                         </div>
                         <div>
-                          <p className="text-white font-medium group-hover:text-green-400 transition">
+                          <p className="text-crema font-medium group-hover:text-cielo transition">
                             Tema Principal
                           </p>
-                          <p className="text-gray-500 text-sm">
+                          <p className="text-crema/60 text-sm">
                             Artista del Evento
                           </p>
                         </div>
                       </li>
                       <li className="flex items-center gap-4 group cursor-pointer">
-                        <div className="text-gray-500 font-medium w-4 text-center group-hover:hidden">
+                        <div className="text-crema/60 font-medium w-4 text-center group-hover:hidden">
                           2
                         </div>
                         <div className="text-green-500 font-medium w-4 text-center hidden group-hover:block">
                           ▶
                         </div>
                         <div>
-                          <p className="text-white font-medium group-hover:text-green-400 transition">
+                          <p className="text-crema font-medium group-hover:text-cielo transition">
                             Sugerencia IA
                           </p>
-                          <p className="text-gray-500 text-sm">
+                          <p className="text-crema/60 text-sm">
                             Basado en {evento.genero}
                           </p>
                         </div>
                       </li>
                     </ul>
-                    <button className="w-full bg-transparent hover:bg-neutral-700 text-white font-bold py-3 rounded-full border border-gray-600 hover:border-gray-400 transition text-sm flex items-center justify-center gap-2">
+                    <button className="w-full bg-transparent hover:bg-neutral-700 text-crema font-bold py-3 rounded-full border border-crema/30 hover:border-gray-400 transition text-sm flex items-center justify-center gap-2">
                       <span className="text-green-500">Spotify</span> Abrir
                       Playlist
                     </button>

@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import Avatar from "./Avatar";
 import { useState, useEffect } from "react";
 
 const Navbar = () => {
@@ -28,23 +29,6 @@ const Navbar = () => {
     setMenuAbierto(false);
   }
 
-  // Lógica para obtener la inicial del usuario
-  const getInicial = () => {
-    if (!usuario) return "U";
-    return (
-      usuario.nombre_usuario ||
-      usuario.nombre_completo ||
-      usuario.nombre ||
-      usuario.email ||
-      "U"
-    )
-      .charAt(0)
-      .toUpperCase();
-  };
-
-  // Validación de foto de perfil
-  const fotoUsuario = usuario?.foto_perfil || usuario?.foto || usuario?.avatar;
-
   // Función para ejecutar la búsqueda al presionar Enter
   const handleBuscar = (e) => {
     if (e.key === "Enter" && terminoBusqueda.trim() !== "") {
@@ -58,16 +42,17 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-neutral-900/80 backdrop-blur-md border-b border-neutral-700/50 shadow-lg"
-          : "bg-neutral-900/60 backdrop-blur-sm border-b border-transparent"
+          ? "bg-tinta/90 backdrop-blur-md border-b border-crema/20 shadow-lg"
+          : "bg-tinta/70 backdrop-blur-sm border-b border-transparent"
       }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link
             to="/"
-            className="text-2xl font-black text-white hover:text-green-400 transition flex items-center gap-2"
+            className="text-2xl font-black text-crema hover:text-sol transition flex items-center gap-2"
           >
+            <span className="w-4 h-4 rounded-full bg-fucsia border-4 border-sol" />
             LiveVibe
           </Link>
 
@@ -80,7 +65,7 @@ const Navbar = () => {
                 value={terminoBusqueda}
                 onChange={(e) => setTerminoBusqueda(e.target.value)}
                 onKeyDown={handleBuscar}
-                className="w-full pl-6 pr-4 py-2 rounded-full bg-neutral-800/80 border border-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-neutral-800 transition placeholder-gray-400 font-medium text-sm"
+                className="w-full pl-6 pr-4 py-2 rounded-full bg-crema/10 border border-crema/25 text-crema focus:outline-none focus:ring-2 focus:ring-cielo focus:bg-crema/15 transition placeholder-crema/60 font-medium text-sm"
               />
             </div>
           </div>
@@ -89,7 +74,8 @@ const Navbar = () => {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setMenuAbierto(!menuAbierto)}
-              className="text-gray-300 hover:text-white focus:outline-none p-2"
+              aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+              className="text-crema hover:text-sol focus:outline-none p-2"
             >
               <svg
                 className="h-6 w-6"
@@ -117,39 +103,41 @@ const Navbar = () => {
           </div>
 
           {/* Enlaces de Navegación (Escritorio) */}
-          <div className="hidden md:flex items-center space-x-6 text-gray-300 font-bold text-sm">
+          <div className="hidden md:flex items-center space-x-6 text-cielo font-bold text-sm">
             <Link
               to="/"
-              className="hover:text-white hover:scale-105 transition"
+              className="hover:text-crema hover:scale-105 transition"
             >
               Inicio
             </Link>
 
             {usuario ? (
               <>
+                {usuario.rol === "artista" && (
+                  <Link
+                    to="/eventos/nuevo"
+                    className="hover:text-crema hover:scale-105 transition"
+                  >
+                    Crear evento
+                  </Link>
+                )}
+
                 <Link
                   to="/perfil"
-                  className="hover:text-white hover:scale-105 transition"
+                  className="hover:text-crema hover:scale-105 transition"
                 >
                   Mi Perfil
                 </Link>
                 <div className="flex items-center gap-3">
-                  {/* Foto o inicial del usuario */}
-                  {fotoUsuario ? (
-                    <img
-                      src={fotoUsuario}
-                      alt="Perfil"
-                      className="w-8 h-8 rounded-full object-cover border border-neutral-700"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 bg-neutral-800 rounded-full flex items-center justify-center border border-neutral-700 text-xs text-white uppercase font-bold">
-                      {getInicial()}
-                    </div>
-                  )}
+                  <Avatar
+                    usuario={usuario}
+                    clases="w-8 h-8 text-xs"
+                    fondo="bg-tinta border-2 border-fucsia"
+                  />
 
                   <button
                     onClick={handleLogout}
-                    className="px-4 py-1.5 rounded-full bg-neutral-800/80 hover:bg-red-500/20 hover:text-red-400 border border-neutral-700 transition-colors"
+                    className="px-4 py-1.5 rounded-full bg-crema/10 border border-crema/25 text-crema hover:border-fucsia hover:text-fucsia transition-colors"
                   >
                     Salir
                   </button>
@@ -160,13 +148,13 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/login"
-                    className="hover:text-white hover:scale-105 transition"
+                    className="hover:text-crema hover:scale-105 transition"
                   >
                     Iniciar Sesión
                   </Link>
                   <Link
                     to="/registro"
-                    className="px-5 py-2 rounded-full bg-green-500 text-black hover:bg-green-400 hover:scale-105 transition-all shadow-[0_0_10px_rgba(34,197,94,0.3)]"
+                    className="px-5 py-2 rounded-full bg-fucsia text-tinta hover:bg-chicle hover:scale-105 transition-all shadow-[0_0_12px_rgba(255,46,147,0.45)]"
                   >
                     Regístrate
                   </Link>
@@ -181,11 +169,11 @@ const Navbar = () => {
       <div
         className={`md:hidden absolute w-full left-0 top-16 transition-all duration-300 overflow-hidden ${
           menuAbierto
-            ? "max-h-96 border-b border-neutral-800 shadow-xl"
+            ? "max-h-96 border-b border-crema/15 shadow-xl"
             : "max-h-0"
         }`}
       >
-        <div className="bg-neutral-900/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-4">
+        <div className="bg-tinta/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-4">
           {/* Barra de Búsqueda (Móvil) */}
           <div className="relative w-full mb-6">
             <input
@@ -194,48 +182,63 @@ const Navbar = () => {
               value={terminoBusqueda}
               onChange={(e) => setTerminoBusqueda(e.target.value)}
               onKeyDown={handleBuscar}
-              className="w-full pl-6 pr-4 py-2 rounded-full bg-neutral-800 border border-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full pl-6 pr-4 py-2 rounded-full bg-crema/10 border border-crema/25 text-crema placeholder-crema/60 focus:outline-none focus:ring-2 focus:ring-cielo text-sm"
             />
           </div>
 
           <Link
             to="/"
             onClick={() => setMenuAbierto(false)}
-            className="block px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
+            className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
           >
             Inicio
           </Link>
 
           {usuario ? (
             <>
+              {usuario.rol === "artista" && (
+                <Link
+                  to="/eventos/nuevo"
+                  onClick={() => setMenuAbierto(false)}
+                  className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                >
+                  Crear evento
+                </Link>
+              )}
+
               <Link
                 to="/perfil"
                 onClick={() => setMenuAbierto(false)}
-                className="block px-3 py-2 text-base font-bold text-gray-300 hover:text-white hover:bg-neutral-800 rounded-md"
+                className="flex items-center gap-3 px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
               >
+                <Avatar
+                  usuario={usuario}
+                  clases="w-8 h-8 text-xs"
+                  fondo="bg-tinta border-2 border-fucsia"
+                />
                 Mi Perfil
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full text-left block px-3 py-2 text-base font-bold text-red-400 hover:bg-neutral-800 rounded-md"
+                className="w-full text-left block px-3 py-2 text-base font-bold text-fucsia hover:bg-crema/10 rounded-md"
               >
                 Cerrar sesión
               </button>
             </>
           ) : (
             !enPaginaAuth && (
-              <div className="pt-4 border-t border-neutral-800 flex flex-col gap-3">
+              <div className="pt-4 border-t border-crema/15 flex flex-col gap-3">
                 <Link
                   to="/login"
                   onClick={() => setMenuAbierto(false)}
-                  className="block text-center px-4 py-2 text-base font-bold text-white hover:bg-neutral-800 rounded-full border border-neutral-700"
+                  className="block text-center px-4 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-full border border-crema/30"
                 >
                   Iniciar Sesión
                 </Link>
                 <Link
                   to="/registro"
                   onClick={() => setMenuAbierto(false)}
-                  className="block text-center px-4 py-2 text-base font-bold text-black bg-green-500 hover:bg-green-400 rounded-full"
+                  className="block text-center px-4 py-2 text-base font-bold text-tinta bg-fucsia hover:bg-chicle rounded-full"
                 >
                   Regístrate
                 </Link>

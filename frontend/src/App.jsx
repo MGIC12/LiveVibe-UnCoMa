@@ -6,15 +6,16 @@ import Register from "./pages/Register";
 import Perfil from "./pages/Perfil";
 import RutaProtegida from "./components/RutaProtegida";
 import Buscador from "./pages/Buscador";
+import CrearEvento from "./pages/CrearEvento";
 
 // Temporales
 const NotFound = () => (
-  <div className="text-white p-8">Error 404: Página no encontrada</div>
+  <div className="text-crema p-8">Error 404: Página no encontrada</div>
 );
 
 function App() {
   return (
-    <div className="bg-gray-900 min-h-screen">
+    <div className="bg-tinta text-crema min-h-screen">
       <Routes>
         {/* Ruta principal */}
         <Route path="/" element={<Home />} />
@@ -40,6 +41,15 @@ function App() {
         <Route path="/evento/:id" element={<EventoDetalle />} />
 
         <Route path="/buscar" element={<Buscador />} />
+
+        <Route
+          path="/eventos/nuevo"
+          element={
+            <RutaProtegida roles={["artista"]}>
+              <CrearEvento />
+            </RutaProtegida>
+          }
+        />
 
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />

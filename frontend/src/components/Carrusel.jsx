@@ -48,7 +48,7 @@ const Carrusel = () => {
 
   return (
     <section className="my-8 overflow-hidden relative">
-      <h3 className="text-2xl font-bold mb-2 px-4 md:px-0 text-white">
+      <h3 className="text-2xl font-bold mb-2 px-4 md:px-0 text-crema">
         Artistas en Tendencia
       </h3>
       <div className="py-8">
@@ -56,7 +56,7 @@ const Carrusel = () => {
           {duplicatedArtists.map((artist, index) => (
             <div
               key={`${artist.id}-${index}`}
-              className="relative shrink-0 w-40 md:w-48 h-60 md:h-72 bg-gray-800 rounded-lg overflow-hidden cursor-pointer transform transition-transform duration-300 hover:scale-110 hover:z-10 shadow-2xl"
+              className="relative shrink-0 w-40 md:w-48 h-60 md:h-72 bg-crema/5rounded-lg overflow-hidden cursor-pointer transform transition-transform duration-300 hover:scale-110 hover:z-10 shadow-2xl"
             >
               <img
                 src={artist.img}
@@ -67,10 +67,10 @@ const Carrusel = () => {
               <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-linear-to-t from-gray-900 to-transparent pointer-events-none"></div>
 
               <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
-                <h4 className="text-white font-bold leading-tight drop-shadow-md">
+                <h4 className="text-crema font-bold leading-tight drop-shadow-md">
                   {artist.name}
                 </h4>
-                <p className="text-purple-400 text-xs font-semibold drop-shadow-md">
+                <p className="text-cielo hover:text-crematext-xs font-semibold drop-shadow-md">
                   {artist.genre}
                 </p>
               </div>

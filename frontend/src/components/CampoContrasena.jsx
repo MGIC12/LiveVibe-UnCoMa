@@ -33,7 +33,7 @@ export default function CampoContrasena({
           type="button"
           onClick={() => setVisible(!visible)}
           aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
-          className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-white"
+          className="absolute inset-y-0 right-4 flex items-center text-crema-80 hover:text-crema"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

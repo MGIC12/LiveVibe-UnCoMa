@@ -8,7 +8,7 @@ import Footer from "../components/Footer";
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-neutral-900 text-white font-sans overflow-x-hidden">
+    <div className="min-h-screenbg-tinta text-crema font-sans overflow-x-hidden">
       <Navbar />
       <HeroEvent />
 

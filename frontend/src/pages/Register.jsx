@@ -93,9 +93,9 @@ export default function Register() {
   }
 
   const piePagina = (
-    <p className="text-center text-sm text-gray-400">
+    <p className="text-center text-sm text-crema/70">
       ¿Ya tenés cuenta?{" "}
-      <Link to="/login" className="text-purple-400 hover:text-purple-300">
+      <Link to="/login" className="text-cielo hover:text-cremahover:text-purple-300">
         Iniciá sesión
       </Link>
     </p>
@@ -107,8 +107,8 @@ export default function Register() {
       <>
         <Navbar />
         <main className="flex justify-center px-4 py-12">
-          <div className="w-full max-w-lg bg-gray-800 border border-gray-700 rounded-2xl p-8 space-y-6">
-            <h1 className="text-3xl font-bold text-white text-center">
+          <div className="w-full max-w-lg bg-crema/5border border-crema/20rounded-2xl p-8 space-y-6">
+            <h1 className="text-3xl font-bold text-crema text-center">
               ¿Cómo querés registrarte?
             </h1>
 
@@ -116,11 +116,11 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => cambiarCampo("rol", "fan")}
-                className="p-6 rounded-2xl border border-gray-600 bg-gray-700 hover:border-purple-500 hover:bg-gray-600 transition text-center"
+                className="p-6 rounded-2xl border border-crema/30 bg-crema/10hover:border-fucsia hover:bg-gray-600 transition text-center"
               >
                 <span className="block text-4xl mb-2">🎧</span>
-                <span className="block text-xl font-bold text-white">Fan</span>
-                <span className="block text-sm text-gray-400 mt-1">
+                <span className="block text-xl font-bold text-crema">Fan</span>
+                <span className="block text-sm text-crema/70 mt-1">
                   Quiero descubrir conciertos y artistas
                 </span>
               </button>
@@ -128,11 +128,11 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => cambiarCampo("rol", "artista")}
-                className="p-6 rounded-2xl border border-gray-600 bg-gray-700 hover:border-purple-500 hover:bg-gray-600 transition text-center"
+                className="p-6 rounded-2xl border border-crema/30 bg-crema/10hover:border-fucsia hover:bg-gray-600 transition text-center"
               >
                 <span className="block text-4xl mb-2">🎤</span>
-                <span className="block text-xl font-bold text-white">Artista</span>
-                <span className="block text-sm text-gray-400 mt-1">
+                <span className="block text-xl font-bold text-crema">Artista</span>
+                <span className="block text-sm text-crema/70 mt-1">
                   Quiero mostrar mi música y mis eventos
                 </span>
               </button>
@@ -155,17 +155,17 @@ export default function Register() {
       <main className="flex justify-center px-4 py-12">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-lg bg-gray-800 border border-gray-700 rounded-2xl p-8 space-y-5"
+          className="w-full max-w-lg bg-crema/5border border-crema/20rounded-2xl p-8 space-y-5"
         >
           <button
             type="button"
             onClick={() => cambiarCampo("rol", "")}
-            className="text-sm text-gray-400 hover:text-purple-300"
+            className="text-sm text-crema/70 hover:text-purple-300"
           >
             ← Cambiar tipo de cuenta
           </button>
 
-          <h1 className="text-3xl font-bold text-white text-center">
+          <h1 className="text-3xl font-bold text-crema text-center">
             {esArtista ? "Cuenta de artista" : "Cuenta de fan"}
           </h1>
 
@@ -235,7 +235,7 @@ export default function Register() {
               value={form.biografia}
               onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
               rows={3}
-              className="mt-1 w-full px-4 py-2 rounded-2xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="mt-1 w-full px-4 py-2 rounded-2xl bg-crema/10text-crema focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </label>
 
@@ -247,7 +247,7 @@ export default function Register() {
           )}
 
           {error && (
-            <p className="text-red-400 text-sm" role="alert">
+            <p className="text-mandarina text-sm" role="alert">
               {error}
             </p>
           )}
@@ -255,7 +255,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={enviando}
-            className="w-full py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold disabled:opacity-50"
+            className="w-full py-2 rounded-full bg-fucsia hover:bg-chicle text-crema font-bold disabled:opacity-50"
           >
             {enviando ? "Creando cuenta..." : "Registrarme"}
           </button>

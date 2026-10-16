@@ -39,15 +39,15 @@ export default function CamposArtista({ valores, onChange }) {
       </label>
 
       <fieldset>
-        <legend className="text-sm text-gray-300 mb-2">Soy</legend>
+        <legend className="text-sm text-crema-80 mb-2">Soy</legend>
         <div className="grid grid-cols-2 gap-3">
           {["solista", "banda"].map((opcion) => (
             <label
               key={opcion}
               className={`cursor-pointer text-center py-3 rounded-xl border font-semibold transition ${
                 valores.tipo_artista === opcion
-                  ? "bg-purple-600 border-purple-500 text-white"
-                  : "bg-gray-700 border-gray-600 text-gray-300 hover:border-purple-500"
+                  ? "bg-fucsia border-fucsia text-tinta"
+                  : "bg-crema/10 border-crema/20 text-crema-80 hover:border-fucsia"
               }`}
             >
               <input
