@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import Perfil from "./pages/Perfil";
 import RutaProtegida from "./components/RutaProtegida";
 import Buscador from "./pages/Buscador";
+import MisReservas from "./pages/MisReservas";
 
 // Temporales
 const NotFound = () => (
@@ -41,6 +42,15 @@ function App() {
 
         <Route path="/buscar" element={<Buscador />} />
 
+        <Route
+          path="/mis-reservas"
+          element={
+            <RutaProtegida>
+              {" "}
+              <MisReservas />{" "}
+            </RutaProtegida>
+          }
+        />
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
       </Routes>

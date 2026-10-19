@@ -11,7 +11,7 @@ const Navbar = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Estado para el término de búsqueda (Feature 7)
+  // Estado para el término de búsqueda
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
 
   useEffect(() => {
@@ -28,7 +28,6 @@ const Navbar = () => {
     setMenuAbierto(false);
   }
 
-  // Lógica para obtener la inicial del usuario
   const getInicial = () => {
     if (!usuario) return "U";
     return (
@@ -37,12 +36,9 @@ const Navbar = () => {
       usuario.nombre ||
       usuario.email ||
       "U"
-    )
-      .charAt(0)
-      .toUpperCase();
+    ).charAt(0);
   };
 
-  // Validación de foto de perfil
   const fotoUsuario = usuario?.foto_perfil || usuario?.foto || usuario?.avatar;
 
   // Función para ejecutar la búsqueda al presionar Enter
@@ -71,7 +67,7 @@ const Navbar = () => {
             LiveVibe
           </Link>
 
-          {/* Barra de Búsqueda (Escritorio) */}
+          {/* Barra de Búsqueda (PC) */}
           <div className="flex-1 mx-4 hidden md:flex justify-center">
             <div className="relative w-full max-w-md">
               <input
@@ -85,7 +81,6 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Botón Menú Móvil */}
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setMenuAbierto(!menuAbierto)}
@@ -116,7 +111,6 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* Enlaces de Navegación (Escritorio) */}
           <div className="hidden md:flex items-center space-x-6 text-gray-300 font-bold text-sm">
             <Link
               to="/"
@@ -127,14 +121,21 @@ const Navbar = () => {
 
             {usuario ? (
               <>
+                {/* NUEVO ENLACE: Mis Entradas (Escritorio) */}
+                <Link
+                  to="/mis-reservas"
+                  className="hover:text-white hover:scale-105 transition text-green-400"
+                >
+                  Mis Entradas
+                </Link>
                 <Link
                   to="/perfil"
                   className="hover:text-white hover:scale-105 transition"
                 >
                   Mi Perfil
                 </Link>
+
                 <div className="flex items-center gap-3">
-                  {/* Foto o inicial del usuario */}
                   {fotoUsuario ? (
                     <img
                       src={fotoUsuario}
@@ -146,7 +147,6 @@ const Navbar = () => {
                       {getInicial()}
                     </div>
                   )}
-
                   <button
                     onClick={handleLogout}
                     className="px-4 py-1.5 rounded-full bg-neutral-800/80 hover:bg-red-500/20 hover:text-red-400 border border-neutral-700 transition-colors"
@@ -177,7 +177,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Menú Móvil Desplegable */}
+      {/* Menú Móvil */}
       <div
         className={`md:hidden absolute w-full left-0 top-16 transition-all duration-300 overflow-hidden ${
           menuAbierto
@@ -208,6 +208,14 @@ const Navbar = () => {
 
           {usuario ? (
             <>
+              {/* NUEVO ENLACE: Mis Entradas (Móvil) */}
+              <Link
+                to="/mis-reservas"
+                onClick={() => setMenuAbierto(false)}
+                className="block px-3 py-2 text-base font-bold text-green-400 hover:text-green-300 hover:bg-neutral-800 rounded-md"
+              >
+                Mis Entradas
+              </Link>
               <Link
                 to="/perfil"
                 onClick={() => setMenuAbierto(false)}

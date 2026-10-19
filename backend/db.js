@@ -84,6 +84,15 @@ CREATE TABLE IF NOT EXISTS eventos (
     gira VARCHAR(255),
     id_artista INT
 );
+
+CREATE TABLE IF NOT EXISTS reservas (
+    id_reserva SERIAL PRIMARY KEY,
+    id_evento INT REFERENCES eventos(id_evento) ON DELETE CASCADE,
+    nombre_usuario VARCHAR(30) REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+    estado VARCHAR(20) DEFAULT 'confirmada' CHECK (estado IN ('pendiente', 'confirmada', 'cancelada', 'asistió')),
+    fecha_reserva TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(id_evento, nombre_usuario)
+);
 `;
 
 async function initDb() {
