@@ -29,6 +29,11 @@
     outline: 3px solid var(--color-cielo);
     outline-offset: 2px;
   }
+
+  option {
+    background-color: var(--color-tinta);
+    color: var(--color-crema);
+  }
 }
 
 /* ---------- Lo que ya tenían ---------- */

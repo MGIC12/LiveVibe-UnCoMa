@@ -7,6 +7,7 @@ import Perfil from "./pages/Perfil";
 import RutaProtegida from "./components/RutaProtegida";
 import Buscador from "./pages/Buscador";
 import CrearEvento from "./pages/CrearEvento";
+import EditarEvento from "./pages/EditarEvento";
 
 // Temporales
 const NotFound = () => (
@@ -47,6 +48,15 @@ function App() {
           element={
             <RutaProtegida roles={["artista"]}>
               <CrearEvento />
+            </RutaProtegida>
+          }
+        />
+
+        <Route
+          path="/eventos/:id/editar"
+          element={
+            <RutaProtegida roles={["artista"]}>
+              <EditarEvento />
             </RutaProtegida>
           }
         />

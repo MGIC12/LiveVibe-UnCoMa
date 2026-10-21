@@ -1,20 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import { formatearPrecio } from "../utils/formularios";
+import { API } from "../utils/api";
 
 const EventoDetalle = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { usuario } = useAuth();
-
   const [evento, setEvento] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [isReserving, setIsReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { usuario, token } = useAuth();
+
+  // Cancelación del evento (solo el artista dueño)
+  const [confirmando, setConfirmando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const [errorCancelar, setErrorCancelar] = useState("");
 
   const getImagenPorGenero = (genero) => {
     const gen = genero ? genero.toLowerCase() : "";
@@ -40,7 +44,7 @@ const EventoDetalle = () => {
         setEvento({
           ...data,
           imagenHero: getImagenPorGenero(data.genero),
-          disponibles: data.cant_entradas || 100,
+          disponibles: data.cant_entradas,
         });
         setLoading(false);
       })
@@ -90,9 +94,31 @@ const EventoDetalle = () => {
     }
   };
 
+  // El artista dueño cancela su evento
+  const cancelarEvento = async () => {
+    setErrorCancelar("");
+    setCancelando(true);
+    try {
+      const res = await fetch(`${API}/api/eventos/${id}/cancelar`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo cancelar el evento");
+
+      // La página se actualiza sin recargar
+      setEvento((actual) => ({ ...actual, estado: "cancelado" }));
+      setConfirmando(false);
+    } catch (err) {
+      setErrorCancelar(err.message);
+    } finally {
+      setCancelando(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center font-bold text-xl animate-pulse">
+      <div className="min-h-screen bg-tinta text-crema flex items-center justify-center">
         Cargando evento...
       </div>
     );
@@ -100,31 +126,107 @@ const EventoDetalle = () => {
 
   if (!evento || evento.error) {
     return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center text-xl">
+      <div className="min-h-screen bg-tinta text-crema flex items-center justify-center">
         Evento no encontrado.
       </div>
     );
   }
 
-  const fechaFormateada = new Date(evento.fecha).toLocaleDateString("es-AR", {
+  // La base manda la fecha como "2026-10-20T00:00:00.000Z": nos quedamos con el día
+  // y lo armamos como fecha local, para que no se corra al día anterior.
+  const dia = String(evento.fecha).slice(0, 10);
+  const fechaFormateada = new Date(`${dia}T00:00:00`).toLocaleDateString("es-AR", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
+  const cancelado = evento.estado === "cancelado";
+  const yaOcurrio = dia < new Date().toLocaleDateString("en-CA");
+  const esDueno = usuario && usuario.nombre_usuario === evento.nombre_artista;
+  const puedeModificar = esDueno && !cancelado && !yaOcurrio;
+
+  // Qué se muestra en lugar del botón de reservar, según quién mira
+  let acciones;
+  if (puedeModificar) {
+    acciones = confirmando ? (
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm text-crema/80">
+          ¿Cancelar este evento? No se puede deshacer.
+        </span>
+        <button
+          onClick={() => setConfirmando(false)}
+          disabled={cancelando}
+          className="py-3 px-6 rounded-full border border-crema/30 text-crema/80 hover:border-crema font-bold disabled:opacity-50"
+        >
+          No, volver
+        </button>
+        <button
+          onClick={cancelarEvento}
+          disabled={cancelando}
+          className="py-3 px-6 rounded-full bg-mandarina hover:bg-sol text-tinta font-bold disabled:opacity-50"
+        >
+          {cancelando ? "Cancelando..." : "Sí, cancelar evento"}
+        </button>
+      </div>
+    ) : (
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          to={`/eventos/${id}/editar`}
+          className="font-bold py-4 px-10 rounded-full bg-fucsia hover:bg-chicle text-tinta text-lg shadow-xl transition transform hover:scale-105"
+        >
+          Editar evento
+        </Link>
+        <button
+          onClick={() => setConfirmando(true)}
+          className="font-bold py-4 px-8 rounded-full border border-mandarina text-mandarina hover:bg-mandarina hover:text-tinta text-lg transition"
+        >
+          Cancelar evento
+        </button>
+      </div>
+    );
+  } else if (esDueno) {
+    acciones = (
+      <span className="text-sm text-crema/70 font-medium">
+        {cancelado
+          ? "Cancelaste este evento."
+          : "Este evento ya ocurrió: no se puede modificar ni cancelar."}
+      </span>
+    );
+  } else {
+    const bloqueado = isReserving || cancelado || yaOcurrio;
+    acciones = (
+      <button
+        onClick={handleReserva}
+        disabled={bloqueado}
+        className={`font-bold py-4 px-10 rounded-full transition shadow-xl text-lg flex justify-center items-center gap-3 ${
+          bloqueado
+            ? "bg-crema/10 cursor-not-allowed text-crema/50"
+            : "bg-fucsia hover:bg-chicle text-tinta transform hover:scale-105"
+        }`}
+      >
+        {cancelado
+          ? "Evento cancelado"
+          : yaOcurrio
+            ? "Evento finalizado"
+            : isReserving
+              ? "Procesando..."
+              : "Reservar Entrada"}
+      </button>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-900 text-white font-sans flex flex-col">
+    <div className="min-h-screen bg-tinta text-crema font-sans flex flex-col">
       <Navbar />
 
       <main className="flex-grow">
         {reservationSuccess ? (
-          <div className="container mx-auto p-4 md:p-8 mt-20">
-            <div className="bg-neutral-800 rounded-3xl p-10 text-center shadow-2xl max-w-2xl mx-auto border border-neutral-700">
-              <div className="text-7xl mb-6 text-green-500 animate-bounce">
-                ✅
-              </div>
-              <h2 className="text-4xl font-black text-white mb-2">
+          <div className="container mx-auto p-4 md:p-8 mt-10">
+            <div className="bg-crema/5 rounded-2xl p-10 text-center shadow-2xl max-w-2xl mx-auto border border-crema/20">
+              <div className="text-6xl mb-6">✅</div>
+              <h2 className="text-4xl font-black text-crema mb-2">
                 ¡Reserva Confirmada!
               </h2>
               <p className="text-gray-400 mb-8 text-lg">
@@ -134,9 +236,8 @@ const EventoDetalle = () => {
                 </strong>
                 .
               </p>
-
-              <div className="bg-neutral-900 p-6 rounded-2xl inline-block mb-8 text-left border border-neutral-800 w-full max-w-md shadow-inner">
-                <p className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-4 border-b border-neutral-800 pb-2">
+              <div className="bg-tinta p-6 rounded-xl inline-block mb-8 text-left border border-crema/20 w-full max-w-md">
+                <p className="text-sm text-crema/60 uppercase font-bold tracking-wider mb-3">
                   Detalles de tu ticket
                 </p>
                 <div className="flex items-center gap-3 mb-3">
@@ -145,9 +246,9 @@ const EventoDetalle = () => {
                     {evento.lugar}, {evento.ciudad}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-gray-400 text-xl">📅</span>
-                  <p className="font-semibold text-lg text-green-400 capitalize">
+                <div className="flex items-center gap-3">
+                  <span className="text-crema/70">📅</span>
+                  <p className="font-semibold text-lg text-cielo capitalize">
                     {fechaFormateada} {evento.hora_apertura}
                   </p>
                 </div>
@@ -181,7 +282,7 @@ const EventoDetalle = () => {
               className="absolute top-0 left-0 w-full h-[60vh] bg-cover bg-center opacity-30"
               style={{ backgroundImage: `url('${evento.imagenHero}')` }}
             >
-              <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/80 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-tinta to-transparent"></div>
             </div>
 
             <div className="relative z-10 container mx-auto px-4 pt-8 md:pt-24 pb-12">
@@ -194,46 +295,33 @@ const EventoDetalle = () => {
 
               <div className="flex flex-col lg:flex-row gap-12">
                 <div className="lg:w-2/3">
-                  <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight drop-shadow-lg uppercase tracking-tight">
+                  {cancelado && (
+                    <span className="inline-block mb-4 text-xs font-bold px-3 py-1 rounded-full bg-mandarina text-tinta uppercase tracking-wider">
+                      Evento cancelado
+                    </span>
+                  )}
+
+                  <h1 className="text-5xl md:text-7xl font-black text-crema mb-6 leading-tight drop-shadow-lg uppercase">
                     {evento.nombre}
                   </h1>
 
-                  <Link
-                    to={`/artista/${evento.nombre_usuario_artista || evento.id_artista}`}
-                    className="group inline-flex items-center gap-4 bg-neutral-800/60 hover:bg-neutral-800 border border-neutral-700 hover:border-green-500/50 rounded-full pr-6 p-2 transition-all duration-300 mb-8 backdrop-blur-sm shadow-lg w-fit"
-                  >
-                    <img
-                      src={
-                        evento.foto_perfil_artista ||
-                        "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=150&h=150&fit=crop"
-                      }
-                      alt={evento.nombre_artista}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-neutral-600 group-hover:border-green-400 transition-colors"
-                    />
-                    <div>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5 group-hover:text-green-400 transition-colors">
-                        Artista Principal
-                      </p>
-                      <p className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">
-                        {evento.nombre_artista || "Artista por confirmar"}
-                      </p>
+                  <div className="flex flex-wrap items-center gap-6 mb-8 text-crema/80 font-medium text-lg">
+                    <div className="flex items-center gap-2">
+                      <span>📍</span> <span>{evento.lugar}</span>
                     </div>
-                    <div className="ml-4 w-8 h-8 rounded-full bg-neutral-700 group-hover:bg-green-500 text-white group-hover:text-black flex items-center justify-center transition-colors">
-                      <span className="text-sm font-bold">→</span>
+                    <div className="flex items-center gap-2">
+                      <span>📅</span>{" "}
+                      <span className="capitalize">{fechaFormateada}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-crema/5 px-3 py-1 rounded-full border border-crema/20">
+                        {evento.clasificacion}
+                      </span>
                     </div>
                   </Link>
 
-                  <div className="flex flex-wrap items-center gap-4 mb-8 text-gray-300 font-medium text-lg">
-                    <span className="bg-neutral-800 border border-neutral-700 px-4 py-2 rounded-full flex items-center gap-2">
-                      📍 {evento.lugar}, {evento.ciudad}
-                    </span>
-                    <span className="bg-neutral-800 border border-neutral-700 px-4 py-2 rounded-full flex items-center gap-2 capitalize">
-                      📅 {fechaFormateada}
-                    </span>
-                    <span className="bg-purple-900/30 text-purple-400 border border-purple-500/30 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider">
-                      {evento.genero}
-                    </span>
-                  </div>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-4 mb-12">
+                    {acciones}
 
                   <div className="bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-6 mb-12 backdrop-blur-sm">
                     {errorMessage && (
@@ -242,57 +330,20 @@ const EventoDetalle = () => {
                       </div>
                     )}
 
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                      <div>
-                        <p className="text-gray-400 text-sm mb-1">
-                          Estado de tickets
-                        </p>
-                        <p className="text-2xl font-black text-white">
-                          Disponibles:{" "}
-                          <span className="text-green-400">
-                            {evento.disponibles}
-                          </span>
-                        </p>
+                    {evento.precio_desde != null && (
+                      <div className="flex items-center gap-2 text-sm text-crema/70 font-medium">
+                        <span>Entradas desde:</span>
+                        <span className="text-sol font-bold">
+                          {formatearPrecio(evento.precio_desde)} 🎟️
+                        </span>
                       </div>
+                    )}
 
-                      <button
-                        onClick={handleReserva}
-                        disabled={isReserving}
-                        className={`w-full sm:w-auto font-bold py-4 px-10 rounded-full transition shadow-xl text-lg flex justify-center items-center gap-3 ${
-                          isReserving
-                            ? "bg-neutral-700 cursor-not-allowed text-gray-400"
-                            : "bg-green-500 hover:bg-green-400 text-black transform hover:scale-105 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                        }`}
-                      >
-                        {isReserving ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 h-5 w-5 text-gray-400"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            Procesando...
-                          </>
-                        ) : (
-                          "Reservar Entrada"
-                        )}
-                      </button>
-                    </div>
+                    {errorCancelar && (
+                      <p className="w-full text-mandarina text-sm" role="alert">
+                        {errorCancelar}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -306,18 +357,19 @@ const EventoDetalle = () => {
                   </div>
                 </div>
 
-                <div className="lg:w-1/3 mt-8 lg:mt-0">
-                  <div className="bg-neutral-800/80 backdrop-blur-md rounded-3xl p-8 border border-neutral-700 sticky top-24 shadow-2xl">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-3xl shadow-lg">
+                {/* Columna Derecha: Playlist */}
+                <div className="lg:w-1/3">
+                  <div className="bg-tinta/80 backdrop-blur-md rounded-2xl p-6 border border-crema/20 sticky top-24 shadow-2xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 bg-crema/10 rounded-full flex items-center justify-center text-2xl">
                         🎧
                       </div>
                       <div>
                         <h4 className="font-black text-white text-xl">
                           Soundtrack
                         </h4>
-                        <p className="text-xs text-green-400 font-bold uppercase tracking-wider">
-                          Sugerencia IA
+                        <p className="text-xs text-cielo font-semibold uppercase tracking-wider">
+                          Generada por IA
                         </p>
                       </div>
                     </div>
@@ -328,33 +380,42 @@ const EventoDetalle = () => {
                       <strong className="text-gray-200">{evento.genero}</strong>{" "}
                       que ya reservaron su lugar.
                     </p>
-
-                    <ul className="space-y-4 mb-8">
-                      {[1, 2, 3].map((num) => (
-                        <li
-                          key={num}
-                          className="flex items-center gap-4 group cursor-pointer p-2 rounded-xl hover:bg-neutral-700/50 transition"
-                        >
-                          <div className="text-gray-500 font-bold w-4 text-center group-hover:hidden">
-                            {num}
-                          </div>
-                          <div className="text-green-500 font-bold w-4 text-center hidden group-hover:block">
-                            ▶
-                          </div>
-                          <div>
-                            <p className="text-white font-bold group-hover:text-green-400 transition">
-                              Hit Sensación {num}
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                              {evento.nombre_artista || "Artista Sorpresa"}
-                            </p>
-                          </div>
-                        </li>
-                      ))}
+                    <ul className="space-y-4 mb-6">
+                      <li className="flex items-center gap-4 group cursor-pointer">
+                        <div className="text-crema/60 font-medium w-4 text-center group-hover:hidden">
+                          1
+                        </div>
+                        <div className="text-fucsia font-medium w-4 text-center hidden group-hover:block">
+                          ▶
+                        </div>
+                        <div>
+                          <p className="text-crema font-medium group-hover:text-cielo transition">
+                            Tema Principal
+                          </p>
+                          <p className="text-crema/60 text-sm">
+                            Artista del Evento
+                          </p>
+                        </div>
+                      </li>
+                      <li className="flex items-center gap-4 group cursor-pointer">
+                        <div className="text-crema/60 font-medium w-4 text-center group-hover:hidden">
+                          2
+                        </div>
+                        <div className="text-fucsia font-medium w-4 text-center hidden group-hover:block">
+                          ▶
+                        </div>
+                        <div>
+                          <p className="text-crema font-medium group-hover:text-cielo transition">
+                            Sugerencia IA
+                          </p>
+                          <p className="text-crema/60 text-sm">
+                            Basado en {evento.genero}
+                          </p>
+                        </div>
+                      </li>
                     </ul>
-
-                    <button className="w-full bg-transparent hover:bg-neutral-700 text-white font-bold py-3.5 rounded-full border-2 border-neutral-600 hover:border-gray-400 transition text-sm flex items-center justify-center gap-2">
-                      <span className="text-green-500">Spotify</span> Abrir
+                    <button className="w-full bg-transparent hover:bg-crema/10 text-crema font-bold py-3 rounded-full border border-crema/30 hover:border-crema/60 transition text-sm flex items-center justify-center gap-2">
+                      <span className="text-cielo">Spotify</span> Abrir
                       Playlist
                     </button>
                   </div>

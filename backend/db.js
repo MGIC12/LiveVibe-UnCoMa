@@ -86,6 +86,10 @@ CREATE TABLE IF NOT EXISTS evento (
       REFERENCES artista(nombre_usuario) ON DELETE CASCADE
 );
 
+ALTER TABLE evento
+  ADD COLUMN IF NOT EXISTS estado VARCHAR(20) NOT NULL DEFAULT 'activo'
+  CHECK (estado IN ('activo', 'cancelado'));
+
 CREATE TABLE IF NOT EXISTS entrada (
     id_entrada     SERIAL PRIMARY KEY,
     id_evento      INT NOT NULL REFERENCES evento(id_evento) ON DELETE CASCADE,
