@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../../context/AuthContext";
@@ -8,11 +8,13 @@ import { API } from "../utils/api";
 
 const EventoDetalle = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [evento, setEvento] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [isReserving, setIsReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const { usuario, token } = useAuth();
 
   // Cancelación del evento (solo el artista dueño)
@@ -104,7 +106,8 @@ const EventoDetalle = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo cancelar el evento");
+      if (!res.ok)
+        throw new Error(data.error || "No se pudo cancelar el evento");
 
       // La página se actualiza sin recargar
       setEvento((actual) => ({ ...actual, estado: "cancelado" }));
@@ -135,12 +138,15 @@ const EventoDetalle = () => {
   // La base manda la fecha como "2026-10-20T00:00:00.000Z": nos quedamos con el día
   // y lo armamos como fecha local, para que no se corra al día anterior.
   const dia = String(evento.fecha).slice(0, 10);
-  const fechaFormateada = new Date(`${dia}T00:00:00`).toLocaleDateString("es-AR", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const fechaFormateada = new Date(`${dia}T00:00:00`).toLocaleDateString(
+    "es-AR",
+    {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    },
+  );
 
   const cancelado = evento.estado === "cancelado";
   const yaOcurrio = dia < new Date().toLocaleDateString("en-CA");
@@ -234,7 +240,7 @@ const EventoDetalle = () => {
                 <strong className="text-white uppercase">
                   {evento.nombre}
                 </strong>
-                .
+                {evento.nombre_artista && ` de ${evento.nombre_artista}`}.
               </p>
               <div className="bg-tinta p-6 rounded-xl inline-block mb-8 text-left border border-crema/20 w-full max-w-md">
                 <p className="text-sm text-crema/60 uppercase font-bold tracking-wider mb-3">
@@ -301,9 +307,32 @@ const EventoDetalle = () => {
                     </span>
                   )}
 
-                  <h1 className="text-5xl md:text-7xl font-black text-crema mb-6 leading-tight drop-shadow-lg uppercase">
+                  <h1 className="text-5xl md:text-7xl font-black text-crema mb-4 leading-tight drop-shadow-lg uppercase">
                     {evento.nombre}
                   </h1>
+
+                  {/* NUEVO DISEÑO PARA EL ARTISTA (Enlace directo a su perfil) */}
+                  {evento.nombre_artista && (
+                    <Link
+                      to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
+                      className="inline-flex items-center gap-4 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700 hover:border-fucsia/60 rounded-full pr-8 pl-2 py-2 mb-8 transition-all group w-fit backdrop-blur-sm"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-fucsia to-purple-600 flex items-center justify-center text-xl shadow-lg group-hover:scale-105 transition-transform">
+                        🎤
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-cielo font-bold uppercase tracking-widest mb-0.5">
+                          Artista Principal
+                        </p>
+                        <h2 className="text-xl sm:text-2xl font-black text-crema group-hover:text-white transition-colors capitalize">
+                          {evento.nombre_artista}
+                        </h2>
+                      </div>
+                      <span className="text-crema/40 group-hover:text-fucsia ml-2 transition-colors">
+                        &rarr;
+                      </span>
+                    </Link>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-6 mb-8 text-crema/80 font-medium text-lg">
                     <div className="flex items-center gap-2">
@@ -318,10 +347,11 @@ const EventoDetalle = () => {
                         {evento.clasificacion}
                       </span>
                     </div>
-                  </Link>
+                  </div>
 
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-4 mb-12">
                     {acciones}
+                  </div>
 
                   <div className="bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-6 mb-12 backdrop-blur-sm">
                     {errorMessage && (
@@ -340,7 +370,10 @@ const EventoDetalle = () => {
                     )}
 
                     {errorCancelar && (
-                      <p className="w-full text-mandarina text-sm" role="alert">
+                      <p
+                        className="w-full text-mandarina text-sm mt-2"
+                        role="alert"
+                      >
                         {errorCancelar}
                       </p>
                     )}
@@ -393,7 +426,7 @@ const EventoDetalle = () => {
                             Tema Principal
                           </p>
                           <p className="text-crema/60 text-sm">
-                            Artista del Evento
+                            {evento.nombre_artista || "Artista del Evento"}
                           </p>
                         </div>
                       </li>
@@ -415,8 +448,7 @@ const EventoDetalle = () => {
                       </li>
                     </ul>
                     <button className="w-full bg-transparent hover:bg-crema/10 text-crema font-bold py-3 rounded-full border border-crema/30 hover:border-crema/60 transition text-sm flex items-center justify-center gap-2">
-                      <span className="text-cielo">Spotify</span> Abrir
-                      Playlist
+                      <span className="text-cielo">Spotify</span> Abrir Playlist
                     </button>
                   </div>
                 </div>

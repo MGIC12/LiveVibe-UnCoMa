@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Filtros from "../components/Filtros";
 import { formatearPrecio } from "../utils/formularios";
@@ -8,6 +8,9 @@ const EventList = () => {
   const [filtroGenero, setFiltroGenero] = useState("");
   const [filtroCiudad, setFiltroCiudad] = useState("");
   const [cargando, setCargando] = useState(true);
+
+  // Agregamos useNavigate para manejar el clic de la tarjeta principal
+  const navigate = useNavigate();
 
   // Estados para la paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -26,10 +29,16 @@ const EventList = () => {
         );
         const data = await response.json();
 
-        setEventos(data);
+        // Validamos que data sea un arreglo por si el backend falla
+        if (Array.isArray(data)) {
+          setEventos(data);
+        } else {
+          setEventos([]);
+        }
         setPaginaActual(1);
       } catch (error) {
         console.error("Error al cargar los eventos:", error);
+        setEventos([]);
       } finally {
         setCargando(false);
       }
@@ -46,7 +55,6 @@ const EventList = () => {
 
   const cambiarPagina = (numeroPagina) => {
     setPaginaActual(numeroPagina);
-    // Eliminamos el window.scrollTo para que se mantenga en el mismo lugar
   };
 
   return (
@@ -91,8 +99,7 @@ const EventList = () => {
             </div>
           ) : (
             <div className="space-y-4 md:space-y-6">
-              {eventos.map((evento) => {
-                // Armamos la fecha como local para que no se corra al día anterior
+              {eventosActuales.map((evento) => {
                 const dia = String(evento.fecha).slice(0, 10);
                 const fechaObj = new Date(`${dia}T00:00:00`);
                 const day = fechaObj.getDate();
@@ -101,13 +108,13 @@ const EventList = () => {
                 });
 
                 return (
-                  <Link
-                    to={`/evento/${evento.id_evento}`}
+                  <div
                     key={evento.id_evento}
-                    className="group block bg-crema/5 hover:bg-crema/10 rounded-xl p-4 sm:p-6 border border-crema/20 hover:border-fucsia/60 transition-all duration-300 backdrop-blur-sm"
+                    onClick={() => navigate(`/evento/${evento.id_evento}`)}
+                    className="group block cursor-pointer bg-crema/5 hover:bg-crema/10 rounded-xl p-4 sm:p-6 border border-crema/20 hover:border-fucsia/60 transition-all duration-300 backdrop-blur-sm"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-                      {/* Bloque de Fecha y Género (Arriba en móvil, Izquierda en PC) */}
+                      {/* Bloque de Fecha y Género */}
                       <div className="flex items-center gap-4 sm:gap-6 sm:w-1/4">
                         <div className="text-center min-w-[60px] sm:min-w-[70px] bg-tinta/80 rounded-lg py-2 px-3 border border-crema/20 group-hover:border-fucsia/50 transition-colors">
                           <p className="text-2xl sm:text-3xl font-black text-crema">
@@ -127,11 +134,26 @@ const EventList = () => {
                         </div>
                       </div>
 
-                      {/* Info Principal (Centro) */}
+                      {/* Info Principal */}
                       <div className="flex-grow">
-                        <h2 className="text-xl sm:text-2xl font-bold text-crema mb-1 sm:mb-2 group-hover:text-cielo transition-colors line-clamp-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-crema mb-1 group-hover:text-cielo transition-colors line-clamp-2">
                           {evento.nombre}
                         </h2>
+
+                        {/* BLOQUE DEL ARTISTA: Enlace independiente */}
+                        {evento.nombre_artista && (
+                          <div className="mb-2 sm:mb-3">
+                            <Link
+                              to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-fucsia hover:text-white bg-fucsia/10 hover:bg-fucsia/30 border border-fucsia/20 px-3 py-1 rounded-full transition-all"
+                              title={`Ver perfil de ${evento.nombre_artista}`}
+                            >
+                              <span>🎤</span> {evento.nombre_artista}
+                            </Link>
+                          </div>
+                        )}
+
                         <p className="text-crema/70 text-xs sm:text-sm flex items-center gap-1 sm:gap-2">
                           <span>📍</span>{" "}
                           <span className="truncate">
@@ -143,7 +165,7 @@ const EventList = () => {
                         </p>
                       </div>
 
-                      {/* Acción / Botón (Abajo en móvil, Derecha en PC) */}
+                      {/* Acción / Botón */}
                       <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 sm:gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-crema/20 sm:border-t-0">
                         <div className="text-xs sm:text-sm font-medium text-crema/70">
                           {evento.cant_entradas > 0 ? (
@@ -153,7 +175,9 @@ const EventList = () => {
                                 {evento.cant_entradas}
                               </strong>
                             </span>
-                          </p>
+                          ) : (
+                            <span className="text-mandarina">Agotado</span>
+                          )}
                         </div>
 
                         {evento.precio_desde != null && (
@@ -167,46 +191,45 @@ const EventList = () => {
                           <span className="hidden sm:inline">&rarr;</span>
                         </div>
                       </div>
-                    </Link>
-                  );
-                })}
-              </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-              {/* Controles de Paginación */}
-              {totalPaginas > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-10">
-                  <button
-                    onClick={() => cambiarPagina(paginaActual - 1)}
-                    disabled={paginaActual === 1}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
-                      paginaActual === 1
-                        ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                        : "bg-white/10 text-crema hover:bg-green-500 hover:text-tinta"
-                    }`}
-                  >
-                    &larr; Anterior
-                  </button>
+          {/* Controles de Paginación */}
+          {!cargando && totalPaginas > 1 && eventos.length > 0 && (
+            <div className="flex justify-center items-center gap-4 mt-10">
+              <button
+                onClick={() => cambiarPagina(paginaActual - 1)}
+                disabled={paginaActual === 1}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  paginaActual === 1
+                    ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                    : "bg-white/10 text-crema hover:bg-fucsia hover:text-tinta"
+                }`}
+              >
+                &larr; Anterior
+              </button>
 
-                  <span className="text-crema/70 text-sm font-medium">
-                    Página{" "}
-                    <strong className="text-crema">{paginaActual}</strong> de{" "}
-                    {totalPaginas}
-                  </span>
+              <span className="text-crema/70 text-sm font-medium">
+                Página <strong className="text-crema">{paginaActual}</strong> de{" "}
+                {totalPaginas}
+              </span>
 
-                  <button
-                    onClick={() => cambiarPagina(paginaActual + 1)}
-                    disabled={paginaActual === totalPaginas}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
-                      paginaActual === totalPaginas
-                        ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                        : "bg-white/10 text-crema hover:bg-green-500 hover:text-tinta"
-                    }`}
-                  >
-                    Siguiente &rarr;
-                  </button>
-                </div>
-              )}
-            </>
+              <button
+                onClick={() => cambiarPagina(paginaActual + 1)}
+                disabled={paginaActual === totalPaginas}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  paginaActual === totalPaginas
+                    ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                    : "bg-white/10 text-crema hover:bg-fucsia hover:text-tinta"
+                }`}
+              >
+                Siguiente &rarr;
+              </button>
+            </div>
           )}
         </div>
       </div>
