@@ -1,29 +1,27 @@
 import { useState } from "react";
-import { Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../components/Navbar";
 import CamposFan from "../components/CamposFan";
 import CamposArtista from "../components/CamposArtista";
-import { inputClase, labelClase, FOTO_VACIA} from "../utils/formularios";
+import { FOTO_VACIA } from "../utils/formularios";
 import CampoContrasena from "../components/CampoContrasena";
 import FotoPerfil from "../components/FotoPerfil";
 
 const INICIAL = {
   foto: FOTO_VACIA,
-  rol: "", // vacío = todavía no eligió
+  rol: "",
   nombre_usuario: "",
   email: "",
   contrasenia: "",
   confirmar: "",
   fecha_nac: "",
   biografia: "",
-  // fan
   cancion_favorita: "",
-  // artista
   nombre_artistico: "",
   nacionalidad: "",
   genero: "",
-  tipo_artista: "solista", // por defecto
+  tipo_artista: "solista",
   integrantes: [],
 };
 
@@ -49,7 +47,6 @@ export default function Register() {
       return setError("Las contraseñas no coinciden");
     }
 
-    // Se arma solo lo que corresponde al tipo de cuenta elegido
     const comunes = {
       rol: form.rol,
       nombre_usuario: form.nombre_usuario,
@@ -76,10 +73,9 @@ export default function Register() {
       const { fotoError } = await register(datos, form.foto.archivo);
 
       if (fotoError) {
-        // La cuenta se creó, pero la foto falló: se avisa en el perfil
         navigate("/perfil", {
           state: {
-            aviso: `Tu cuenta se creó, pero no pudimos subir la foto (${fotoError}). Podés intentarlo de nuevo desde acá.`,
+            aviso: `Tu cuenta se creó, pero no pudimos subir la foto (${fotoError}).`,
           },
         });
       } else {
@@ -95,7 +91,10 @@ export default function Register() {
   const piePagina = (
     <p className="text-center text-sm text-crema/70">
       ¿Ya tenés cuenta?{" "}
-      <Link to="/login" className="text-cielo hover:text-cremahover:text-purple-300">
+      <Link
+        to="/login"
+        className="font-bold text-cielo hover:text-green-400 transition-colors ml-1"
+      >
         Iniciá sesión
       </Link>
     </p>
@@ -106,34 +105,36 @@ export default function Register() {
     return (
       <>
         <Navbar />
-        <main className="flex justify-center px-4 py-12">
-          <div className="w-full max-w-lg bg-crema/5border border-crema/20rounded-2xl p-8 space-y-6">
-            <h1 className="text-3xl font-bold text-crema text-center">
-              ¿Cómo querés registrarte?
+        <main className="min-h-screen bg-tinta flex items-center justify-center px-4 py-12 relative overflow-hidden">
+          <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-3xl p-8 shadow-2xl relative z-10">
+            <h1 className="text-3xl font-black text-crema text-center mb-6">
+              ¿Cómo querés <span className="text-green-500">registrarte?</span>
             </h1>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <button
                 type="button"
                 onClick={() => cambiarCampo("rol", "fan")}
-                className="p-6 rounded-2xl border border-crema/30 bg-crema/10hover:border-fucsia hover:bg-gray-600 transition text-center"
+                className="p-6 rounded-2xl border border-neutral-700 bg-neutral-800/40 hover:border-green-500 transition text-center"
               >
                 <span className="block text-4xl mb-2">🎧</span>
                 <span className="block text-xl font-bold text-crema">Fan</span>
-                <span className="block text-sm text-crema/70 mt-1">
-                  Quiero descubrir conciertos y artistas
+                <span className="block text-xs text-crema/60 mt-1">
+                  Quiero descubrir conciertos
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => cambiarCampo("rol", "artista")}
-                className="p-6 rounded-2xl border border-crema/30 bg-crema/10hover:border-fucsia hover:bg-gray-600 transition text-center"
+                className="p-6 rounded-2xl border border-neutral-700 bg-neutral-800/40 hover:border-green-500 transition text-center"
               >
                 <span className="block text-4xl mb-2">🎤</span>
-                <span className="block text-xl font-bold text-crema">Artista</span>
-                <span className="block text-sm text-crema/70 mt-1">
-                  Quiero mostrar mi música y mis eventos
+                <span className="block text-xl font-bold text-crema">
+                  Artista
+                </span>
+                <span className="block text-xs text-crema/60 mt-1">
+                  Quiero mostrar mi música
                 </span>
               </button>
             </div>
@@ -145,117 +146,140 @@ export default function Register() {
     );
   }
 
-  /* ---------- PASO 2: formulario según el tipo ---------- */
+  /* ---------- PASO 2: formulario en dos columnas ---------- */
   const esArtista = form.rol === "artista";
 
   return (
     <>
       <Navbar />
 
-      <main className="flex justify-center px-4 py-12">
+      <main className="min-h-screen bg-tinta flex items-center justify-center px-4 py-20 relative">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-lg bg-crema/5border border-crema/20rounded-2xl p-8 space-y-5"
+          className="w-full max-w-3xl bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6"
         >
-          <button
-            type="button"
-            onClick={() => cambiarCampo("rol", "")}
-            className="text-sm text-crema/70 hover:text-purple-300"
-          >
-            ← Cambiar tipo de cuenta
-          </button>
+          <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
+            <button
+              type="button"
+              onClick={() => cambiarCampo("rol", "")}
+              className="text-sm text-crema/70 hover:text-green-400 transition-colors font-medium"
+            >
+              &larr; Cambiar tipo de cuenta
+            </button>
+            <h1 className="text-2xl font-black text-crema">
+              Registro de{" "}
+              <span className="text-green-500">
+                {esArtista ? "Artista" : "Fan"}
+              </span>
+            </h1>
+          </div>
 
-          <h1 className="text-3xl font-bold text-crema text-center">
-            {esArtista ? "Cuenta de artista" : "Cuenta de fan"}
-          </h1>
+          {/* Grid de dos columnas para aprovechar los costados y reducir la altura */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Columna Izquierda: Foto e info básica */}
+            <div className="space-y-4 flex flex-col items-center justify-center bg-neutral-800/30 p-6 rounded-2xl border border-neutral-800">
+              <FotoPerfil
+                urlActual={null}
+                valor={form.foto}
+                onChange={(v) => cambiarCampo("foto", v)}
+                titulo="Foto de perfil"
+              />
 
-          <FotoPerfil
-            urlActual={null}
-            valor={form.foto}
-            onChange={(v) => cambiarCampo("foto", v)}
-            titulo="Foto de perfil (opcional)"
-          />
+              <div className="w-full">
+                <label className="block text-sm font-bold text-crema/80 mb-1">
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  name="nombre_usuario"
+                  value={form.nombre_usuario}
+                  onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+                  maxLength={30}
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
 
-          {/* Datos de cuenta (comunes) */}
-          <label className={labelClase}>
-            Nombre de usuario
-            <input
-              name="nombre_usuario"
-              value={form.nombre_usuario}
-              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-              maxLength={30}
-              required
-              className={inputClase}
-            />
-          </label>
+              <div className="w-full">
+                <label className="block text-sm font-bold text-crema/80 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+            </div>
 
-          <label className={labelClase}>
-            Email
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-              required
-              className={inputClase}
-            />
-          </label>
+            {/* Columna Derecha: Contraseñas y datos adicionales */}
+            <div className="space-y-4">
+              <CampoContrasena
+                etiqueta="Contraseña (mín. 8 caracteres)"
+                name="contrasenia"
+                value={form.contrasenia}
+                onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+                autoComplete="new-password"
+              />
 
-          <CampoContrasena
-            etiqueta="Contraseña (mínimo 8 caracteres)"
-            name="contrasenia"
-            value={form.contrasenia}
-            onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-            autoComplete="new-password"
-          />
+              <CampoContrasena
+                etiqueta="Repetir contraseña"
+                name="confirmar"
+                value={form.confirmar}
+                onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+                autoComplete="new-password"
+              />
 
-          <CampoContrasena
-            etiqueta="Repetir contraseña"
-            name="confirmar"
-            value={form.confirmar}
-            onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-            autoComplete="new-password"
-          />
+              <div>
+                <label className="block text-sm font-bold text-crema/80 mb-1">
+                  Fecha de nacimiento
+                </label>
+                <input
+                  type="date"
+                  name="fecha_nac"
+                  value={form.fecha_nac}
+                  onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500 [color-scheme:dark]"
+                />
+              </div>
 
-          <label className={labelClase}>
-            Fecha de nacimiento
-            <input
-              type="date"
-              name="fecha_nac"
-              value={form.fecha_nac}
-              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-              className={`${inputClase} [color-scheme:dark]`}
-            />
-          </label>
+              <div>
+                <label className="block text-sm font-bold text-crema/80 mb-1">
+                  Biografía (opcional)
+                </label>
+                <textarea
+                  name="biografia"
+                  value={form.biografia}
+                  onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                />
+              </div>
+            </div>
+          </div>
 
-          <label className={labelClase}>
-            Biografía (opcional)
-            <textarea
-              name="biografia"
-              value={form.biografia}
-              onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-              rows={3}
-              className="mt-1 w-full px-4 py-2 rounded-2xl bg-crema/10text-crema focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </label>
-
-          {/* Campos propios del tipo de cuenta */}
-          {esArtista ? (
-            <CamposArtista valores={form} onChange={cambiarCampo} />
-          ) : (
-            <CamposFan valores={form} onChange={cambiarCampo} />
-          )}
+          {/* Campos específicos abajo ocupando el ancho completo con estilo compacto */}
+          <div className="pt-2 border-t border-neutral-800">
+            {esArtista ? (
+              <CamposArtista valores={form} onChange={cambiarCampo} />
+            ) : (
+              <CamposFan valores={form} onChange={cambiarCampo} />
+            )}
+          </div>
 
           {error && (
-            <p className="text-mandarina text-sm" role="alert">
-              {error}
-            </p>
+            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm font-medium">
+              ⚠️ {error}
+            </div>
           )}
 
           <button
             type="submit"
             disabled={enviando}
-            className="w-full py-2 rounded-full bg-fucsia hover:bg-chicle text-crema font-bold disabled:opacity-50"
+            className="w-full py-3.5 rounded-xl font-bold text-lg bg-green-500 hover:bg-green-400 text-black transition-all shadow-lg"
           >
             {enviando ? "Creando cuenta..." : "Registrarme"}
           </button>

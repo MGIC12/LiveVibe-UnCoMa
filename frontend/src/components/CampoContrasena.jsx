@@ -1,5 +1,4 @@
 import { useId, useState } from "react";
-import { inputClase, labelClase } from "../utils/formularios";
 
 export default function CampoContrasena({
   etiqueta,
@@ -13,7 +12,10 @@ export default function CampoContrasena({
 
   return (
     <div>
-      <label htmlFor={id} className={labelClase}>
+      <label
+        htmlFor={id}
+        className="block text-sm font-bold text-crema/80 mb-2"
+      >
         {etiqueta}
       </label>
 
@@ -26,14 +28,14 @@ export default function CampoContrasena({
           onChange={onChange}
           autoComplete={autoComplete}
           required
-          className={`${inputClase} pr-12`}
+          className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-neutral-800/50 border border-neutral-700 text-crema focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder:text-crema/30"
         />
 
         <button
           type="button"
           onClick={() => setVisible(!visible)}
           aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
-          className="absolute inset-y-0 right-4 flex items-center text-crema-80 hover:text-crema"
+          className="absolute inset-y-0 right-4 flex items-center text-crema/50 hover:text-crema transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

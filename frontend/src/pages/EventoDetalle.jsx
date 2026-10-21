@@ -10,6 +10,7 @@ const EventoDetalle = () => {
   const { id } = useParams();
   const [evento, setEvento] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [isReserving, setIsReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(false);
   const { usuario, token } = useAuth();
@@ -19,25 +20,21 @@ const EventoDetalle = () => {
   const [cancelando, setCancelando] = useState(false);
   const [errorCancelar, setErrorCancelar] = useState("");
 
-  // Función auxiliar para asignar una imagen según el género
   const getImagenPorGenero = (genero) => {
-    const generosBuscados = genero ? genero.toLowerCase() : "";
-
-    if (generosBuscados.includes("rock")) {
-      return "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=2000&auto=format&fit=crop"; // Concierto de rock, guitarras
-    } else if (generosBuscados.includes("jazz")) {
-      return "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=2000&auto=format&fit=crop"; // Banda de jazz, saxofón
-    } else if (
-      generosBuscados.includes("urbano") ||
-      generosBuscados.includes("trap")
-    ) {
-      return "https://images.unsplash.com/photo-1470229722913-7c090be01246?q=80&w=2000&auto=format&fit=crop"; // Escenario con luces de colores neón
-    } else if (generosBuscados.includes("indie")) {
-      return "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2000&auto=format&fit=crop"; // Festival al aire libre o ambiente relajado
-    } else {
-      // Imagen por defecto (la que tenías antes)
-      return "https://images.unsplash.com/photo-1540039155732-d674d6e3f0be?q=80&w=2000&auto=format&fit=crop";
-    }
+    const gen = genero ? genero.toLowerCase() : "";
+    if (gen.includes("rock"))
+      return "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=2000&auto=format&fit=crop";
+    if (gen.includes("jazz"))
+      return "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=2000&auto=format&fit=crop";
+    if (
+      gen.includes("urbano") ||
+      gen.includes("trap") ||
+      gen.includes("reggaeton")
+    )
+      return "https://images.unsplash.com/photo-1470229722913-7c090be01246?q=80&w=2000&auto=format&fit=crop";
+    if (gen.includes("indie"))
+      return "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2000&auto=format&fit=crop";
+    return "https://images.unsplash.com/photo-1540039155732-d674d6e3f0be?q=80&w=2000&auto=format&fit=crop";
   };
 
   useEffect(() => {
@@ -46,7 +43,6 @@ const EventoDetalle = () => {
       .then((data) => {
         setEvento({
           ...data,
-          // Ahora usamos la función para determinar la imagen
           imagenHero: getImagenPorGenero(data.genero),
           disponibles: data.cant_entradas,
         });
@@ -59,24 +55,40 @@ const EventoDetalle = () => {
   }, [id]);
 
   const handleReserva = async () => {
+    setErrorMessage("");
+
+    if (!usuario) {
+      alert("Debes iniciar sesión o registrarte para poder reservar entradas.");
+      navigate("/login");
+      return;
+    }
+
     setIsReserving(true);
     try {
       const response = await fetch(
         `http://localhost:5000/api/eventos/${id}/reservar`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usuario_id: 1, cantidad_entradas: 1 }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ nombre_usuario: usuario.nombre_usuario }),
         },
       );
+
+      const data = await response.json();
 
       if (response.ok) {
         setReservationSuccess(true);
       } else {
-        alert("Hubo un problema al procesar la reserva.");
+        setErrorMessage(
+          data.error || "Hubo un problema al procesar tu reserva.",
+        );
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error de conexión:", error);
+      setErrorMessage("Error de conexión con el servidor.");
     } finally {
       setIsReserving(false);
     }
@@ -217,16 +229,19 @@ const EventoDetalle = () => {
               <h2 className="text-4xl font-black text-crema mb-2">
                 ¡Reserva Confirmada!
               </h2>
-              <p className="text-crema/70 mb-8 text-lg">
+              <p className="text-gray-400 mb-8 text-lg">
                 Ya tienes tu lugar asegurado para{" "}
-                <strong className="text-crema">{evento.nombre}</strong>.
+                <strong className="text-white uppercase">
+                  {evento.nombre}
+                </strong>
+                .
               </p>
               <div className="bg-tinta p-6 rounded-xl inline-block mb-8 text-left border border-crema/20 w-full max-w-md">
                 <p className="text-sm text-crema/60 uppercase font-bold tracking-wider mb-3">
                   Detalles de tu ticket
                 </p>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-crema/70">📍</span>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-gray-400 text-xl">📍</span>
                   <p className="font-semibold text-lg">
                     {evento.lugar}, {evento.ciudad}
                   </p>
@@ -237,31 +252,45 @@ const EventoDetalle = () => {
                     {fechaFormateada} {evento.hora_apertura}
                   </p>
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-400 text-xl">👤</span>
+                  <p className="font-semibold text-lg text-gray-300">
+                    Titular: {usuario.nombre_completo || usuario.nombre_usuario}
+                  </p>
+                </div>
               </div>
-              <br />
-              <Link
-                to="/"
-                className="bg-fucsia hover:bg-chicle text-tinta font-bold py-4 px-10 rounded-full transition shadow-lg inline-block text-lg"
-              >
-                Volver al Catálogo
-              </Link>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
+                <Link
+                  to="/mis-reservas"
+                  className="bg-green-500 hover:bg-green-400 text-black font-bold py-4 px-8 rounded-full transition shadow-lg text-lg"
+                >
+                  Ver Mis Entradas
+                </Link>
+                <Link
+                  to="/"
+                  className="bg-neutral-700 hover:bg-neutral-600 text-white font-bold py-4 px-8 rounded-full transition border border-neutral-600 text-lg"
+                >
+                  Volver al Catálogo
+                </Link>
+              </div>
             </div>
           </div>
         ) : (
           <div className="relative">
             <div
-              className="absolute top-0 left-0 w-full h-[50vh] bg-cover bg-center opacity-40"
+              className="absolute top-0 left-0 w-full h-[60vh] bg-cover bg-center opacity-30"
               style={{ backgroundImage: `url('${evento.imagenHero}')` }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-tinta to-transparent"></div>
             </div>
 
-            <div className="relative z-10 container mx-auto px-4 pt-8 md:pt-16 pb-12">
+            <div className="relative z-10 container mx-auto px-4 pt-8 md:pt-24 pb-12">
               <Link
                 to="/"
-                className="text-crema/70 hover:text-crema flex items-center gap-2 mb-10 transition w-fit font-semibold uppercase text-sm tracking-wider"
+                className="text-gray-400 hover:text-white flex items-center gap-2 mb-8 transition w-fit font-semibold uppercase text-sm tracking-wider bg-neutral-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-neutral-700/50"
               >
-                <span>&larr;</span> Volver
+                <span>&larr;</span> Volver al catálogo
               </Link>
 
               <div className="flex flex-col lg:flex-row gap-12">
@@ -289,18 +318,16 @@ const EventoDetalle = () => {
                         {evento.clasificacion}
                       </span>
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-4 mb-12">
                     {acciones}
 
-                    {!isReserving && (
-                      <span className="text-sm text-crema/70 font-medium">
-                        Disponibles:{" "}
-                        <strong className="text-crema">
-                          {evento.disponibles}
-                        </strong>
-                      </span>
+                  <div className="bg-neutral-800/40 border border-neutral-700/50 rounded-2xl p-6 mb-12 backdrop-blur-sm">
+                    {errorMessage && (
+                      <div className="mb-4 p-4 bg-red-900/30 border border-red-500/50 rounded-xl text-red-400 text-sm font-bold">
+                        ⚠️ {errorMessage}
+                      </div>
                     )}
 
                     {evento.precio_desde != null && (
@@ -320,12 +347,12 @@ const EventoDetalle = () => {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-crema mb-3">
-                      Género Principal
+                    <h3 className="text-2xl font-bold text-white mb-4 border-b border-neutral-800 pb-2">
+                      Sobre el concierto
                     </h3>
-                    <p className="text-crema/70 leading-relaxed text-lg max-w-3xl">
-                      {evento.genero}{" "}
-                      {evento.gira ? `- Tour: ${evento.gira}` : ""}
+                    <p className="text-gray-400 leading-relaxed text-lg max-w-3xl">
+                      {evento.descripcion ||
+                        "Únete a este increíble evento y vive la mejor música en directo junto a tu comunidad. Un show imperdible que marcará la agenda musical del mes."}
                     </p>
                   </div>
                 </div>
@@ -338,17 +365,20 @@ const EventoDetalle = () => {
                         🎧
                       </div>
                       <div>
-                        <h4 className="font-bold text-crema text-lg">
-                          Playlist del Evento
+                        <h4 className="font-black text-white text-xl">
+                          Soundtrack
                         </h4>
                         <p className="text-xs text-cielo font-semibold uppercase tracking-wider">
                           Generada por IA
                         </p>
                       </div>
                     </div>
-                    <p className="text-sm text-crema/70 mb-6">
-                      Música de los artistas y temas favoritos de los fans que
-                      ya reservaron.
+
+                    <p className="text-sm text-gray-400 mb-8 font-medium leading-relaxed">
+                      Prepárate para el show con las canciones favoritas de los
+                      fans de{" "}
+                      <strong className="text-gray-200">{evento.genero}</strong>{" "}
+                      que ya reservaron su lugar.
                     </p>
                     <ul className="space-y-4 mb-6">
                       <li className="flex items-center gap-4 group cursor-pointer">
