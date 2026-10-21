@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Filtros from "../components/Filtros";
+import { formatearPrecio } from "../utils/formularios";
 
 const EventList = () => {
   const [eventos, setEventos] = useState([]);
@@ -33,10 +34,10 @@ const EventList = () => {
   }, [filtroGenero, filtroCiudad]);
 
   return (
-    <div className="min-h-screenbg-tinta px-4 sm:px-6 py-8 md:py-12 w-full">
+    <div className="min-h-screen bg-tinta px-4 sm:px-6 py-8 md:py-12 w-full">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-crema mb-6 md:mb-10 tracking-tight text-center md:text-left">
-          Descubrir <span className="text-green-500">Eventos</span>
+          Descubrir <span className="text-fucsia">Eventos</span>
         </h1>
 
         <Filtros
@@ -53,7 +54,7 @@ const EventList = () => {
               Buscando los mejores shows...
             </div>
           ) : eventos.length === 0 ? (
-            <div className="text-centerbg-crema/5/50 rounded-2xl p-8 md:p-12 borderborder-crema/20/50 backdrop-blur-sm mx-2">
+            <div className="text-center bg-crema/5 rounded-2xl p-8 md:p-12 border border-crema/20 backdrop-blur-sm mx-2">
               <span className="text-4xl md:text-5xl block mb-4">🥺</span>
               <h3 className="text-xl md:text-2xl font-bold text-crema mb-2">
                 Sin resultados
@@ -67,7 +68,7 @@ const EventList = () => {
                   setFiltroGenero("");
                   setFiltroCiudad("");
                 }}
-                className="mt-6 text-green-500 font-bold hover:text-cielo transition-colors"
+                className="mt-6 text-cielo font-bold hover:text-crema transition-colors"
               >
                 Limpiar todos los filtros
               </button>
@@ -75,7 +76,9 @@ const EventList = () => {
           ) : (
             <div className="space-y-4 md:space-y-6">
               {eventos.map((evento) => {
-                const fechaObj = new Date(evento.fecha);
+                // Armamos la fecha como local para que no se corra al día anterior
+                const dia = String(evento.fecha).slice(0, 10);
+                const fechaObj = new Date(`${dia}T00:00:00`);
                 const day = fechaObj.getDate();
                 const month = fechaObj.toLocaleString("es-AR", {
                   month: "short",
@@ -85,13 +88,13 @@ const EventList = () => {
                   <Link
                     to={`/evento/${evento.id_evento}`}
                     key={evento.id_evento}
-                    className="group blockbg-crema/5/40 hover:bg-neutral-800 rounded-xl p-4 sm:p-6 borderborder-crema/20/50 hover:border-green-500/50 transition-all duration-300 backdrop-blur-sm"
+                    className="group block bg-crema/5 hover:bg-crema/10 rounded-xl p-4 sm:p-6 border border-crema/20 hover:border-fucsia/60 transition-all duration-300 backdrop-blur-sm"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                       {/* Bloque de Fecha y Género (Arriba en móvil, Izquierda en PC) */}
                       <div className="flex items-center gap-4 sm:gap-6 sm:w-1/4">
-                        <div className="text-center min-w-[60px] sm:min-w-[70px]bg-tinta/80 rounded-lg py-2 px-3 border border-neutral-800 group-hover:border-green-500/30 transition-colors">
-                          <p className="text-2xl sm:text-3xl font-blacktext-cielo hover:text-crema">
+                        <div className="text-center min-w-[60px] sm:min-w-[70px] bg-tinta/80 rounded-lg py-2 px-3 border border-crema/20 group-hover:border-fucsia/50 transition-colors">
+                          <p className="text-2xl sm:text-3xl font-black text-crema">
                             {day}
                           </p>
                           <p className="text-crema/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest">
@@ -102,7 +105,7 @@ const EventList = () => {
                           <p className="text-crema/70 text-xs font-bold uppercase tracking-wider mb-1">
                             {evento.genero}
                           </p>
-                          <span className="text-[10px]bg-crema/10 text-crema/80  px-2 py-0.5 rounded-full border border-neutral-600">
+                          <span className="inline-block whitespace-nowrap text-[10px] bg-crema/10 text-crema/80 px-2 py-0.5 rounded-full border border-crema/30">
                             {evento.clasificacion || "ATP"}
                           </span>
                         </div>
@@ -117,7 +120,7 @@ const EventList = () => {
                           <span>📍</span>{" "}
                           <span className="truncate">
                             {evento.lugar},{" "}
-                            <strong className="text-crema/80 ">
+                            <strong className="text-crema/80">
                               {evento.ciudad}
                             </strong>
                           </span>
@@ -125,7 +128,7 @@ const EventList = () => {
                       </div>
 
                       {/* Acción / Botón (Abajo en móvil, Derecha en PC) */}
-                      <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 sm:gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0border-crema/20/50">
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 sm:gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-crema/20 sm:border-t-0">
                         <div className="text-xs sm:text-sm font-medium text-crema/70">
                           {evento.cant_entradas > 0 ? (
                             <span>
@@ -138,7 +141,14 @@ const EventList = () => {
                             <span className="text-mandarina">Agotado</span>
                           )}
                         </div>
-                        <div className="bg-white/10 group-hover:bg-green-500 text-crema group-hover:text-tinta font-bold py-1.5 sm:py-2 px-4 sm:px-6 rounded-full transition-all duration-300 flex items-center gap-2 text-xs sm:text-sm w-auto">
+
+                        {evento.precio_desde != null && (
+                          <p className="text-sol font-bold text-sm sm:text-base">
+                            {formatearPrecio(evento.precio_desde)}
+                          </p>
+                        )}
+
+                        <div className="bg-crema/10 group-hover:bg-fucsia text-crema group-hover:text-tinta font-bold py-1.5 sm:py-2 px-4 sm:px-6 rounded-full transition-all duration-300 flex items-center gap-2 text-xs sm:text-sm w-auto">
                           Detalles{" "}
                           <span className="hidden sm:inline">&rarr;</span>
                         </div>

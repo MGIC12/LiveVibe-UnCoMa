@@ -20,3 +20,34 @@ export const MAX_BYTES_IMAGEN = 2 * 1024 * 1024; // 2 MB
 
 // Estado inicial de una foto "sin tocar"
 export const FOTO_VACIA = { archivo: null, previa: null, quitar: false };
+
+// Opciones del desplegable de clasificación
+export const CLASIFICACIONES = ["Apto todo público", "+13", "+16", "+18"];
+
+// Valores de un formulario de evento vacío
+export const EVENTO_VACIO = {
+  nombre: "",
+  lugar: "",
+  ciudad: "",
+  fecha: "",
+  hora_apertura: "",
+  precio: "",
+  cant_entradas: "",
+  pais: "",
+  genero: "",
+  clasificacion: CLASIFICACIONES,
+  gira: "",
+};
+
+// Convierte un precio en texto: 15000 -> "$ 15.000", 0 -> "Gratis"
+export function formatearPrecio(valor) {
+  if (valor === null || valor === undefined || valor === "") return "";
+  const numero = Number(valor);
+  if (numero === 0) return "Gratis";
+  return numero.toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
