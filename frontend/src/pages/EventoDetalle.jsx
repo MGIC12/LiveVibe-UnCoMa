@@ -314,23 +314,10 @@ const EventoDetalle = () => {
                   {/* NUEVO DISEÑO PARA EL ARTISTA (Enlace directo a su perfil) */}
                   {evento.nombre_artista && (
                     <Link
-                      to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
-                      className="inline-flex items-center gap-4 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700 hover:border-fucsia/60 rounded-full pr-8 pl-2 py-2 mb-8 transition-all group w-fit backdrop-blur-sm"
+                      to={`/artista/${encodeURIComponent(evento.nombre_artista)}`}
+                      className="inline-block mb-3 text-cielo hover:text-crema font-bold transition"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-fucsia to-purple-600 flex items-center justify-center text-xl shadow-lg group-hover:scale-105 transition-transform">
-                        🎤
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-cielo font-bold uppercase tracking-widest mb-0.5">
-                          Artista Principal
-                        </p>
-                        <h2 className="text-xl sm:text-2xl font-black text-crema group-hover:text-white transition-colors capitalize">
-                          {evento.nombre_artista}
-                        </h2>
-                      </div>
-                      <span className="text-crema/40 group-hover:text-fucsia ml-2 transition-colors">
-                        &rarr;
-                      </span>
+                      🎤 {evento.artista_nombre || evento.nombre_artista}
                     </Link>
                   )}
 

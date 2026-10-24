@@ -8,6 +8,7 @@ import RutaProtegida from "./components/RutaProtegida";
 import Buscador from "./pages/Buscador";
 import CrearEvento from "./pages/CrearEvento";
 import EditarEvento from "./pages/EditarEvento";
+import PerfilArtista from "./pages/PerfilArtista";
 
 // Temporales
 const NotFound = () => (
@@ -37,6 +38,8 @@ function App() {
             </RutaProtegida>
           }
         />
+
+        <Route path="/artista/:usuario" element={<PerfilArtista />} />
 
         {/* Ruta con parámetro dinámico (el ID del evento) */}
         <Route path="/evento/:id" element={<EventoDetalle />} />

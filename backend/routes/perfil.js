@@ -2,37 +2,80 @@ const express = require("express");
 const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
 const { subirFoto, borrarArchivo } = require("../middleware/subida");
+const { texto, validarDatosArtista } = require("../middleware/artista");
 
 const router = express.Router();
 
-// PUT /api/perfil  -> el fan modifica su biografía y su canción favorita
-router.put("/", verificarToken, requerirRol("fan"), async (req, res) => {
-  const { biografia, cancion_favorita } = req.body;
+// PUT /api/perfil -> el fan o el artista modifica los datos de su perfil
+router.put("/", verificarToken, requerirRol("fan", "artista"), async (req, res) => {
+  const usuario = req.user.nombre_usuario;
+  const esArtista = req.user.rol === "artista";
+  const biografia = texto(req.body.biografia);
 
-  if (typeof biografia !== "string" || typeof cancion_favorita !== "string") {
-    return res.status(400).json({ error: "Datos inválidos" });
-  }
   if (biografia.length > 500) {
     return res.status(400).json({ error: "La biografía puede tener hasta 500 caracteres" });
   }
-  if (cancion_favorita.length > 150) {
-    return res.status(400).json({ error: "La canción favorita puede tener hasta 150 caracteres" });
-  }
 
-  // Un campo vacío se guarda como NULL (así se puede borrar)
-  const bio = biografia.trim() || null;
-  const cancion = cancion_favorita.trim() || null;
-  const usuario = req.user.nombre_usuario; // sale del token, no del body
+  // Los datos propios de cada tipo de cuenta se validan antes de abrir la transacción
+  let artista = null;
+  let cancion = null;
+  if (esArtista) {
+    const r = validarDatosArtista(req.body);
+    if (r.error) return res.status(400).json({ error: r.error });
+    artista = r.datos;
+  } else {
+    cancion = texto(req.body.cancion_favorita);
+    if (cancion.length > 150) {
+      return res.status(400).json({ error: "La canción favorita puede tener hasta 150 caracteres" });
+    }
+    cancion = cancion || null;
+  }
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    await client.query("UPDATE usuario SET biografia = $1 WHERE nombre_usuario = $2", [bio, usuario]);
-    await client.query("UPDATE fan SET cancion_favorita = $1 WHERE nombre_usuario = $2", [cancion, usuario]);
+
+    await client.query("UPDATE usuario SET biografia = $1 WHERE nombre_usuario = $2", [
+      biografia || null,
+      usuario,
+    ]);
+
+    if (esArtista) {
+      await client.query(
+        `UPDATE artista
+            SET nombre_artistico = $1, nacionalidad = $2, genero = $3, tipo_artista = $4
+          WHERE nombre_usuario = $5`,
+        [artista.nombre_artistico, artista.nacionalidad, artista.genero, artista.tipo_artista, usuario],
+      );
+
+      // Los integrantes se reemplazan por la lista nueva
+      await client.query("DELETE FROM integrante WHERE nombre_usuario = $1", [usuario]);
+      for (const i of artista.integrantes) {
+        await client.query(
+          `INSERT INTO integrante (nombre_usuario, nombre, apellido, instrumento, fecha_nac, nacionalidad)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [usuario, i.nombre, i.apellido, i.instrumento, i.fecha_nac, i.nacionalidad],
+        );
+      }
+
+      await client.query("COMMIT");
+      return res.json({ biografia: biografia || null, ...artista });
+    }
+
+    await client.query("UPDATE fan SET cancion_favorita = $1 WHERE nombre_usuario = $2", [
+      cancion,
+      usuario,
+    ]);
     await client.query("COMMIT");
-    return res.json({ biografia: bio, cancion_favorita: cancion });
+    return res.json({ biografia: biografia || null, cancion_favorita: cancion });
   } catch (err) {
     await client.query("ROLLBACK");
+    if (err.code === "22001") {
+      return res.status(400).json({ error: "Alguno de los textos es demasiado largo" });
+    }
+    if (err.code === "22007" || err.code === "22008") {
+      return res.status(400).json({ error: "Alguna fecha no es válida" });
+    }
     console.error(err);
     return res.status(500).json({ error: "Error del servidor" });
   } finally {

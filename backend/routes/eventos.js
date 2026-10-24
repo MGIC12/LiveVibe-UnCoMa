@@ -44,13 +44,15 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-    `SELECT e.*,
-            (SELECT MIN(precio)::float8 FROM entrada WHERE id_evento = e.id_evento) AS precio_desde
-      FROM evento e
-      WHERE e.id_evento = $1`,
-    [id],
-  );
+const result = await pool.query(
+  `SELECT e.*,
+          a.nombre_artistico AS artista_nombre,
+          (SELECT MIN(precio)::float8 FROM entrada WHERE id_evento = e.id_evento) AS precio_desde
+     FROM evento e
+     LEFT JOIN artista a ON a.nombre_usuario = e.nombre_artista
+    WHERE e.id_evento = $1`,
+  [id],
+);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Evento no encontrado" });
@@ -61,6 +63,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+
 
 // ---------- Utilidades ----------
 
