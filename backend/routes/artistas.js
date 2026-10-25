@@ -35,4 +35,15 @@ router.get("/:username", async (req, res) => {
   }
 });
 
+// GET /api/artistas - Obtener todos los artistas
+router.get("/", async (req, res) => {
+  try {
+    const artistasRes = await pool.query("SELECT * FROM artista");
+    res.json(artistasRes.rows);
+  } catch (error) {
+    console.error("Error al obtener artistas:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 module.exports = router;
