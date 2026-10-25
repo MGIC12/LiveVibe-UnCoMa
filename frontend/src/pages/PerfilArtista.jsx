@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 const PerfilArtista = () => {
   const { username } = useParams();
+  const navigate = useNavigate(); // <-- Inicializamos useNavigate para el botón de retroceso
   const [datos, setDatos] = useState({ artista: null, eventos: [] });
   const [loading, setLoading] = useState(true);
 
@@ -35,8 +36,14 @@ const PerfilArtista = () => {
     return (
       <div className="min-h-screen bg-tinta text-crema flex flex-col">
         <Navbar />
-        <div className="flex-grow flex justify-center items-center pt-20">
+        <div className="flex-grow flex flex-col justify-center items-center pt-20 gap-4">
           <p className="text-xl text-crema/60">Artista no encontrado.</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-crema/10 hover:bg-crema/20 text-crema px-6 py-2 rounded-full font-bold transition-colors"
+          >
+            ← Volver atrás
+          </button>
         </div>
         <Footer />
       </div>
@@ -47,7 +54,15 @@ const PerfilArtista = () => {
     <div className="min-h-screen bg-tinta text-crema font-sans flex flex-col justify-between">
       <Navbar />
 
-      <main className="flex-grow container mx-auto px-4 pt-28 pb-16 w-full max-w-4xl space-y-10">
+      <main className="flex-grow container mx-auto px-4 pt-28 pb-16 w-full max-w-4xl">
+        {/* Botón Volver Atrás */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-crema/60 hover:text-fucsia transition-colors font-bold text-sm w-fit mb-6"
+        >
+          <span>←</span> Volver atrás
+        </button>
+
         {/* Cabecera del Artista */}
         <section className="bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-3xl p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
           {/* Luces de fondo */}
@@ -89,7 +104,7 @@ const PerfilArtista = () => {
         </section>
 
         {/* Sección Biografía */}
-        <section className="bg-crema/5 border border-crema/10 rounded-3xl p-6 sm:p-8">
+        <section className="bg-crema/5 border border-crema/10 rounded-3xl p-6 sm:p-8 mt-10">
           <h2 className="text-sm font-bold text-fucsia uppercase tracking-widest mb-3">
             Acerca de
           </h2>
@@ -100,7 +115,7 @@ const PerfilArtista = () => {
         </section>
 
         {/* Sección Próximos Shows */}
-        <section>
+        <section className="mt-10">
           <h2 className="text-2xl font-black mb-6 text-white flex items-center gap-2">
             Próximos Shows
           </h2>
@@ -123,6 +138,7 @@ const PerfilArtista = () => {
                 return (
                   <div
                     key={evento.id_evento}
+                    onClick={() => navigate(`/evento/${evento.id_evento}`)}
                     className="bg-neutral-900/60 p-5 rounded-2xl border border-neutral-800 hover:border-fucsia/50 transition-colors flex gap-5 items-center group cursor-pointer"
                   >
                     <div className="bg-tinta rounded-xl p-3 min-w-[65px] text-center border border-neutral-700 group-hover:border-fucsia/30 transition-colors">
@@ -141,12 +157,9 @@ const PerfilArtista = () => {
                       <p className="text-crema/60 text-xs truncate mb-3">
                         📍 {evento.lugar}, {evento.ciudad}
                       </p>
-                      <Link
-                        to={`/evento/${evento.id_evento}`}
-                        className="text-xs bg-crema/10 hover:bg-fucsia hover:text-tinta px-4 py-2 rounded-full font-bold transition-colors inline-block"
-                      >
+                      <span className="text-xs bg-crema/10 group-hover:bg-fucsia text-crema group-hover:text-tinta px-4 py-2 rounded-full font-bold transition-colors inline-block">
                         Ver Detalles
-                      </Link>
+                      </span>
                     </div>
                   </div>
                 );
