@@ -144,7 +144,7 @@ const EventList = () => {
                         {evento.nombre_artista && (
                           <div className="mb-2 sm:mb-3">
                             <Link
-                              to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
+                              to={`/perfil-artista/${evento.creador_usuario || evento.nombre_artista}`}
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-fucsia hover:text-white bg-fucsia/10 hover:bg-fucsia/30 border border-fucsia/20 px-3 py-1 rounded-full transition-all"
                               title={`Ver perfil de ${evento.nombre_artista}`}

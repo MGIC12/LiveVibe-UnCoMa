@@ -311,10 +311,9 @@ const EventoDetalle = () => {
                     {evento.nombre}
                   </h1>
 
-                  {/* NUEVO DISEÑO PARA EL ARTISTA (Enlace directo a su perfil) */}
                   {evento.nombre_artista && (
                     <Link
-                      to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
+                      to={`/perfil-artista/${evento.nombre_artista}`}
                       className="inline-flex items-center gap-4 bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700 hover:border-fucsia/60 rounded-full pr-8 pl-2 py-2 mb-8 transition-all group w-fit backdrop-blur-sm"
                     >
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-fucsia to-purple-600 flex items-center justify-center text-xl shadow-lg group-hover:scale-105 transition-transform">

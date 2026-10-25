@@ -8,6 +8,7 @@ import RutaProtegida from "./components/RutaProtegida";
 import Buscador from "./pages/Buscador";
 import CrearEvento from "./pages/CrearEvento";
 import EditarEvento from "./pages/EditarEvento";
+import PerfilArtista from "./pages/PerfilArtista";
 
 // Temporales
 const NotFound = () => (
@@ -60,6 +61,8 @@ function App() {
             </RutaProtegida>
           }
         />
+
+        <Route path="/perfil-artista/:username" element={<PerfilArtista />} />
 
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
