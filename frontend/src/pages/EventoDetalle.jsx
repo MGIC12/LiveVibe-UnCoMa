@@ -200,7 +200,15 @@ const EventoDetalle = () => {
           : "Este evento ya ocurrió: no se puede modificar ni cancelar."}
       </span>
     );
+  } else if (usuario?.rol === "artista") {
+    // Si es un artista viendo el evento de otro artista, se le bloquea la reserva
+    acciones = (
+      <span className="text-sm text-crema/70 font-medium px-4 py-2 bg-crema/5 border border-crema/20 rounded-full">
+        Solo las cuentas de Fans pueden reservar entradas.
+      </span>
+    );
   } else {
+    // Flujo normal para Fans o usuarios no logueados (que serán redirigidos)
     const bloqueado = isReserving || cancelado || yaOcurrio;
     acciones = (
       <button

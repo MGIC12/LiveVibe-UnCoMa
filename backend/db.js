@@ -100,6 +100,15 @@ CREATE TABLE IF NOT EXISTS entrada (
     precio         NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
     stock          INT NOT NULL CHECK (stock >= 0)
 );
+
+CREATE TABLE IF NOT EXISTS reserva (
+    id_reserva SERIAL PRIMARY KEY,
+    id_evento INT REFERENCES evento(id_evento) ON DELETE CASCADE,
+    nombre_usuario VARCHAR(50) REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+    estado VARCHAR(20) DEFAULT 'confirmada' CHECK (estado IN ('pendiente', 'confirmada', 'cancelada', 'asistió')),
+    fecha_reserva TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(id_evento, nombre_usuario)
+);
 `;
 
 async function initDb() {

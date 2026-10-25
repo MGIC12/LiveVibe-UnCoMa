@@ -122,6 +122,15 @@ const Navbar = () => {
                   </Link>
                 )}
 
+                {usuario.rol === "fan" && (
+                  <Link
+                    to="/mis-reservas"
+                    className="hover:text-crema hover:scale-105 transition text-fucsia"
+                  >
+                    Mis Entradas
+                  </Link>
+                )}
+
                 <Link
                   to="/perfil"
                   className="hover:text-crema hover:scale-105 transition"
@@ -203,6 +212,16 @@ const Navbar = () => {
                   className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
                 >
                   Crear evento
+                </Link>
+              )}
+
+              {usuario.rol === "fan" && (
+                <Link
+                  to="/mis-reservas"
+                  onClick={() => setMenuAbierto(false)}
+                  className="block px-3 py-2 text-base font-bold text-fucsia hover:bg-crema/10 rounded-md"
+                >
+                  Mis Entradas
                 </Link>
               )}
 

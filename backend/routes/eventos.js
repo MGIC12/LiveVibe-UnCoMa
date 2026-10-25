@@ -45,12 +45,12 @@ router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-    `SELECT e.*,
+      `SELECT e.*,
             (SELECT MIN(precio)::float8 FROM entrada WHERE id_evento = e.id_evento) AS precio_desde
       FROM evento e
       WHERE e.id_evento = $1`,
-    [id],
-  );
+      [id],
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Evento no encontrado" });
@@ -62,6 +62,49 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// POST /api/eventos/:id/reservar - Crear nueva reserva
+router.post("/:id/reservar", verificarToken, async (req, res) => {
+  try {
+    const id_evento = req.params.id;
+    const nombre_usuario = req.user.nombre_usuario;
+
+    // Validar fecha del evento
+    const eventoQuery = await pool.query(
+      "SELECT fecha FROM evento WHERE id_evento = $1",
+      [id_evento],
+    );
+    if (eventoQuery.rows.length === 0)
+      return res.status(404).json({ error: "Evento no existe" });
+
+    if (new Date(eventoQuery.rows[0].fecha) <= new Date()) {
+      return res.status(400).json({ error: "El evento ya ocurrió." });
+    }
+
+    // Insertar reserva
+    const queryInsert = `
+      INSERT INTO reserva (id_evento, nombre_usuario, estado) 
+      VALUES ($1, $2, 'confirmada') RETURNING *;
+    `;
+    const nuevaReserva = await pool.query(queryInsert, [
+      id_evento,
+      nombre_usuario,
+    ]);
+
+    res
+      .status(201)
+      .json({ mensaje: "Reserva confirmada", reserva: nuevaReserva.rows[0] });
+  } catch (error) {
+    if (error.code === "23505") {
+      // Error de la restricción UNIQUE de tu base de datos
+      return res
+        .status(400)
+        .json({ error: "Ya tienes una reserva para este evento." });
+    }
+    console.error("Error:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 // ---------- Utilidades ----------
 
 // Devuelve el texto sin espacios de más ("" si no es texto)
@@ -69,7 +112,9 @@ const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
 
 // Hoy en horario argentino (AAAA-MM-DD), para no depender de la hora del servidor
 const hoyEnArgentina = () =>
-  new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
 
 // Comprueba formato y que la fecha exista (rechaza 2026-02-31)
 function esFechaValida(fecha) {
@@ -106,10 +151,19 @@ function validarEvento(b) {
   if (datos.hora && !/^([01]\d|2[0-3]):[0-5]\d$/.test(datos.hora)) {
     return { error: "La hora no es válida" };
   }
-  if (b.precio === "" || !Number.isFinite(datos.precio) || datos.precio < 0 || datos.precio > 10000000) {
+  if (
+    b.precio === "" ||
+    !Number.isFinite(datos.precio) ||
+    datos.precio < 0 ||
+    datos.precio > 10000000
+  ) {
     return { error: "El precio debe ser un número mayor o igual a 0" };
   }
-  if (!Number.isInteger(datos.cantidad) || datos.cantidad < 1 || datos.cantidad > 100000) {
+  if (
+    !Number.isInteger(datos.cantidad) ||
+    datos.cantidad < 1 ||
+    datos.cantidad > 100000
+  ) {
     return { error: "La cantidad de entradas debe ser un entero mayor a 0" };
   }
   return { datos };
@@ -128,20 +182,28 @@ async function cargarEventoModificable(client, id, usuario) {
 
   if (!evento) return { status: 404, error: "Evento no encontrado" };
   if (evento.nombre_artista !== usuario) {
-    return { status: 403, error: "Solo el artista que creó el evento puede modificarlo" };
+    return {
+      status: 403,
+      error: "Solo el artista que creó el evento puede modificarlo",
+    };
   }
   if (evento.estado === "cancelado") {
     return { status: 409, error: "El evento ya está cancelado" };
   }
   if (evento.fecha < hoyEnArgentina()) {
-    return { status: 409, error: "El evento ya ocurrió y no se puede modificar ni cancelar" };
+    return {
+      status: 409,
+      error: "El evento ya ocurrió y no se puede modificar ni cancelar",
+    };
   }
   return { evento };
 }
 
 function responderError(error, res) {
   if (error.code === "22001") {
-    return res.status(400).json({ error: "Alguno de los textos es demasiado largo" });
+    return res
+      .status(400)
+      .json({ error: "Alguno de los textos es demasiado largo" });
   }
   if (error.code === "23503") {
     return res.status(404).json({ error: "Artista no encontrado" });
@@ -171,8 +233,17 @@ router.post("/", verificarToken, requerirRol("artista"), async (req, res) => {
                $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING id_evento`,
       [
-        req.user.nombre_usuario, datos.nombre, datos.genero, datos.ciudad, datos.pais,
-        datos.lugar, datos.fecha, datos.hora, datos.cantidad, datos.clasificacion, datos.gira,
+        req.user.nombre_usuario,
+        datos.nombre,
+        datos.genero,
+        datos.ciudad,
+        datos.pais,
+        datos.lugar,
+        datos.fecha,
+        datos.hora,
+        datos.cantidad,
+        datos.clasificacion,
+        datos.gira,
       ],
     );
 
@@ -204,7 +275,11 @@ router.put("/:id", verificarToken, requerirRol("artista"), async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    const r = await cargarEventoModificable(client, id, req.user.nombre_usuario);
+    const r = await cargarEventoModificable(
+      client,
+      id,
+      req.user.nombre_usuario,
+    );
     if (r.error) {
       await client.query("ROLLBACK");
       return res.status(r.status).json({ error: r.error });
@@ -232,17 +307,30 @@ router.put("/:id", verificarToken, requerirRol("artista"), async (req, res) => {
          cant_entradas = $9, clasificacion = $10, gira = $11
        WHERE id_evento = $12`,
       [
-        datos.nombre, datos.genero, req.user.nombre_usuario, datos.ciudad, datos.pais,
-        datos.lugar, datos.fecha, datos.hora, datos.cantidad, datos.clasificacion, datos.gira, id,
+        datos.nombre,
+        datos.genero,
+        req.user.nombre_usuario,
+        datos.ciudad,
+        datos.pais,
+        datos.lugar,
+        datos.fecha,
+        datos.hora,
+        datos.cantidad,
+        datos.clasificacion,
+        datos.gira,
+        id,
       ],
     );
 
     // El stock disponible es la nueva capacidad menos lo ya reservado
-    await client.query(`UPDATE entrada SET precio = $1, stock = $2 WHERE id_entrada = $3`, [
-      Math.round(datos.precio * 100) / 100,
-      datos.cantidad - reservadas,
-      entradas[0].id_entrada,
-    ]);
+    await client.query(
+      `UPDATE entrada SET precio = $1, stock = $2 WHERE id_entrada = $3`,
+      [
+        Math.round(datos.precio * 100) / 100,
+        datos.cantidad - reservadas,
+        entradas[0].id_entrada,
+      ],
+    );
 
     await client.query("COMMIT");
     res.json({ id_evento: Number(id) });
@@ -257,28 +345,40 @@ router.put("/:id", verificarToken, requerirRol("artista"), async (req, res) => {
 // ---------- Cancelar ----------
 
 // PATCH /api/eventos/:id/cancelar - El artista dueño cancela su evento (antes de su fecha)
-router.patch("/:id/cancelar", verificarToken, requerirRol("artista"), async (req, res) => {
-  const { id } = req.params;
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+router.patch(
+  "/:id/cancelar",
+  verificarToken,
+  requerirRol("artista"),
+  async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    const r = await cargarEventoModificable(client, id, req.user.nombre_usuario);
-    if (r.error) {
+      const r = await cargarEventoModificable(
+        client,
+        id,
+        req.user.nombre_usuario,
+      );
+      if (r.error) {
+        await client.query("ROLLBACK");
+        return res.status(r.status).json({ error: r.error });
+      }
+
+      await client.query(
+        "UPDATE evento SET estado = 'cancelado' WHERE id_evento = $1",
+        [id],
+      );
+
+      await client.query("COMMIT");
+      res.json({ id_evento: Number(id), estado: "cancelado" });
+    } catch (error) {
       await client.query("ROLLBACK");
-      return res.status(r.status).json({ error: r.error });
+      responderError(error, res);
+    } finally {
+      client.release();
     }
-
-    await client.query("UPDATE evento SET estado = 'cancelado' WHERE id_evento = $1", [id]);
-
-    await client.query("COMMIT");
-    res.json({ id_evento: Number(id), estado: "cancelado" });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    responderError(error, res);
-  } finally {
-    client.release();
-  }
-});
+  },
+);
 
 module.exports = router;
