@@ -10,11 +10,7 @@ import CrearEvento from "./pages/CrearEvento";
 import EditarEvento from "./pages/EditarEvento";
 import PerfilArtista from "./pages/PerfilArtista";
 import MisReservas from "./pages/MisReservas";
-
-// Temporales
-const NotFound = () => (
-  <div className="text-crema p-8">Error 404: Página no encontrada</div>
-);
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
