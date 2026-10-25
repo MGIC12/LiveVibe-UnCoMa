@@ -9,6 +9,7 @@ import Buscador from "./pages/Buscador";
 import CrearEvento from "./pages/CrearEvento";
 import EditarEvento from "./pages/EditarEvento";
 import PerfilArtista from "./pages/PerfilArtista";
+import MisReservas from "./pages/MisReservas";
 
 // Temporales
 const NotFound = () => (
@@ -64,6 +65,14 @@ function App() {
 
         <Route path="/perfil-artista/:username" element={<PerfilArtista />} />
 
+        <Route
+          path="/mis-reservas"
+          element={
+            <RutaProtegida>
+              <MisReservas />
+            </RutaProtegida>
+          }
+        />
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
       </Routes>
