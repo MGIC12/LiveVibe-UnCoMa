@@ -9,6 +9,8 @@ import Buscador from "./pages/Buscador";
 import CrearEvento from "./pages/CrearEvento";
 import EditarEvento from "./pages/EditarEvento";
 import PerfilArtista from "./pages/PerfilArtista";
+import PerfilUsuario from "./pages/PerfilUsuario";
+import MisEventos from "./pages/MisEventos";
 
 // Temporales
 const NotFound = () => (
@@ -41,6 +43,8 @@ function App() {
 
         <Route path="/artista/:usuario" element={<PerfilArtista />} />
 
+        <Route path="/usuario/:usuario" element={<PerfilUsuario />} />
+
         {/* Ruta con parámetro dinámico (el ID del evento) */}
         <Route path="/evento/:id" element={<EventoDetalle />} />
 
@@ -60,6 +64,15 @@ function App() {
           element={
             <RutaProtegida roles={["artista"]}>
               <EditarEvento />
+            </RutaProtegida>
+          }
+        />
+
+        <Route
+          path="/mis-eventos"
+          element={
+            <RutaProtegida roles={["artista"]}>
+              <MisEventos />
             </RutaProtegida>
           }
         />

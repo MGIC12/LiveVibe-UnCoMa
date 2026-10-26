@@ -115,6 +115,15 @@ const Navbar = () => {
               <>
                 {usuario.rol === "artista" && (
                   <Link
+                    to="/mis-eventos"
+                    className="hover:text-crema hover:scale-105 transition"
+                  >
+                    Mis eventos
+                  </Link>
+                )}
+
+                {usuario.rol === "artista" && (
+                  <Link
                     to="/eventos/nuevo"
                     className="hover:text-crema hover:scale-105 transition"
                   >
@@ -196,6 +205,16 @@ const Navbar = () => {
 
           {usuario ? (
             <>
+              {usuario.rol === "artista" && (
+                <Link
+                  to="/mis-eventos"
+                  onClick={() => setMenuAbierto(false)}
+                  className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                >
+                  Mis eventos
+                </Link>
+              )}
+
               {usuario.rol === "artista" && (
                 <Link
                   to="/eventos/nuevo"

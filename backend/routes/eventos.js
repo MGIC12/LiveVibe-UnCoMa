@@ -40,6 +40,36 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/eventos/mios - Historial completo del artista (todos sus eventos)
+router.get("/mios", verificarToken, requerirRol("artista"), async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT e.id_evento, e.nombre, e.genero, e.ciudad, e.pais, e.lugar,
+              to_char(e.fecha, 'YYYY-MM-DD') AS fecha,
+              to_char(e.hora_apertura, 'HH24:MI') AS hora_apertura,
+              e.cant_entradas, e.clasificacion, e.gira, e.estado,
+              (SELECT MIN(precio)::float8 FROM entrada
+                WHERE id_evento = e.id_evento) AS precio_desde,
+              (SELECT COALESCE(SUM(stock), 0)::int FROM entrada
+                WHERE id_evento = e.id_evento) AS entradas_disponibles,
+              CASE
+                WHEN e.estado = 'cancelado' THEN 'cancelado'
+                WHEN e.fecha < $2::date THEN 'pasado'
+                WHEN e.fecha = $2::date THEN 'hoy'
+                ELSE 'proximo'
+              END AS situacion
+         FROM evento e
+        WHERE e.nombre_artista = $1
+        ORDER BY e.fecha DESC, e.hora_apertura DESC NULLS LAST, e.id_evento DESC`,
+      [req.user.nombre_usuario, hoyEnArgentina()],
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener el historial del artista:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // GET /api/evento/:id - Obtener el detalle de un evento específico
 router.get("/:id", async (req, res) => {
   try {

@@ -21,6 +21,8 @@ app.use("/api/auth", require("./routes/auth"));
 
 app.use("/api/perfil", require("./routes/perfil"));
 
+app.use("/api/usuarios", require("./routes/usuarios"));
+
 app.use("/api/artistas", require("./routes/artistas"));
 
 app.use("/api/eventos", eventosRoutes);

@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import Avatar from "../components/Avatar";
+import CabeceraPerfil from "../components/CabeceraPerfil";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
+import BotonesSeguimiento from "../components/BotonesSeguimiento";
 
 // Marco común: Navbar, contenido y Footer
 function Marco({ children }) {
@@ -79,51 +80,37 @@ export default function PerfilArtista() {
   const esMiPerfil = usuario?.nombre_usuario === artista.nombre_usuario;
   const esBanda = artista.tipo_artista === "banda";
   const shows = artista.proximos_eventos;
+  // Los botones de seguir los ve un fan o quien no inició sesión;
+  // el dueño del perfil ve en su lugar el acceso para editarlo
+  const mostrarAcciones = esMiPerfil || !usuario || usuario.rol === "fan";
 
   return (
     <Marco>
       {/* Cabecera */}
-      <section className="bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-2xl">
-        <Avatar
-          usuario={artista}
-          clases="w-24 h-24 text-5xl shadow-lg border-2 border-fucsia"
-          fondo="bg-tinta"
-        />
-        <div className="text-center sm:text-left space-y-3">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-crema tracking-tight">
-              {artista.nombre_artistico}
-            </h1>
-            <p className="text-crema/60 text-sm">@{artista.nombre_usuario}</p>
-          </div>
-
-          <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-            <span className="px-3 py-1 rounded-full bg-sol text-tinta text-xs font-bold uppercase tracking-wider">
-              {artista.tipo_artista}
-            </span>
-            {artista.genero && (
-              <span className="px-3 py-1 rounded-full bg-crema/10 text-crema/80 border border-crema/20 text-xs font-bold uppercase tracking-wider">
-                {artista.genero}
-              </span>
-            )}
-            {artista.nacionalidad && (
-              <span className="px-3 py-1 rounded-full bg-crema/10 text-crema/80 border border-crema/20 text-xs font-bold uppercase tracking-wider">
-                {artista.nacionalidad}
-              </span>
-            )}
-          </div>
-
-          {/* Acá van los botones de seguir y de notificaciones (Parte 4) */}
-          {esMiPerfil && (
+      <CabeceraPerfil
+        avatar={{ ...artista, nombre_usuario: artista.nombre_artistico }}
+        titulo={artista.nombre_artistico}
+        subtitulo={`@${artista.nombre_usuario} · ${artista.seguidores} ${
+          artista.seguidores === 1 ? "seguidor" : "seguidores"
+        }`}
+        etiquetas={[
+          { texto: artista.tipo_artista, destacada: true },
+          artista.genero && { texto: `🎵 ${artista.genero}` },
+          artista.nacionalidad && { texto: `🌍 ${artista.nacionalidad}` },
+        ].filter(Boolean)}
+      >
+        {mostrarAcciones &&
+          (esMiPerfil ? (
             <Link
               to="/perfil"
-              className="inline-block px-5 py-2 rounded-full border border-cielo text-cielo hover:bg-cielo hover:text-tinta text-sm font-bold transition"
+              className="inline-block px-6 py-2.5 rounded-full border border-cielo text-cielo hover:bg-cielo hover:text-tinta text-sm font-bold transition"
             >
               Editar mi perfil
             </Link>
-          )}
-        </div>
-      </section>
+          ) : (
+            <BotonesSeguimiento artista={artista.nombre_usuario} />
+          ))}
+      </CabeceraPerfil>
 
       {/* Biografía */}
       {artista.biografia && (

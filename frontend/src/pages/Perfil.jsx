@@ -98,6 +98,11 @@ export default function Perfil() {
     : usuario.nombre_usuario;
   const etiqueta = esArtista ? (usuario.tipo_artista ?? "artista") : usuario.rol;
 
+    // Dónde está tu perfil público (los artistas tienen su propia página)
+  const rutaPublica = esArtista
+    ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
+    : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`;
+
   return (
     // Contenedor principal con altura mínima completa y distribución flexible para anclar el footer abajo
     <div className="min-h-screen bg-tinta text-crema font-sans flex flex-col justify-between">
@@ -174,23 +179,17 @@ export default function Perfil() {
                 </span>
               </div>
 
-              {esFan ? (
-                <div>
-                  <label className="block text-sm font-bold text-crema/80 mb-2">
-                    Canción favorita
-                  </label>
-                  <input
-                    value={cancion}
-                    onChange={(e) => setCancion(e.target.value)}
-                    maxLength={150}
-                    placeholder="Ej. De música ligera - Soda Stereo"
-                    className="w-full px-4 py-3.5 rounded-xl bg-crema/10 border border-crema/25 text-crema placeholder-crema/60 focus:outline-none focus:ring-2 focus:ring-cielo transition-all text-sm"
-                  />
-                </div>
-              ) : (
-                <div className="border-t border-crema/20 pt-5">
-                  <CamposArtista valores={artista} onChange={cambiarArtista} />
-                </div>
+              {(esFan || esArtista) && (
+              <Link
+                to={
+                  esArtista
+                    ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
+                    : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`
+                }
+                className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
+              >
+                👁️ Ver mi perfil público
+              </Link>
               )}
             </div>
 
@@ -222,6 +221,7 @@ export default function Perfil() {
             </div>
           </form>
         ) : (
+
           /* ---------- MODO VISTA ---------- */
           <section className="bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
             {aviso && (
@@ -324,29 +324,30 @@ export default function Perfil() {
 
             <div className="flex flex-col gap-3 pt-2">
               {esArtista && (
-                <>
                 <Link
                   to="/eventos/nuevo"
                   className="w-full text-center py-4 rounded-xl border border-cielo text-cielo hover:bg-cielo hover:text-tinta font-bold transition-all text-sm"
                 >
                   ➕ Crear evento nuevo
                 </Link>
-                <Link
-                  to={`/artista/${encodeURIComponent(usuario.nombre_usuario)}`}
-                  className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
-                >
-                  👀 Ver mi perfil público
-                </Link>
-                </>
               )}
 
               {puedeEditar && (
-                <button
-                  onClick={empezarEdicion}
-                  className="w-full py-4 rounded-xl bg-fucsia hover:bg-chicle text-tinta font-bold transition-all shadow-[0_0_15px_rgba(255,46,147,0.35)] text-sm"
-                >
-                  Editar perfil
-                </button>
+                <>
+                  <Link
+                    to={rutaPublica}
+                    className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
+                  >
+                    👀 Ver mi perfil público
+                  </Link>
+
+                  <button
+                    onClick={empezarEdicion}
+                    className="w-full py-4 rounded-xl bg-fucsia hover:bg-chicle text-tinta font-bold transition-all shadow-[0_0_15px_rgba(255,46,147,0.35)] text-sm"
+                  >
+                    Editar perfil
+                  </button>
+                </>
               )}
             </div>
           </section>
