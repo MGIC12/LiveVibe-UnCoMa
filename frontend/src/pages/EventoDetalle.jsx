@@ -311,7 +311,6 @@ const EventoDetalle = () => {
                     {evento.nombre}
                   </h1>
 
-                  {/* NUEVO DISEÑO PARA EL ARTISTA (Enlace directo a su perfil) */}
                   {evento.nombre_artista && (
                     <Link
                       to={`/artista/${encodeURIComponent(evento.nombre_artista)}`}
