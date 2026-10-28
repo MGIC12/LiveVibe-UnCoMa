@@ -4,29 +4,54 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Avatar from "../components/Avatar";
 import FotoPerfil from "../components/FotoPerfil";
+import CamposArtista from "../components/CamposArtista"; // ← misma ruta que en Register.jsx
 import { useAuth } from "../../context/AuthContext";
-import { FOTO_VACIA, inputClase } from "../utils/formularios";
+import { FOTO_VACIA } from "../utils/formularios";
 import { urlImagen } from "../utils/api";
 
 export default function Perfil() {
   const { usuario, editarPerfil, cambiarFoto, quitarFoto } = useAuth();
   const { state } = useLocation();
   const aviso = state?.aviso;
+
   const esFan = usuario.rol === "fan";
+  const esArtista = usuario.rol === "artista";
+  const esBanda = usuario.tipo_artista === "banda";
+  const puedeEditar = esFan || esArtista;
 
   const [editando, setEditando] = useState(false);
 
+  // Borrador: lo que se edita en el formulario
   const [biografia, setBiografia] = useState("");
   const [cancion, setCancion] = useState("");
+  const [artista, setArtista] = useState({});
   const [foto, setFoto] = useState(FOTO_VACIA);
 
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
 
+  function cambiarArtista(nombre, valor) {
+    setArtista((actual) => ({ ...actual, [nombre]: valor }));
+  }
+
   function empezarEdicion() {
     setBiografia(usuario.biografia ?? "");
     setCancion(usuario.cancion_favorita ?? "");
+    setArtista({
+      nombre_artistico: usuario.nombre_artistico ?? "",
+      nacionalidad: usuario.nacionalidad ?? "",
+      genero: usuario.genero ?? "",
+      tipo_artista: usuario.tipo_artista ?? "solista",
+      // Los campos de un formulario no aceptan null: se pasan a texto vacío
+      integrantes: (usuario.integrantes ?? []).map((i) => ({
+        nombre: i.nombre ?? "",
+        apellido: i.apellido ?? "",
+        instrumento: i.instrumento ?? "",
+        fecha_nac: i.fecha_nac ?? "",
+        nacionalidad: i.nacionalidad ?? "",
+      })),
+    });
     setFoto(FOTO_VACIA);
     setMensaje("");
     setError("");
@@ -45,7 +70,14 @@ export default function Perfil() {
     try {
       if (esFan) {
         await editarPerfil({ biografia, cancion_favorita: cancion });
+      } else {
+        await editarPerfil({
+          biografia,
+          ...artista,
+          integrantes: artista.tipo_artista === "banda" ? artista.integrantes : [],
+        });
       }
+
       if (foto.archivo) {
         await cambiarFoto(foto.archivo);
       } else if (foto.quitar) {
@@ -60,6 +92,17 @@ export default function Perfil() {
     }
   }
 
+  // Qué se muestra en la cabecera según el tipo de cuenta
+  const nombrePrincipal = esArtista
+    ? usuario.nombre_artistico || usuario.nombre_usuario
+    : usuario.nombre_usuario;
+  const etiqueta = esArtista ? (usuario.tipo_artista ?? "artista") : usuario.rol;
+
+    // Dónde está tu perfil público (los artistas tienen su propia página)
+  const rutaPublica = esArtista
+    ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
+    : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`;
+
   return (
     // Contenedor principal con altura mínima completa y distribución flexible para anclar el footer abajo
     <div className="min-h-screen bg-tinta text-crema font-sans flex flex-col justify-between">
@@ -68,19 +111,30 @@ export default function Perfil() {
       {/* pt-28 evita que el Navbar fijo tape el contenido, w-full y max-w-2xl mejoran la adaptabilidad */}
       <main className="flex-grow container mx-auto px-4 pt-28 pb-16 w-full max-w-2xl space-y-6">
         {/* Cabecera: siempre visible */}
-        <section className="bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-2xl">
+        <section className="bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 shadow-2xl">
           <Avatar
             usuario={usuario}
-            clases="w-20 h-20 text-4xl shadow-lg border-2 border-green-500/50"
+            clases="w-20 h-20 text-4xl shadow-lg border-2 border-fucsia"
+            fondo="bg-tinta"
           />
           <div className="text-center sm:text-left">
-            <h1 className="text-3xl font-black text-white tracking-tight mb-1">
-              {usuario.nombre_usuario}
+            <h1 className="text-3xl font-black text-crema tracking-tight mb-1">
+              {nombrePrincipal}
             </h1>
-            <p className="text-crema/60 text-sm mb-3">{usuario.email}</p>
-            <span className="inline-block px-3 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold uppercase tracking-wider">
-              {usuario.rol}
-            </span>
+            <p className="text-crema/60 text-sm mb-3">
+              {esArtista ? `@${usuario.nombre_usuario} · ` : ""}
+              {usuario.email}
+            </p>
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-sol text-tinta text-xs font-bold uppercase tracking-wider">
+                {etiqueta}
+              </span>
+              {esArtista && usuario.genero && (
+                <span className="inline-block px-3 py-1 rounded-full bg-crema/10 text-crema/80 border border-crema/20 text-xs font-bold uppercase tracking-wider">
+                  {usuario.genero}
+                </span>
+              )}
+            </div>
           </div>
         </section>
 
@@ -88,10 +142,10 @@ export default function Perfil() {
           /* ---------- MODO EDICIÓN ---------- */
           <form
             onSubmit={handleSubmit}
-            className="bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl"
+            className="bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl"
           >
-            <h2 className="text-2xl font-black text-white border-b border-neutral-800 pb-4">
-              Editar <span className="text-green-500">mi perfil</span>
+            <h2 className="text-2xl font-black text-crema border-b border-crema/20 pb-4">
+              Editar <span className="text-fucsia">mi perfil</span>
             </h2>
 
             <div className="flex flex-col items-center justify-center py-2">
@@ -103,49 +157,46 @@ export default function Perfil() {
               />
             </div>
 
-            {esFan ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-crema/80 mb-2">
-                    Biografía
-                  </label>
-                  <textarea
-                    value={biografia}
-                    onChange={(e) => setBiografia(e.target.value)}
-                    rows={4}
-                    maxLength={500}
-                    placeholder="Cuéntanos algo sobre ti..."
-                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-neutral-700 text-crema focus:outline-none focus:ring-2 focus:ring-green-500 transition-all resize-none text-sm"
-                  />
-                  <span className="block text-right text-xs text-crema/50 mt-1">
-                    {biografia.length}/500
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-crema/80 mb-2">
-                    Canción favorita
-                  </label>
-                  <input
-                    value={cancion}
-                    onChange={(e) => setCancion(e.target.value)}
-                    maxLength={150}
-                    placeholder="Ej. De música ligera - Soda Stereo"
-                    className="w-full px-4 py-3.5 rounded-xl bg-neutral-800/50 border border-neutral-700 text-crema focus:outline-none focus:ring-2 focus:ring-green-500 transition-all text-sm"
-                  />
-                </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-crema/80 mb-2">
+                  Biografía
+                </label>
+                <textarea
+                  value={biografia}
+                  onChange={(e) => setBiografia(e.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  placeholder={
+                    esArtista
+                      ? "Contale a tus fans quién sos y qué hacés..."
+                      : "Cuéntanos algo sobre ti..."
+                  }
+                  className="w-full px-4 py-3 rounded-xl bg-crema/10 border border-crema/25 text-crema placeholder-crema/60 focus:outline-none focus:ring-2 focus:ring-cielo transition-all resize-none text-sm"
+                />
+                <span className="block text-right text-xs text-crema/50 mt-1">
+                  {biografia.length}/500
+                </span>
               </div>
-            ) : (
-              <p className="text-xs text-crema/60 bg-neutral-800/40 p-4 rounded-xl border border-neutral-800">
-                💡 Las cuentas de artista pueden cambiar su foto de perfil desde
-                esta sección.
-              </p>
-            )}
+
+              {(esFan || esArtista) && (
+              <Link
+                to={
+                  esArtista
+                    ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
+                    : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`
+                }
+                className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
+              >
+                👁️ Ver mi perfil público
+              </Link>
+              )}
+            </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-red-500 text-xl">⚠️</span>
-                <p className="text-red-400 text-sm font-medium" role="alert">
+              <div className="bg-mandarina/10 border border-mandarina/50 rounded-lg p-3 flex items-center gap-3">
+                <span className="text-xl">⚠️</span>
+                <p className="text-mandarina text-sm font-medium" role="alert">
                   {error}
                 </p>
               </div>
@@ -156,35 +207,36 @@ export default function Perfil() {
                 type="button"
                 onClick={cancelar}
                 disabled={guardando}
-                className="flex-1 py-3.5 rounded-xl border border-neutral-700 text-crema/80 hover:bg-neutral-800 hover:text-white transition-all font-bold text-sm disabled:opacity-50"
+                className="flex-1 py-3.5 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema transition-all font-bold text-sm disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={guardando}
-                className="flex-1 py-3.5 rounded-xl bg-green-500 hover:bg-green-400 text-black font-bold transition-all shadow-lg text-sm disabled:opacity-50"
+                className="flex-1 py-3.5 rounded-xl bg-fucsia hover:bg-chicle text-tinta font-bold transition-all shadow-lg text-sm disabled:opacity-50"
               >
                 {guardando ? "Guardando..." : "Guardar cambios"}
               </button>
             </div>
           </form>
         ) : (
+
           /* ---------- MODO VISTA ---------- */
-          <section className="bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+          <section className="bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
             {aviso && (
-              <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-amber-300 text-sm">
+              <div className="bg-sol/10 border border-sol/40 rounded-xl p-4 text-sol text-sm">
                 {aviso}
               </div>
             )}
             {mensaje && (
-              <div className="bg-green-500/10 border border-green-500/40 rounded-xl p-4 text-green-400 text-sm font-medium">
+              <div className="bg-cielo/10 border border-cielo/40 rounded-xl p-4 text-cielo text-sm font-medium">
                 ✨ {mensaje}
               </div>
             )}
 
-            <div className="bg-neutral-800/40 p-5 rounded-2xl border border-neutral-800">
-              <h2 className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">
+            <div className="bg-crema/5 p-5 rounded-2xl border border-crema/20">
+              <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">
                 Biografía
               </h2>
               <p className="whitespace-pre-line text-crema/90 text-sm sm:text-base leading-relaxed">
@@ -197,8 +249,8 @@ export default function Perfil() {
             </div>
 
             {esFan && (
-              <div className="bg-neutral-800/40 p-5 rounded-2xl border border-neutral-800">
-                <h2 className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">
+              <div className="bg-crema/5 p-5 rounded-2xl border border-crema/20">
+                <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">
                   Canción favorita
                 </h2>
                 <p className="text-crema/90 text-sm sm:text-base font-medium flex items-center gap-2">
@@ -213,6 +265,53 @@ export default function Perfil() {
               </div>
             )}
 
+            {esArtista && (
+              <div className="bg-crema/5 p-5 rounded-2xl border border-crema/20">
+                <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-3">
+                  Datos artísticos
+                </h2>
+                <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <dt className="text-crema/60">Formación</dt>
+                    <dd className="font-bold text-crema capitalize">
+                      {usuario.tipo_artista ?? "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-crema/60">Género</dt>
+                    <dd className="font-bold text-crema">{usuario.genero || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-crema/60">Nacionalidad</dt>
+                    <dd className="font-bold text-crema">{usuario.nacionalidad || "—"}</dd>
+                  </div>
+                </dl>
+              </div>
+            )}
+
+            {esBanda && (usuario.integrantes?.length ?? 0) > 0 && (
+              <div className="bg-crema/5 p-5 rounded-2xl border border-crema/20">
+                <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-3">
+                  Integrantes
+                </h2>
+                <ul className="space-y-2">
+                  {usuario.integrantes.map((i, n) => (
+                    <li
+                      key={n}
+                      className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                    >
+                      <span className="font-bold text-crema">
+                        {i.nombre} {i.apellido}
+                      </span>
+                      {i.instrumento && (
+                        <span className="text-crema/70">{i.instrumento}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {usuario.fecha_alta && (
               <p className="text-xs text-crema/50 text-center pt-2">
                 Miembro desde{" "}
@@ -224,21 +323,32 @@ export default function Perfil() {
             )}
 
             <div className="flex flex-col gap-3 pt-2">
-              {usuario.rol === "artista" && (
+              {esArtista && (
                 <Link
                   to="/eventos/nuevo"
-                  className="w-full text-center py-4 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold transition-all text-sm shadow-md"
+                  className="w-full text-center py-4 rounded-xl border border-cielo text-cielo hover:bg-cielo hover:text-tinta font-bold transition-all text-sm"
                 >
                   ➕ Crear evento nuevo
                 </Link>
               )}
 
-              <button
-                onClick={empezarEdicion}
-                className="w-full py-4 rounded-xl bg-green-500 hover:bg-green-400 text-black font-bold transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] text-sm"
-              >
-                Editar perfil
-              </button>
+              {puedeEditar && (
+                <>
+                  <Link
+                    to={rutaPublica}
+                    className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
+                  >
+                    👀 Ver mi perfil público
+                  </Link>
+
+                  <button
+                    onClick={empezarEdicion}
+                    className="w-full py-4 rounded-xl bg-fucsia hover:bg-chicle text-tinta font-bold transition-all shadow-[0_0_15px_rgba(255,46,147,0.35)] text-sm"
+                  >
+                    Editar perfil
+                  </button>
+                </>
+              )}
             </div>
           </section>
         )}

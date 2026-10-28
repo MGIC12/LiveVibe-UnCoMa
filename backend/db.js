@@ -65,6 +65,26 @@ CREATE TABLE IF NOT EXISTS fan (
   insignia         VARCHAR(60)
 );
 
+CREATE TABLE IF NOT EXISTS sigue (
+  nombre_fan     VARCHAR(30) NOT NULL
+                 REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
+  nombre_artista VARCHAR(30) NOT NULL
+                 REFERENCES artista(nombre_usuario) ON DELETE CASCADE,
+  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (nombre_fan, nombre_artista)
+);
+
+CREATE TABLE IF NOT EXISTS suscripcion_novedades (
+  nombre_fan     VARCHAR(30) NOT NULL
+                 REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
+  nombre_artista VARCHAR(30) NOT NULL
+                 REFERENCES artista(nombre_usuario) ON DELETE CASCADE,
+  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (nombre_fan, nombre_artista)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sigue_artista ON sigue (nombre_artista);
+
 CREATE TABLE IF NOT EXISTS admin (
   nombre_usuario VARCHAR(30) PRIMARY KEY
                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE

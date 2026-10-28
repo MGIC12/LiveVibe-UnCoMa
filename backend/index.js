@@ -23,6 +23,10 @@ app.use("/api/auth", require("./routes/auth"));
 
 app.use("/api/perfil", require("./routes/perfil"));
 
+app.use("/api/usuarios", require("./routes/usuarios"));
+
+app.use("/api/artistas", require("./routes/artistas"));
+
 app.use("/api/eventos", eventosRoutes);
 
 app.use("/api/buscar", buscarRoutes);
@@ -42,3 +46,4 @@ initDb()
     console.error("No se pudo conectar a la base de datos", err);
     process.exit(1);
   });
+

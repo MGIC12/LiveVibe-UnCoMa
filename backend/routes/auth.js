@@ -193,21 +193,39 @@ router.post("/login", async (req, res) => {
 router.get("/me", verificarToken, async (req, res) => {
   try {
     const { rows } = await pool.query(
-            `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
+      `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
               i.url AS foto_url, i.descripcion AS foto_descripcion,
-              f.cancion_favorita
+              f.cancion_favorita,
+              a.nombre_artistico, a.nacionalidad, a.genero, a.tipo_artista
          FROM usuario u
          LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
          LEFT JOIN fan f ON f.nombre_usuario = u.nombre_usuario
+         LEFT JOIN artista a ON a.nombre_usuario = u.nombre_usuario
         WHERE u.nombre_usuario = $1`,
       [req.user.nombre_usuario]
     );
     if (!rows[0]) return res.status(404).json({ error: "Usuario no encontrado" });
-    return res.json(rows[0]);
+
+    const usuario = rows[0];
+
+    // Si es artista, también sus integrantes
+    if (usuario.rol === "artista") {
+      const { rows: integrantes } = await pool.query(
+        `SELECT nombre, apellido, instrumento, nacionalidad,
+                to_char(fecha_nac, 'YYYY-MM-DD') AS fecha_nac
+           FROM integrante
+          WHERE nombre_usuario = $1
+          ORDER BY id_integrante`,
+        [usuario.nombre_usuario]
+      );
+      usuario.integrantes = integrantes;
+    }
+
+    return res.json(usuario);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Error del servidor" });
   }
 });
 
-module.exports = router;
+module.exports = router
