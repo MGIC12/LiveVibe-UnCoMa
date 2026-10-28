@@ -9,13 +9,11 @@ import Buscador from "./pages/Buscador";
 import CrearEvento from "./pages/CrearEvento";
 import EditarEvento from "./pages/EditarEvento";
 import PerfilArtista from "./pages/PerfilArtista";
+import MisReservas from "./pages/MisReservas";
+import NotFound from "./pages/NotFound";
 import PerfilUsuario from "./pages/PerfilUsuario";
 import MisEventos from "./pages/MisEventos";
 
-// Temporales
-const NotFound = () => (
-  <div className="text-crema p-8">Error 404: Página no encontrada</div>
-);
 
 function App() {
   return (
@@ -77,6 +75,14 @@ function App() {
           }
         />
 
+        <Route
+          path="/mis-reservas"
+          element={
+            <RutaProtegida>
+              <MisReservas />
+            </RutaProtegida>
+          }
+        />
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
       </Routes>
