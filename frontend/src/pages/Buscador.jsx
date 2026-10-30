@@ -106,7 +106,7 @@ const Buscador = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                   {artistas.map((artista, index) => (
                     <Link
-                      to={`/perfil-artista/${artista.id}`}
+                      to={`/artista/${artista.id}`}
                       key={`artista-${artista.id}-${index}`}
                       className="bg-neutral-900 hover:bg-neutral-800 p-4 rounded-xl transition-all duration-300 group"
                     >

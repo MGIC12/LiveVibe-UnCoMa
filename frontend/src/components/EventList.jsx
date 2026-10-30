@@ -144,7 +144,7 @@ const EventList = () => {
                         {evento.nombre_artista && (
                           <div className="mb-2 sm:mb-3">
                             <Link
-                              to={`/perfil-artista/${evento.creador_usuario || evento.nombre_artista}`}
+                              to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-fucsia hover:text-white bg-fucsia/10 hover:bg-fucsia/30 border border-fucsia/20 px-3 py-1 rounded-full transition-all"
                               title={`Ver perfil de ${evento.nombre_artista}`}
@@ -168,11 +168,11 @@ const EventList = () => {
                       {/* Acción / Botón */}
                       <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 sm:gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-crema/20 sm:border-t-0">
                         <div className="text-xs sm:text-sm font-medium text-crema/70">
-                          {evento.cant_entradas > 0 ? (
+                          {(evento.entradas_disponibles ?? evento.cant_entradas) > 0 ? (
                             <span>
                               Quedan{" "}
                               <strong className="text-crema">
-                                {evento.cant_entradas}
+                                {evento.entradas_disponibles ?? evento.cant_entradas}
                               </strong>
                             </span>
                           ) : (

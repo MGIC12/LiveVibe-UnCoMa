@@ -209,7 +209,8 @@ const EventoDetalle = () => {
     );
   } else {
     // Flujo normal para Fans o usuarios no logueados (que serán redirigidos)
-    const bloqueado = isReserving || cancelado || yaOcurrio;
+    const agotado = evento.entradas_disponibles === 0;
+    const bloqueado = isReserving || cancelado || yaOcurrio || agotado;
     acciones = (
       <button
         onClick={handleReserva}
@@ -224,9 +225,11 @@ const EventoDetalle = () => {
           ? "Evento cancelado"
           : yaOcurrio
             ? "Evento finalizado"
-            : isReserving
-              ? "Procesando..."
-              : "Reservar Entrada"}
+            : agotado
+              ? "Entradas agotadas"
+              : isReserving
+                ? "Procesando..."
+                : "Reservar Entrada"}
       </button>
     );
   }

@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
+const { notificarNuevoSeguidor } = require("../middleware/notificaciones");
 
 const router = express.Router();
 
@@ -108,10 +109,12 @@ router.put("/:usuario/seguimiento", verificarToken, requerirRol("fan"), async (r
     }
 
     if (sigue === true) {
-      await pool.query(
+      const r = await pool.query(
         "INSERT INTO sigue (nombre_fan, nombre_artista) VALUES ($1, $2) ON CONFLICT DO NOTHING",
         [fan, artista],
       );
+      // Solo se avisa si es un seguimiento nuevo (no si ya lo seguía)
+      if (r.rowCount === 1) await notificarNuevoSeguidor(artista, fan);
     } else if (sigue === false) {
       await pool.query("DELETE FROM sigue WHERE nombre_fan = $1 AND nombre_artista = $2", [fan, artista]);
     }

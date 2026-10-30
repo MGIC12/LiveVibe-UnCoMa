@@ -13,6 +13,7 @@ import MisReservas from "./pages/MisReservas";
 import NotFound from "./pages/NotFound";
 import PerfilUsuario from "./pages/PerfilUsuario";
 import MisEventos from "./pages/MisEventos";
+import Notificaciones from "./pages/Notificaciones";
 
 
 function App() {
@@ -80,6 +81,15 @@ function App() {
           element={
             <RutaProtegida>
               <MisReservas />
+            </RutaProtegida>
+          }
+        />
+
+        <Route
+          path="/notificaciones"
+          element={
+            <RutaProtegida>
+              <Notificaciones />
             </RutaProtegida>
           }
         />

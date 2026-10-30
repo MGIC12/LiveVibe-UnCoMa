@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
 
+
 const FILTROS = [
   { id: "todos", etiqueta: "Todos", coincide: () => true },
   {
@@ -115,7 +116,7 @@ export default function MisEventos() {
               const fecha = new Date(`${e.fecha}T00:00:00`);
               const situacion = SITUACIONES[e.situacion];
               const modificable = e.situacion === "proximo" || e.situacion === "hoy";
-              const reservadas = (e.cant_entradas ?? 0) - (e.entradas_disponibles ?? 0);
+              const reservadas = e.reservas ?? 0;
 
               return (
                 <li
@@ -161,6 +162,9 @@ export default function MisEventos() {
                       <p className="text-crema/70">
                         Reservadas: <strong className="text-crema">{reservadas}</strong> / {e.cant_entradas}
                       </p>
+                    )}
+                    {e.entradas_disponibles === 0 && e.situacion !== "cancelado" && (
+                      <p className="text-mandarina font-bold">Agotado</p>
                     )}
                   </div>
 

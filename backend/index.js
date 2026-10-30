@@ -35,6 +35,8 @@ app.use("/api/artistas", artistasRoutes);
 
 app.use("/api/reservas", reservasRoutes);
 
+app.use("/api/notificaciones", require("./routes/notificaciones"));
+
 // Crear las tablas antes de empezar a escuchar
 initDb()
   .then(() =>

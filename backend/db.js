@@ -129,6 +129,23 @@ CREATE TABLE IF NOT EXISTS reserva (
     fecha_reserva TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(id_evento, nombre_usuario)
 );
+
+CREATE TABLE IF NOT EXISTS notificacion (
+  id_notificacion     SERIAL      PRIMARY KEY,
+  nombre_destinatario VARCHAR(30) NOT NULL
+                      REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  tipo                VARCHAR(30) NOT NULL
+                      CHECK (tipo IN ('nuevo_seguidor', 'nueva_reserva', 'entradas_agotadas',
+                                      'evento_nuevo', 'evento_modificado', 'evento_cancelado')),
+  mensaje             TEXT        NOT NULL,
+  id_evento           INT REFERENCES evento(id_evento) ON DELETE CASCADE,
+  nombre_origen       VARCHAR(30) REFERENCES usuario(nombre_usuario) ON DELETE SET NULL,
+  leida               BOOLEAN     NOT NULL DEFAULT FALSE,
+  fecha               TIMESTAMP   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notificacion_destinatario
+  ON notificacion (nombre_destinatario, leida, fecha DESC);
 `;
 
 async function initDb() {

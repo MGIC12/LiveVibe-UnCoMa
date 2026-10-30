@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "./Avatar";
 import { useState, useEffect } from "react";
+import CampanaNotificaciones from "../components/CampanaNotificaciones";
 
 const Navbar = () => {
   const { usuario, logout } = useAuth();
@@ -146,12 +147,15 @@ const Navbar = () => {
                 >
                   Mi Perfil
                 </Link>
+
                 <div className="flex items-center gap-3">
                   <Avatar
                     usuario={usuario}
                     clases="w-8 h-8 text-xs"
                     fondo="bg-tinta border-2 border-fucsia"
                   />
+
+                  <CampanaNotificaciones />
 
                   <button
                     onClick={handleLogout}
@@ -243,6 +247,8 @@ const Navbar = () => {
                   Mis Entradas
                 </Link>
               )}
+
+              <CampanaNotificaciones etiqueta onClick={() => setMenuAbierto(false)} />
 
               <Link
                 to="/perfil"
