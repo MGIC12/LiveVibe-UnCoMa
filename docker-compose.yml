@@ -1,5 +1,3 @@
-version: "3.9" # Usamos una versión reciente y estable del formato compose
-
 services:
   # -----------------------------------------------------------
   # BASE DE DATOS: PostgreSQL
@@ -27,9 +25,13 @@ services:
     restart: always
     ports:
       - "5000:5000"
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://root:password123@db:5432/livevibe_db
       JWT_SECRET: hola_live_es_nuestro_proyecto_para_el_tp_final_gracias
+      GEMINI_MODEL: gemini-3.5-flash-lite
+      GEMINI_FALLBACK_MODEL: gemini-3.5-flash
     volumes:
       - ./backend:/app
       - /app/node_modules
