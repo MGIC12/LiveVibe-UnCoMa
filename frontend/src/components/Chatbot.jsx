@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-// Ajustá estas dos líneas a tu app:
 const getToken = () => localStorage.getItem("token");
 const rutaEvento = (id) => `/eventos/${id}`;
 
-// Animaciones propias (no requieren tocar la config de Tailwind)
+// Animaciones propias
 const estilos = `
 @keyframes cb-pop { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes cb-msg { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
