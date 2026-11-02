@@ -1,8 +1,8 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "./Avatar";
+import CampanaNotificaciones from "./CampanaNotificaciones";
 import { useState, useEffect } from "react";
-import CampanaNotificaciones from "../components/CampanaNotificaciones";
 
 const Navbar = () => {
   const { usuario, logout } = useAuth();
@@ -39,6 +39,14 @@ const Navbar = () => {
     }
   };
 
+  // Tu perfil público: de ahí se llega a "Editar mi perfil"
+  const rutaPerfil = usuario
+    ? `${usuario.rol === "artista" ? "/artista" : "/usuario"}/${encodeURIComponent(
+        usuario.nombre_usuario,
+      )}`
+    : "/login";
+  const puedePublicar = usuario?.rol === "fan" || usuario?.rol === "artista";
+
   return (
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
@@ -58,7 +66,7 @@ const Navbar = () => {
           </Link>
 
           {/* Barra de Búsqueda (Escritorio) */}
-          <div className="flex-1 mx-4 hidden md:flex justify-center">
+          <div className="flex-1 mx-4 hidden lg:flex justify-center">
             <div className="relative w-full max-w-md">
               <input
                 type="text"
@@ -72,7 +80,7 @@ const Navbar = () => {
           </div>
 
           {/* Botón Menú Móvil */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center lg:hidden">
             <button
               onClick={() => setMenuAbierto(!menuAbierto)}
               aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
@@ -104,32 +112,32 @@ const Navbar = () => {
           </div>
 
           {/* Enlaces de Navegación (Escritorio) */}
-          <div className="hidden md:flex items-center space-x-6 text-cielo font-bold text-sm">
-            <Link
-              to="/"
-              className="hover:text-crema hover:scale-105 transition"
-            >
+          <div className="hidden lg:flex items-center space-x-6 text-cielo font-bold text-sm">
+            <Link to="/" className="hover:text-crema hover:scale-105 transition text-fucsia">
               Inicio
+            </Link>
+
+            <Link to="/comunidad" className="hover:text-crema hover:scale-105 transition">
+              Comunidad
             </Link>
 
             {usuario ? (
               <>
                 {usuario.rol === "artista" && (
-                  <Link
-                    to="/mis-eventos"
-                    className="hover:text-crema hover:scale-105 transition text-fucsia"
-                  >
-                    Mis eventos
-                  </Link>
-                )}
-
-                {usuario.rol === "artista" && (
-                  <Link
-                    to="/eventos/nuevo"
-                    className="hover:text-crema hover:scale-105 transition"
-                  >
-                    Crear evento
-                  </Link>
+                  <>
+                    <Link
+                      to="/mis-eventos"
+                      className="hover:text-crema hover:scale-105 transition text-fucsia"
+                    >
+                      Mis eventos
+                    </Link>
+                    <Link
+                      to="/eventos/nuevo"
+                      className="hover:text-crema hover:scale-105 transition"
+                    >
+                      Crear evento
+                    </Link>
+                  </>
                 )}
 
                 {usuario.rol === "fan" && (
@@ -137,25 +145,48 @@ const Navbar = () => {
                     to="/mis-reservas"
                     className="hover:text-crema hover:scale-105 transition text-fucsia"
                   >
-                    Mis Entradas
+                    Mis entradas
                   </Link>
                 )}
 
-                <Link
-                  to="/perfil"
-                  className="hover:text-crema hover:scale-105 transition text-purple-500"
-                >
-                  Mi Perfil
-                </Link>
-
                 <div className="flex items-center gap-3">
-                  <Avatar
-                    usuario={usuario}
-                    clases="w-8 h-8 text-xs"
-                    fondo="bg-tinta border-2 border-fucsia"
-                  />
+                  {puedePublicar && (
+                    <Link
+                      to="/publicar"
+                      aria-label="Crear publicación"
+                      title="Crear publicación"
+                      className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-sol hover:bg-chicle text-tinta transition hover:scale-105"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </Link>
+                  )}
 
                   <CampanaNotificaciones />
+
+                  {/* Tocar la foto lleva a tu perfil */}
+                  <Link
+                    to={rutaPerfil}
+                    aria-label="Ir a mi perfil"
+                    title="Mi perfil"
+                    className="rounded-full hover:ring-2 hover:ring-fucsia transition"
+                  >
+                    <Avatar
+                      usuario={usuario}
+                      clases="w-8 h-8 text-xs"
+                      fondo="bg-tinta border-2 border-fucsia"
+                    />
+                  </Link>
 
                   <button
                     onClick={handleLogout}
@@ -170,7 +201,7 @@ const Navbar = () => {
                 <>
                   <Link
                     to="/login"
-                    className="hover:text-crema hover:scale-105 transition"
+                    className="hover:text-crema hover:scale-105 transition text-fucsia"
                   >
                     Iniciar Sesión
                   </Link>
@@ -187,12 +218,12 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Menú Móvil Desplegable */}
+      {/* Menú Móvil Desplegable: si no entra en pantalla, tiene su propio scroll */}
       <div
-        className={`md:hidden absolute w-full left-0 top-16 transition-all duration-300 overflow-hidden ${
+        className={`lg:hidden absolute w-full left-0 top-16 transition-all duration-300 ${
           menuAbierto
-            ? "max-h-96 border-b border-crema/15 shadow-xl"
-            : "max-h-0"
+            ? "max-h-[85vh] overflow-y-auto border-b border-crema/15 shadow-xl"
+            : "max-h-0 overflow-hidden"
         }`}
       >
         <div className="bg-tinta/95 backdrop-blur-md px-4 pt-4 pb-6 space-y-4">
@@ -211,30 +242,48 @@ const Navbar = () => {
           <Link
             to="/"
             onClick={() => setMenuAbierto(false)}
-            className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+            className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-m"
           >
             Inicio
+          </Link>
+
+          <Link
+            to="/comunidad"
+            onClick={() => setMenuAbierto(false)}
+            className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+          >
+            Comunidad
           </Link>
 
           {usuario ? (
             <>
               {usuario.rol === "artista" && (
-                <Link
-                  to="/mis-eventos"
-                  onClick={() => setMenuAbierto(false)}
-                  className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
-                >
-                  Mis eventos
-                </Link>
+                <>
+                  <Link
+                    to="/mis-eventos"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    Mis eventos
+                  </Link>
+
+                  <Link
+                    to="/eventos/nuevo"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    Crear evento
+                  </Link>
+                </>
               )}
 
-              {usuario.rol === "artista" && (
+              {puedePublicar && (
                 <Link
-                  to="/eventos/nuevo"
+                  to="/publicar"
                   onClick={() => setMenuAbierto(false)}
-                  className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
-                >
-                  Crear evento
+                  className="block px-3 py-2 text-base font-bold text-sol hover:bg-crema/10 rounded-md"                
+                  >
+                  ➕ Crear publicación
                 </Link>
               )}
 
@@ -242,16 +291,16 @@ const Navbar = () => {
                 <Link
                   to="/mis-reservas"
                   onClick={() => setMenuAbierto(false)}
-                  className="block px-3 py-2 text-base font-bold text-fucsia hover:bg-crema/10 rounded-md"
+                  className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
                 >
-                  Mis Entradas
+                  Mis entradas
                 </Link>
               )}
 
               <CampanaNotificaciones etiqueta onClick={() => setMenuAbierto(false)} />
 
               <Link
-                to="/perfil"
+                to={rutaPerfil}
                 onClick={() => setMenuAbierto(false)}
                 className="flex items-center gap-3 px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
               >
@@ -260,8 +309,9 @@ const Navbar = () => {
                   clases="w-8 h-8 text-xs"
                   fondo="bg-tinta border-2 border-fucsia"
                 />
-                Mi Perfil
+                {usuario.nombre_usuario}
               </Link>
+
               <button
                 onClick={handleLogout}
                 className="w-full text-left block px-3 py-2 text-base font-bold text-fucsia hover:bg-crema/10 rounded-md"

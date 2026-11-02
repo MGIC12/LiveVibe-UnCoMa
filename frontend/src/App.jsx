@@ -14,6 +14,8 @@ import NotFound from "./pages/NotFound";
 import PerfilUsuario from "./pages/PerfilUsuario";
 import MisEventos from "./pages/MisEventos";
 import Notificaciones from "./pages/Notificaciones";
+import Comunidad from "./pages/Comunidad";
+import Publicar from "./pages/Publicar";
 
 
 function App() {
@@ -93,6 +95,18 @@ function App() {
             </RutaProtegida>
           }
         />
+
+        <Route path="/comunidad" element={<Comunidad />} />
+        
+        <Route
+          path="/publicar"
+          element={
+            <RutaProtegida roles={["fan", "artista"]}>
+              <Publicar />
+            </RutaProtegida>
+          }
+        />
+
         {/* Ruta comodín */}
         <Route path="*" element={<NotFound />} />
       </Routes>

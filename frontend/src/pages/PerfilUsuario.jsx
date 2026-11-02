@@ -5,6 +5,8 @@ import Footer from "../components/Footer";
 import CabeceraPerfil from "../components/CabeceraPerfil";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
+import Publicaciones from "../components/Publicaciones";
+import BotonSeguirFan from "../components/BotonesSeguimiento";
 
 // Marco común: Navbar, contenido y Footer
 function Marco({ children }) {
@@ -91,18 +93,32 @@ export default function PerfilUsuario() {
       <CabeceraPerfil
         avatar={perfil}
         titulo={perfil.nombre_usuario}
-        subtitulo={`Miembro desde ${miembroDesde}`}
+        subtitulo={`Miembro desde ${miembroDesde} · ${perfil.seguidores} ${
+          perfil.seguidores === 1 ? "seguidor" : "seguidores"
+        } · ${perfil.siguiendo} siguiendo`}
         etiquetas={[{ texto: "Fan", destacada: true }]}
         banner="bg-cielo"
       >
-        {esMiPerfil && (
+        {esMiPerfil ? (
           <Link
             to="/perfil"
             className="inline-block px-6 py-2.5 rounded-full border border-cielo text-cielo hover:bg-cielo hover:text-tinta text-sm font-bold transition"
           >
             Editar mi perfil
           </Link>
-        )}
+        ) : usuario?.rol === "fan" ? (
+          <BotonSeguirFan
+            usuarioPerfil={perfil.nombre_usuario}
+            onCambio={(seguidores) => setPerfil((p) => ({ ...p, seguidores }))}
+          />
+        ) : !usuario ? (
+          <p className="text-sm text-crema/70">
+            <Link to="/login" className="text-cielo hover:text-crema font-bold">
+              Iniciá sesión
+            </Link>{" "}
+            como fan para seguir a este usuario.
+          </p>
+        ) : null}
       </CabeceraPerfil>
 
       <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
@@ -128,6 +144,7 @@ export default function PerfilUsuario() {
           )}
         </p>
       </section>
+            <Publicaciones key={perfil.nombre_usuario} perfil={perfil} esMiPerfil={esMiPerfil} />
     </Marco>
   );
 }

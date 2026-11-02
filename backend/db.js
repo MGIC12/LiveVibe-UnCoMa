@@ -74,6 +74,18 @@ CREATE TABLE IF NOT EXISTS sigue (
   PRIMARY KEY (nombre_fan, nombre_artista)
 );
 
+CREATE TABLE IF NOT EXISTS sigue_fan (
+  nombre_seguidor VARCHAR(30) NOT NULL
+                  REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
+  nombre_seguido  VARCHAR(30) NOT NULL
+                  REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
+  fecha           TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (nombre_seguidor, nombre_seguido),
+  CHECK (nombre_seguidor <> nombre_seguido)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sigue_fan_seguido ON sigue_fan (nombre_seguido);
+
 CREATE TABLE IF NOT EXISTS suscripcion_novedades (
   nombre_fan     VARCHAR(30) NOT NULL
                  REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
@@ -145,7 +157,46 @@ CREATE TABLE IF NOT EXISTS notificacion (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notificacion_destinatario
-  ON notificacion (nombre_destinatario, leida, fecha DESC);
+  ON notificacion (nombre_destinatario, leida, fecha DESC
+  );
+
+CREATE TABLE IF NOT EXISTS publicacion (
+  id_publicacion    SERIAL      PRIMARY KEY,
+  nombre_autor      VARCHAR(30) NOT NULL
+                    REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  contenido         TEXT        NOT NULL CHECK (char_length(contenido) BETWEEN 1 AND 500),
+  fecha_publicacion TIMESTAMP   NOT NULL DEFAULT NOW(),
+  id_imagen         INT         REFERENCES imagen(id_imagen) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_publicacion_autor
+  ON publicacion (nombre_autor, fecha_publicacion DESC);
+CREATE INDEX IF NOT EXISTS idx_publicacion_fecha
+  ON publicacion (fecha_publicacion DESC);
+
+CREATE TABLE IF NOT EXISTS comentario (
+  id_comentario       SERIAL      PRIMARY KEY,
+  id_publicacion      INT         NOT NULL
+                      REFERENCES publicacion(id_publicacion) ON DELETE CASCADE,
+  nombre_autor        VARCHAR(30) NOT NULL
+                      REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  id_comentario_padre INT
+                      REFERENCES comentario(id_comentario) ON DELETE CASCADE,
+  contenido           TEXT        NOT NULL CHECK (char_length(contenido) BETWEEN 1 AND 300),
+  fecha_hora          TIMESTAMP   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comentario_publicacion
+  ON comentario (id_publicacion, fecha_hora);
+
+CREATE TABLE IF NOT EXISTS me_gusta (
+  id_publicacion INT         NOT NULL
+                 REFERENCES publicacion(id_publicacion) ON DELETE CASCADE,
+  nombre_usuario VARCHAR(30) NOT NULL
+                 REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (id_publicacion, nombre_usuario)
+);
 `;
 
 async function initDb() {

@@ -37,6 +37,8 @@ app.use("/api/reservas", reservasRoutes);
 
 app.use("/api/notificaciones", require("./routes/notificaciones"));
 
+app.use("/api/publicaciones", require("./routes/publicaciones"));
+
 // Crear las tablas antes de empezar a escuchar
 initDb()
   .then(() =>

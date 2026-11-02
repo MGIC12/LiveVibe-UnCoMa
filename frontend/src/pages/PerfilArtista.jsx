@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
 import BotonesSeguimiento from "../components/BotonesSeguimiento";
+import Publicaciones from "../components/Publicaciones";
 
 // Marco común: Navbar, contenido y Footer
 function Marco({ children }) {
@@ -196,6 +197,7 @@ export default function PerfilArtista() {
           </ul>
         )}
       </section>
+            <Publicaciones key={artista.nombre_usuario} perfil={artista} esMiPerfil={esMiPerfil} />
     </Marco>
   );
 }
