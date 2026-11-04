@@ -2,6 +2,7 @@ const express = require("express");
 const pool = require("../db");
 const { verificarToken, requerirRol, tokenOpcional } = require("../middleware/auth");
 const { subirFoto, borrarArchivo } = require("../middleware/subida");
+const { notificarNuevaPublicacion } = require("../middleware/notificaciones");
 
 const router = express.Router();
 
@@ -38,9 +39,11 @@ const idValido = (id) => /^\d+$/.test(id);
 
 // GET /api/publicaciones/feed - Las publicaciones más nuevas de toda la comunidad (públicas)
 // ?filtro=siguiendo -> solo las de quienes sigue el usuario con sesión
+// ?rol=artista | ?rol=fan -> solo las de ese tipo de cuenta
 router.get("/feed", tokenOpcional, async (req, res) => {
   const usuario = req.user?.nombre_usuario ?? null;
   const soloSeguidos = req.query.filtro === "siguiendo";
+  const rol = ["artista", "fan"].includes(req.query.rol) ? req.query.rol : null;
 
   if (soloSeguidos && !usuario) {
     return res
@@ -51,14 +54,14 @@ router.get("/feed", tokenOpcional, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `${SELECT_PUBLICACION}
-        WHERE $2::boolean = false
-           OR p.nombre_autor IN (
-                SELECT nombre_seguido FROM sigue_fan WHERE nombre_seguidor = $1::varchar
-                UNION
-                SELECT nombre_artista FROM sigue WHERE nombre_fan = $1::varchar)
+        WHERE ($2::boolean = false
+               OR p.nombre_autor IN (
+                    SELECT nombre_seguido FROM seguimiento
+                     WHERE nombre_seguidor = $1::varchar AND tipo = 'sigue'))
+          AND ($3::varchar IS NULL OR u.rol = $3::varchar)
         ORDER BY p.fecha_publicacion DESC, p.id_publicacion DESC
         LIMIT 30`,
-      [usuario, soloSeguidos],
+      [usuario, soloSeguidos, rol],
     );
     res.json(rows);
   } catch (error) {
@@ -130,6 +133,8 @@ router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), subirFoto, 
     );
 
     await client.query("COMMIT");
+
+    await notificarNuevaPublicacion(autor, contenido);
 
     // Se devuelve con el mismo formato que la lista, así la pantalla la muestra directo
     const { rows: nueva } = await pool.query(

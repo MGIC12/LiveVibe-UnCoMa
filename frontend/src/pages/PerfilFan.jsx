@@ -3,10 +3,10 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CabeceraPerfil from "../components/CabeceraPerfil";
-import { useAuth } from "../../context/AuthContext";
-import { API } from "../utils/api";
 import Publicaciones from "../components/Publicaciones";
-import BotonSeguirFan from "../components/BotonesSeguimiento";
+import { useAuth } from "../../context/AuthContext";
+import BotonSeguirFan from "../components/BotonSeguirFan";
+import { API } from "../utils/api";
 
 // Marco común: Navbar, contenido y Footer
 function Marco({ children }) {
@@ -21,7 +21,7 @@ function Marco({ children }) {
   );
 }
 
-export default function PerfilUsuario() {
+export default function PerfilFan() {
   const { usuario: nombreUsuario } = useParams();
   const { usuario } = useAuth();
   const [perfil, setPerfil] = useState(null);
@@ -87,15 +87,17 @@ export default function PerfilUsuario() {
     month: "long",
     year: "numeric",
   });
+  const seguidores = perfil.seguidores ?? 0;
+  const siguiendo = perfil.siguiendo ?? 0;
 
   return (
     <Marco>
       <CabeceraPerfil
         avatar={perfil}
         titulo={perfil.nombre_usuario}
-        subtitulo={`Miembro desde ${miembroDesde} · ${perfil.seguidores} ${
-          perfil.seguidores === 1 ? "seguidor" : "seguidores"
-        } · ${perfil.siguiendo} siguiendo`}
+        subtitulo={`Miembro desde ${miembroDesde} · ${seguidores} ${
+          seguidores === 1 ? "seguidor" : "seguidores"
+        } · ${siguiendo} siguiendo`}
         etiquetas={[{ texto: "Fan", destacada: true }]}
         banner="bg-cielo"
       >
@@ -109,7 +111,7 @@ export default function PerfilUsuario() {
         ) : usuario?.rol === "fan" ? (
           <BotonSeguirFan
             usuarioPerfil={perfil.nombre_usuario}
-            onCambio={(seguidores) => setPerfil((p) => ({ ...p, seguidores }))}
+            onCambio={(nuevos) => setPerfil((p) => ({ ...p, seguidores: nuevos }))}
           />
         ) : !usuario ? (
           <p className="text-sm text-crema/70">
@@ -144,7 +146,8 @@ export default function PerfilUsuario() {
           )}
         </p>
       </section>
-            <Publicaciones key={perfil.nombre_usuario} perfil={perfil} esMiPerfil={esMiPerfil} />
+
+      <Publicaciones key={perfil.nombre_usuario} perfil={perfil} esMiPerfil={esMiPerfil} />
     </Marco>
   );
 }

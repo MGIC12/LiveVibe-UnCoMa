@@ -19,16 +19,15 @@ async function notificarUsuario(
   }
 }
 
-// Un fan empezó a seguir al artista
-const notificarNuevoSeguidor = (artista, fan) =>
-  notificarUsuario(artista, "nuevo_seguidor", `${fan} empezó a seguirte`, {
-    origen: fan,
+// Alguien empezó a seguir a este usuario
+const notificarNuevoSeguidor = (destinatario, seguidor) =>
+  notificarUsuario(destinatario, "nuevo_seguidor", `${seguidor} empezó a seguirte`, {
+    origen: seguidor,
   });
 
 // El artista creó, modificó o canceló un evento.
-// Reciben el aviso los fans con las novedades del artista activadas y,
-// si incluirReservas es true, también quienes tienen una reserva de ese evento.
-// Si alguien cumple las dos condiciones, recibe un solo aviso (por el UNION).
+// Reciben el aviso quienes activaron sus novedades y, si incluirReservas es true,
+// también quienes tienen una reserva de ese evento (sin repetir, por el UNION).
 async function notificarSuscriptores(
   artista,
   tipo,
@@ -47,9 +46,9 @@ async function notificarSuscriptores(
       `INSERT INTO notificacion (nombre_destinatario, tipo, mensaje, id_evento, nombre_origen)
        SELECT d.nombre, $2::varchar, $3::text, $4::int, $1::varchar
          FROM (
-           SELECT nombre_fan AS nombre
-             FROM suscripcion_novedades
-            WHERE nombre_artista = $1::varchar
+           SELECT nombre_seguidor AS nombre
+             FROM seguimiento
+            WHERE nombre_seguido = $1::varchar AND tipo = 'novedades'
            UNION
            SELECT nombre_usuario
              FROM reserva
@@ -62,4 +61,38 @@ async function notificarSuscriptores(
   }
 }
 
-module.exports = { notificarUsuario, notificarNuevoSeguidor, notificarSuscriptores };
+// Alguien (fan o artista) publicó: se avisa a quienes activaron sus novedades
+async function notificarNuevaPublicacion(autor, contenido) {
+  try {
+    // Los artistas se muestran con su nombre artístico; los fans, con su usuario
+    const { rows } = await pool.query(
+      `SELECT COALESCE(a.nombre_artistico, u.nombre_usuario) AS nombre
+         FROM usuario u
+         LEFT JOIN artista a ON a.nombre_usuario = u.nombre_usuario
+        WHERE u.nombre_usuario = $1`,
+      [autor],
+    );
+    const nombre = rows[0]?.nombre ?? autor;
+
+    // Se muestra un resumen de la publicación
+    const letras = [...contenido];
+    const resumen = letras.slice(0, 80).join("") + (letras.length > 80 ? "…" : "");
+
+    await pool.query(
+      `INSERT INTO notificacion (nombre_destinatario, tipo, mensaje, nombre_origen)
+       SELECT nombre_seguidor, 'nueva_publicacion', $2::text, $1::varchar
+         FROM seguimiento
+        WHERE nombre_seguido = $1::varchar AND tipo = 'novedades'`,
+      [autor, `${nombre} publicó: "${resumen}"`],
+    );
+  } catch (error) {
+    console.error("No se pudieron crear las notificaciones de la publicación:", error);
+  }
+}
+
+module.exports = {
+  notificarUsuario,
+  notificarNuevoSeguidor,
+  notificarSuscriptores,
+  notificarNuevaPublicacion,
+};

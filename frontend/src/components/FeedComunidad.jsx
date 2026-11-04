@@ -5,9 +5,16 @@ import TarjetaPublicacion from "./TarjetaPublicacion";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 
-export default function FeedComunidad() {
+// encabezado: título de la sección (si no se indica, usa el de la página Comunidad)
+// max: cuántas publicaciones mostrar (si no se indica, todas las que trae el servidor)
+// soloArtistas: muestra únicamente publicaciones de artistas
+export default function FeedComunidad({ encabezado, max, soloArtistas = false }) {
   const { usuario, token } = useAuth();
-  const puedePublicar = usuario?.rol === "fan" || usuario?.rol === "artista";
+  const puedeInteractuar = usuario?.rol === "fan" || usuario?.rol === "artista";
+
+  // En un feed solo de artistas, la publicación de un fan no se vería:
+  // por eso ahí el formulario es solo para artistas
+  const puedePublicar = soloArtistas ? usuario?.rol === "artista" : puedeInteractuar;
 
   const [filtro, setFiltro] = useState("todas"); // todas | siguiendo
   const [lista, setLista] = useState([]);
@@ -16,8 +23,13 @@ export default function FeedComunidad() {
 
   useEffect(() => {
     let activo = true;
-    const consulta = filtro === "siguiendo" ? "?filtro=siguiendo" : "";
-    fetch(`${API}/api/publicaciones/feed${consulta}`, {
+
+    const params = new URLSearchParams();
+    if (filtro === "siguiendo") params.set("filtro", "siguiendo");
+    if (soloArtistas) params.set("rol", "artista");
+    const texto = params.toString();
+
+    fetch(`${API}/api/publicaciones/feed${texto ? `?${texto}` : ""}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then(async (res) => {
@@ -37,7 +49,7 @@ export default function FeedComunidad() {
     return () => {
       activo = false;
     };
-  }, [filtro, token]);
+  }, [filtro, token, soloArtistas]);
 
   function cambiarFiltro(nuevo) {
     if (nuevo === filtro) return;
@@ -58,11 +70,15 @@ export default function FeedComunidad() {
     </button>
   );
 
+  const visibles = max ? lista.slice(0, max) : lista;
+
   return (
     <section className="space-y-5">
-      <h1 className="text-3xl sm:text-4xl font-black text-crema">
-        <span className="text-fucsia">Comunidad</span>
-      </h1>
+      {encabezado ?? (
+        <h1 className="text-3xl sm:text-4xl font-black text-crema">
+          <span className="text-fucsia">Comunidad</span>
+        </h1>
+      )}
 
       <div className="flex gap-2">
         {pestana("todas", "Todas")}
@@ -71,6 +87,16 @@ export default function FeedComunidad() {
 
       {puedePublicar && filtro === "todas" && (
         <FormularioPublicacion onPublicada={(nueva) => setLista((actual) => [nueva, ...actual])} />
+      )}
+
+      {/* Los fans no publican acá: se los lleva a la comunidad */}
+      {soloArtistas && usuario?.rol === "fan" && (
+        <p className="text-sm text-crema/60">
+          ¿Querés compartir algo?{" "}
+          <Link to="/comunidad" className="text-cielo hover:text-crema font-bold">
+            Publicá en la comunidad →
+          </Link>
+        </p>
       )}
 
       {cargando ? (
@@ -83,26 +109,35 @@ export default function FeedComunidad() {
         <div className="bg-crema/5 border border-crema/20 rounded-2xl p-8 text-center text-crema/60 space-y-2">
           {filtro === "siguiendo" ? (
             <>
-              <p>Todavía no hay publicaciones de quienes seguís.</p>
+              <p>
+                {soloArtistas
+                  ? "Todavía no hay publicaciones de los artistas que seguís."
+                  : "Todavía no hay publicaciones de quienes seguís."}
+              </p>
               <p className="text-sm">
-                Seguí a otros fans desde su perfil, o a tus artistas favoritos, y sus
-                publicaciones van a aparecer acá.
+                {soloArtistas
+                  ? "Seguí a tus artistas favoritos desde su perfil y sus publicaciones van a aparecer acá."
+                  : "Seguí a otros fans desde su perfil, o a tus artistas favoritos, y sus publicaciones van a aparecer acá."}
               </p>
             </>
           ) : (
             <p>
-              Todavía no hay publicaciones.{" "}
-              {puedePublicar ? "¡Sé el primero!" : (
+              {soloArtistas
+                ? "Todavía no hay publicaciones de artistas."
+                : "Todavía no hay publicaciones."}{" "}
+              {puedePublicar ? (
+                "¡Sé el primero!"
+              ) : !usuario ? (
                 <Link to="/login" className="text-cielo hover:text-crema font-bold">
                   Iniciá sesión para publicar.
                 </Link>
-              )}
+              ) : null}
             </p>
           )}
         </div>
       ) : (
         <div className="space-y-4">
-          {lista.map((p) => (
+          {visibles.map((p) => (
             <TarjetaPublicacion
               key={`${p.id_publicacion}-${usuario?.nombre_usuario ?? "visitante"}`}
               publicacion={p}
@@ -110,6 +145,14 @@ export default function FeedComunidad() {
               onEliminada={(id) => setLista((a) => a.filter((x) => x.id_publicacion !== id))}
             />
           ))}
+
+          {max && lista.length > max && (
+            <div className="text-center">
+              <Link to="/comunidad" className="text-cielo hover:text-crema font-bold transition">
+                Ver toda la comunidad →
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </section>

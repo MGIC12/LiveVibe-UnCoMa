@@ -6,7 +6,7 @@ import CabeceraPerfil from "../components/CabeceraPerfil";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
-import BotonesSeguimiento from "../components/BotonesSeguimiento";
+import BotonSeguirArtista from "../components/BotonSeguirArtista";
 import Publicaciones from "../components/Publicaciones";
 
 // Marco común: Navbar, contenido y Footer
@@ -83,7 +83,7 @@ export default function PerfilArtista() {
   const shows = artista.proximos_eventos;
   // Los botones de seguir los ve un fan o quien no inició sesión;
   // el dueño del perfil ve en su lugar el acceso para editarlo
-  const mostrarAcciones = esMiPerfil || !usuario || usuario.rol === "fan";
+  const mostrarAcciones = esMiPerfil || !usuario || usuario.rol === "fan" || usuario.rol === "artista";
 
   return (
     <Marco>
@@ -109,7 +109,7 @@ export default function PerfilArtista() {
               Editar mi perfil
             </Link>
           ) : (
-            <BotonesSeguimiento artista={artista.nombre_usuario} />
+            <BotonSeguirArtista artista={artista.nombre_usuario} />
           ))}
       </CabeceraPerfil>
 

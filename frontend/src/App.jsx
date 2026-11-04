@@ -11,7 +11,7 @@ import EditarEvento from "./pages/EditarEvento";
 import PerfilArtista from "./pages/PerfilArtista";
 import MisReservas from "./pages/MisReservas";
 import NotFound from "./pages/NotFound";
-import PerfilUsuario from "./pages/PerfilUsuario";
+import PerfilFan from "./pages/PerfilFan";
 import MisEventos from "./pages/MisEventos";
 import Notificaciones from "./pages/Notificaciones";
 import Comunidad from "./pages/Comunidad";
@@ -44,7 +44,7 @@ function App() {
 
         <Route path="/artista/:usuario" element={<PerfilArtista />} />
 
-        <Route path="/usuario/:usuario" element={<PerfilUsuario />} />
+        <Route path="/usuario/:usuario" element={<PerfilFan />} />
 
         {/* Ruta con parámetro dinámico (el ID del evento) */}
         <Route path="/evento/:id" element={<EventoDetalle />} />

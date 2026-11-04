@@ -8,16 +8,16 @@ import { API } from "../utils/api";
 const TIPOS = {
   nuevo_seguidor: { icono: "👤", titulo: "Nuevo seguidor" },
   nueva_reserva: { icono: "🎟️", titulo: "Nueva reserva" },
+  nueva_publicacion: { icono: "📝", titulo: "Nueva publicación" },
   entradas_agotadas: { icono: "🔥", titulo: "Entradas agotadas" },
   evento_nuevo: { icono: "🎤", titulo: "Evento nuevo" },
   evento_modificado: { icono: "✏️", titulo: "Evento modificado" },
   evento_cancelado: { icono: "⚠️", titulo: "Evento cancelado" },
 };
 
-// A dónde lleva cada aviso al tocarlo
 function destino(n) {
   if (n.id_evento) return `/evento/${n.id_evento}`;
-  if (n.tipo === "nuevo_seguidor" && n.nombre_origen) {
+  if ((n.tipo === "nuevo_seguidor" || n.tipo === "nueva_publicacion") && n.nombre_origen) {
     return `/usuario/${encodeURIComponent(n.nombre_origen)}`;
   }
   return null;
