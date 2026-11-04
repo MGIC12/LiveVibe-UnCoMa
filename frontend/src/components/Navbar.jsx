@@ -70,7 +70,7 @@ const Navbar = () => {
             <div className="relative w-full max-w-md">
               <input
                 type="text"
-                placeholder="Buscar artistas, eventos, géneros..."
+                placeholder="Buscar artistas, eventos, géneros, usuarios..."
                 value={terminoBusqueda}
                 onChange={(e) => setTerminoBusqueda(e.target.value)}
                 onKeyDown={handleBuscar}
@@ -242,7 +242,7 @@ const Navbar = () => {
           <Link
             to="/"
             onClick={() => setMenuAbierto(false)}
-            className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-m"
+            className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
           >
             Inicio
           </Link>

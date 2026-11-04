@@ -19,11 +19,22 @@ async function notificarUsuario(
   }
 }
 
-// Alguien empezó a seguir a este usuario
-const notificarNuevoSeguidor = (destinatario, seguidor) =>
-  notificarUsuario(destinatario, "nuevo_seguidor", `${seguidor} empezó a seguirte`, {
+// Alguien empezó a seguir a este usuario (los artistas se muestran con su nombre artístico)
+async function notificarNuevoSeguidor(destinatario, seguidor) {
+  let nombre = seguidor;
+  try {
+    const { rows } = await pool.query(
+      "SELECT nombre_artistico FROM artista WHERE nombre_usuario = $1",
+      [seguidor],
+    );
+    nombre = rows[0]?.nombre_artistico ?? seguidor;
+  } catch (error) {
+    console.error("No se pudo buscar el nombre del seguidor:", error);
+  }
+  return notificarUsuario(destinatario, "nuevo_seguidor", `${nombre} empezó a seguirte`, {
     origen: seguidor,
   });
+}
 
 // El artista creó, modificó o canceló un evento.
 // Reciben el aviso quienes activaron sus novedades y, si incluirReservas es true,

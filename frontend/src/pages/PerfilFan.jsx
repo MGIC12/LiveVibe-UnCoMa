@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import CabeceraPerfil from "../components/CabeceraPerfil";
 import Publicaciones from "../components/Publicaciones";
 import { useAuth } from "../../context/AuthContext";
-import BotonSeguirFan from "../components/BotonSeguirFan";
+import BotonesSeguimiento from "../components/BotonesSeguimiento";
 import { API } from "../utils/api";
 
 // Marco común: Navbar, contenido y Footer
@@ -108,19 +108,13 @@ export default function PerfilFan() {
           >
             Editar mi perfil
           </Link>
-        ) : usuario?.rol === "fan" ? (
-          <BotonSeguirFan
+        ) : !usuario || usuario.rol === "fan" || usuario.rol === "artista" ? (
+          <BotonesSeguimiento
             usuarioPerfil={perfil.nombre_usuario}
             onCambio={(nuevos) => setPerfil((p) => ({ ...p, seguidores: nuevos }))}
           />
-        ) : !usuario ? (
-          <p className="text-sm text-crema/70">
-            <Link to="/login" className="text-cielo hover:text-crema font-bold">
-              Iniciá sesión
-            </Link>{" "}
-            como fan para seguir a este usuario.
-          </p>
         ) : null}
+        
       </CabeceraPerfil>
 
       <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
