@@ -39,7 +39,8 @@ router.get("/:usuario", async (req, res) => {
         WHERE u.nombre_usuario = $1`,
       [usuario],
     );
-    if (!rows[0]) return res.status(404).json({ error: "Artista no encontrado" });
+    if (!rows[0])
+      return res.status(404).json({ error: "Artista no encontrado" });
 
     const artista = rows[0];
 

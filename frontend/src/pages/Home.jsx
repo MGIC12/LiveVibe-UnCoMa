@@ -5,6 +5,7 @@ import FeedInicio from "../components/FeedInicio";
 import EventList from "../components/EventList";
 import Chatbot from "../components/Chatbot";
 import Footer from "../components/Footer";
+import Recomendador from "../components/Recomendador";
 
 const Home = () => {
   return (
@@ -15,6 +16,7 @@ const Home = () => {
       {/* Contenedor principal centrado */}
       <div className="container mx-auto p-4">
         <Carrusel />
+        <Recomendador />
 
         <main className="flex flex-col md:flex-row gap-8 mt-8">
           <FeedInicio />

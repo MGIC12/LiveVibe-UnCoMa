@@ -5,6 +5,7 @@ const eventosRoutes = require("./routes/eventos");
 const buscarRoutes = require("./routes/buscar");
 const artistasRoutes = require("./routes/artistas");
 const reservasRoutes = require("./routes/reservas");
+const iaRoutes = require("./routes/ia");
 const app = express();
 const port = 5000;
 const path = require("path");
@@ -39,6 +40,7 @@ app.use("/api/notificaciones", require("./routes/notificaciones"));
 
 app.use("/api/publicaciones", require("./routes/publicaciones"));
 
+app.use("/api/ia", iaRoutes);
 // Crear las tablas antes de empezar a escuchar
 initDb()
   .then(() =>
@@ -50,4 +52,3 @@ initDb()
     console.error("No se pudo conectar a la base de datos", err);
     process.exit(1);
   });
-
