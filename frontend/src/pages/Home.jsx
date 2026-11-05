@@ -1,7 +1,7 @@
 import Navbar from "../components/Navbar";
 import HeroEvent from "../components/HeroEvent";
 import Carrusel from "../components/Carrusel"; // <-- Importar el carrusel
-import CommunityFeed from "../components/CommunityFeed";
+import FeedInicio from "../components/FeedInicio";
 import EventList from "../components/EventList";
 import Chatbot from "../components/Chatbot";
 import Footer from "../components/Footer";
@@ -19,7 +19,7 @@ const Home = () => {
         <Recomendador />
 
         <main className="flex flex-col md:flex-row gap-8 mt-8">
-          <CommunityFeed />
+          <FeedInicio />
           <EventList />
         </main>
       </div>

@@ -3,18 +3,23 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 
-export default function BotonesSeguimiento({ artista }) {
+// En el perfil de un artista: <BotonesSeguimiento artista="usuario_del_artista" />
+// En el perfil de un fan:    <BotonesSeguimiento usuarioPerfil="usuario_del_fan" onCambio={...} />
+export default function BotonesSeguimiento({ artista, usuarioPerfil, onCambio }) {
   const { usuario, token } = useAuth();
-  const esFan = usuario?.rol === "fan";
-  const ruta = `${API}/api/artistas/${encodeURIComponent(artista)}/seguimiento`;
+  const puedeSeguir = usuario?.rol === "fan" || usuario?.rol === "artista";
 
-  const [estado, setEstado] = useState(null); // { sigue, novedades }
+  const esDeArtista = artista !== undefined;
+  const destino = esDeArtista ? artista : usuarioPerfil;
+  const ruta = `${API}/api/usuarios/${encodeURIComponent(destino ?? "")}/seguimiento`;
+
+  const [estado, setEstado] = useState(null); // { sigue, novedades, seguidores }
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  // Al entrar, se consulta qué viene haciendo este fan con este artista
+  // Al entrar, se consulta qué viene haciendo quien mira con este perfil
   useEffect(() => {
-    if (!esFan) return;
+    if (!puedeSeguir || !destino) return;
     let activo = true;
     fetch(ruta, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
@@ -30,7 +35,7 @@ export default function BotonesSeguimiento({ artista }) {
     return () => {
       activo = false;
     };
-  }, [ruta, token, esFan]);
+  }, [ruta, token, puedeSeguir, destino]);
 
   // Manda solo el cambio que se pidió, y se queda con el estado que devuelve el servidor
   async function cambiar(cambio) {
@@ -48,6 +53,7 @@ export default function BotonesSeguimiento({ artista }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "No se pudo guardar el cambio");
       setEstado(data);
+      onCambio?.(data.seguidores); // el contador del perfil se actualiza con el dato real
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,21 +61,22 @@ export default function BotonesSeguimiento({ artista }) {
     }
   }
 
+  if (!destino) return null;
+
   // Sin sesión: se invita a ingresar
   if (!usuario) {
     return (
       <p className="text-sm text-crema/70 text-center">
-        ¿Sos fan?{" "}
         <Link to="/login" className="text-cielo hover:text-crema font-bold">
           Iniciá sesión
         </Link>{" "}
-        para seguir a este artista.
+        para seguir {esDeArtista ? "a este artista" : "a este usuario"}.
       </p>
     );
   }
 
-  // Los artistas (y admins) no siguen artistas
-  if (!esFan) return null;
+  // Los admins no siguen
+  if (!puedeSeguir) return null;
 
   if (!estado) {
     return error ? (
@@ -112,7 +119,10 @@ export default function BotonesSeguimiento({ artista }) {
       </div>
 
       <p className="text-xs text-crema/50 text-center">
-        Podés recibir las novedades sin seguirlo, y seguirlo sin recibir avisos.
+        {esDeArtista
+          ? "Las novedades son sus eventos nuevos, cambios, cancelaciones y publicaciones."
+          : "Las novedades son sus publicaciones nuevas."}{" "}
+        Podés recibirlas sin seguirlo, y seguirlo sin recibir avisos.
       </p>
 
       {error && (

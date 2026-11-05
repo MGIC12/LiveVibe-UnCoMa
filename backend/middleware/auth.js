@@ -27,4 +27,20 @@ function requerirRol(...rolesPermitidos) {
   };
 }
 
-module.exports = { verificarToken, requerirRol };
+// Igual que verificarToken, pero si no hay sesión sigue adelante sin usuario.
+// Sirve para rutas públicas que muestran algo extra a quien inició sesión.
+function tokenOpcional(req, res, next) {
+  const header = req.headers.authorization || "";
+  const [tipo, token] = header.split(" ");
+
+  if (tipo === "Bearer" && token) {
+    try {
+      req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      // Token vencido o inválido: se trata como un visitante
+    }
+  }
+  next();
+}
+
+module.exports = { verificarToken, requerirRol, tokenOpcional};

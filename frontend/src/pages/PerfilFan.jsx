@@ -3,7 +3,9 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CabeceraPerfil from "../components/CabeceraPerfil";
+import Publicaciones from "../components/Publicaciones";
 import { useAuth } from "../../context/AuthContext";
+import BotonesSeguimiento from "../components/BotonesSeguimiento";
 import { API } from "../utils/api";
 
 // Marco común: Navbar, contenido y Footer
@@ -19,7 +21,7 @@ function Marco({ children }) {
   );
 }
 
-export default function PerfilUsuario() {
+export default function PerfilFan() {
   const { usuario: nombreUsuario } = useParams();
   const { usuario } = useAuth();
   const [perfil, setPerfil] = useState(null);
@@ -85,24 +87,34 @@ export default function PerfilUsuario() {
     month: "long",
     year: "numeric",
   });
+  const seguidores = perfil.seguidores ?? 0;
+  const siguiendo = perfil.siguiendo ?? 0;
 
   return (
     <Marco>
       <CabeceraPerfil
         avatar={perfil}
         titulo={perfil.nombre_usuario}
-        subtitulo={`Miembro desde ${miembroDesde}`}
+        subtitulo={`Miembro desde ${miembroDesde} · ${seguidores} ${
+          seguidores === 1 ? "seguidor" : "seguidores"
+        } · ${siguiendo} siguiendo`}
         etiquetas={[{ texto: "Fan", destacada: true }]}
         banner="bg-cielo"
       >
-        {esMiPerfil && (
+        {esMiPerfil ? (
           <Link
             to="/perfil"
             className="inline-block px-6 py-2.5 rounded-full border border-cielo text-cielo hover:bg-cielo hover:text-tinta text-sm font-bold transition"
           >
             Editar mi perfil
           </Link>
-        )}
+        ) : !usuario || usuario.rol === "fan" || usuario.rol === "artista" ? (
+          <BotonesSeguimiento
+            usuarioPerfil={perfil.nombre_usuario}
+            onCambio={(nuevos) => setPerfil((p) => ({ ...p, seguidores: nuevos }))}
+          />
+        ) : null}
+        
       </CabeceraPerfil>
 
       <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
@@ -128,6 +140,8 @@ export default function PerfilUsuario() {
           )}
         </p>
       </section>
+
+      <Publicaciones key={perfil.nombre_usuario} perfil={perfil} esMiPerfil={esMiPerfil} />
     </Marco>
   );
 }

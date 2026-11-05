@@ -65,30 +65,48 @@ CREATE TABLE IF NOT EXISTS fan (
   insignia         VARCHAR(60)
 );
 
-CREATE TABLE IF NOT EXISTS sigue (
-  nombre_fan     VARCHAR(30) NOT NULL
-                 REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
-  nombre_artista VARCHAR(30) NOT NULL
-                 REFERENCES artista(nombre_usuario) ON DELETE CASCADE,
-  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (nombre_fan, nombre_artista)
-);
-
-CREATE TABLE IF NOT EXISTS suscripcion_novedades (
-  nombre_fan     VARCHAR(30) NOT NULL
-                 REFERENCES fan(nombre_usuario) ON DELETE CASCADE,
-  nombre_artista VARCHAR(30) NOT NULL
-                 REFERENCES artista(nombre_usuario) ON DELETE CASCADE,
-  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (nombre_fan, nombre_artista)
-);
-
-CREATE INDEX IF NOT EXISTS idx_sigue_artista ON sigue (nombre_artista);
-
 CREATE TABLE IF NOT EXISTS admin (
   nombre_usuario VARCHAR(30) PRIMARY KEY
                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS seguimiento (
+  nombre_seguidor VARCHAR(30) NOT NULL
+                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  nombre_seguido  VARCHAR(30) NOT NULL
+                  REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  tipo            VARCHAR(10) NOT NULL CHECK (tipo IN ('sigue', 'novedades')),
+  fecha           TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (nombre_seguidor, nombre_seguido, tipo),
+  CHECK (nombre_seguidor <> nombre_seguido)
+);
+
+CREATE INDEX IF NOT EXISTS idx_seguimiento_seguido
+  ON seguimiento (nombre_seguido, tipo);
+
+DO $$
+BEGIN
+  IF to_regclass('public.sigue') IS NOT NULL THEN
+    INSERT INTO seguimiento (nombre_seguidor, nombre_seguido, tipo, fecha)
+      SELECT nombre_fan, nombre_artista, 'sigue', fecha FROM sigue
+      ON CONFLICT DO NOTHING;
+    DROP TABLE sigue;
+  END IF;
+
+  IF to_regclass('public.sigue_fan') IS NOT NULL THEN
+    INSERT INTO seguimiento (nombre_seguidor, nombre_seguido, tipo, fecha)
+      SELECT nombre_seguidor, nombre_seguido, 'sigue', fecha FROM sigue_fan
+      ON CONFLICT DO NOTHING;
+    DROP TABLE sigue_fan;
+  END IF;
+
+  IF to_regclass('public.suscripcion_novedades') IS NOT NULL THEN
+    INSERT INTO seguimiento (nombre_seguidor, nombre_seguido, tipo, fecha)
+      SELECT nombre_fan, nombre_artista, 'novedades', fecha FROM suscripcion_novedades
+      ON CONFLICT DO NOTHING;
+    DROP TABLE suscripcion_novedades;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS evento (
     id_evento SERIAL PRIMARY KEY,
@@ -136,7 +154,8 @@ CREATE TABLE IF NOT EXISTS notificacion (
                       REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
   tipo                VARCHAR(30) NOT NULL
                       CHECK (tipo IN ('nuevo_seguidor', 'nueva_reserva', 'entradas_agotadas',
-                                      'evento_nuevo', 'evento_modificado', 'evento_cancelado')),
+                                      'evento_nuevo', 'evento_modificado', 'evento_cancelado',
+                                      'nueva_publicacion')),
   mensaje             TEXT        NOT NULL,
   id_evento           INT REFERENCES evento(id_evento) ON DELETE CASCADE,
   nombre_origen       VARCHAR(30) REFERENCES usuario(nombre_usuario) ON DELETE SET NULL,
@@ -144,8 +163,61 @@ CREATE TABLE IF NOT EXISTS notificacion (
   fecha               TIMESTAMP   NOT NULL DEFAULT NOW()
 );
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+     WHERE conname = 'notificacion_tipo_check'
+       AND pg_get_constraintdef(oid) LIKE '%nueva_publicacion%'
+  ) THEN
+    ALTER TABLE notificacion DROP CONSTRAINT IF EXISTS notificacion_tipo_check;
+    ALTER TABLE notificacion ADD CONSTRAINT notificacion_tipo_check
+      CHECK (tipo IN ('nuevo_seguidor', 'nueva_reserva', 'entradas_agotadas',
+                      'evento_nuevo', 'evento_modificado', 'evento_cancelado',
+                      'nueva_publicacion'));
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_notificacion_destinatario
   ON notificacion (nombre_destinatario, leida, fecha DESC);
+
+CREATE TABLE IF NOT EXISTS publicacion (
+  id_publicacion    SERIAL      PRIMARY KEY,
+  nombre_autor      VARCHAR(30) NOT NULL
+                    REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  contenido         TEXT        NOT NULL CHECK (char_length(contenido) BETWEEN 1 AND 500),
+  fecha_publicacion TIMESTAMP   NOT NULL DEFAULT NOW(),
+  id_imagen         INT         REFERENCES imagen(id_imagen) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_publicacion_autor
+  ON publicacion (nombre_autor, fecha_publicacion DESC);
+CREATE INDEX IF NOT EXISTS idx_publicacion_fecha
+  ON publicacion (fecha_publicacion DESC);
+
+CREATE TABLE IF NOT EXISTS comentario (
+  id_comentario       SERIAL      PRIMARY KEY,
+  id_publicacion      INT         NOT NULL
+                      REFERENCES publicacion(id_publicacion) ON DELETE CASCADE,
+  nombre_autor        VARCHAR(30) NOT NULL
+                      REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  id_comentario_padre INT
+                      REFERENCES comentario(id_comentario) ON DELETE CASCADE,
+  contenido           TEXT        NOT NULL CHECK (char_length(contenido) BETWEEN 1 AND 300),
+  fecha_hora          TIMESTAMP   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comentario_publicacion
+  ON comentario (id_publicacion, fecha_hora);
+
+CREATE TABLE IF NOT EXISTS me_gusta (
+  id_publicacion INT         NOT NULL
+                 REFERENCES publicacion(id_publicacion) ON DELETE CASCADE,
+  nombre_usuario VARCHAR(30) NOT NULL
+                 REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (id_publicacion, nombre_usuario)
+);
 `;
 
 async function initDb() {
