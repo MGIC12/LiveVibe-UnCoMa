@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
+import ImagenEvento from "./ImagenEvento";
 
 const HeroEvent = () => {
   const { usuario, token } = useAuth();
@@ -175,10 +176,11 @@ const HeroEvent = () => {
   }
 
   return (
-    <header
-      className="relative h-[70vh] min-h-[500px] flex items-end bg-cover bg-center"
-      style={{ backgroundImage: `url('${imagenFondo}')` }}
-    >
+    <header className="relative h-[70vh] min-h-[500px] flex items-end overflow-hidden">
+      <ImagenEvento
+        evento={eventoDestacado}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-tinta via-tinta/60 to-transparent"></div>
 
       <div className="relative z-10 container mx-auto px-4 pb-12 md:pb-16">

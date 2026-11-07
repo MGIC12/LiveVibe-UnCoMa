@@ -128,6 +128,10 @@ ALTER TABLE evento
   ADD COLUMN IF NOT EXISTS estado VARCHAR(20) NOT NULL DEFAULT 'activo'
   CHECK (estado IN ('activo', 'cancelado'));
 
+ALTER TABLE evento
+  ADD COLUMN IF NOT EXISTS id_imagen INT
+  REFERENCES imagen(id_imagen) ON DELETE SET NULL;
+
 CREATE TABLE IF NOT EXISTS entrada (
     id_entrada     SERIAL PRIMARY KEY,
     id_evento      INT NOT NULL REFERENCES evento(id_evento) ON DELETE CASCADE,

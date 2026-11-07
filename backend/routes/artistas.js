@@ -54,13 +54,15 @@ router.get("/:usuario", async (req, res) => {
             [usuario],
           )
         : { rows: [] },
-      pool.query(
+            pool.query(
         `SELECT e.id_evento, e.nombre, e.lugar, e.ciudad, e.pais,
                 to_char(e.fecha, 'YYYY-MM-DD') AS fecha,
                 to_char(e.hora_apertura, 'HH24:MI') AS hora_apertura,
                 (SELECT MIN(precio)::float8 FROM entrada
-                  WHERE id_evento = e.id_evento) AS precio_desde
+                  WHERE id_evento = e.id_evento) AS precio_desde,
+                img.url AS imagen_url
            FROM evento e
+           LEFT JOIN imagen img ON img.id_imagen = e.id_imagen
           WHERE e.nombre_artista = $1
             AND e.estado = 'activo'
             AND e.fecha >= (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date
