@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { CLASIFICACIONES, inputClase, labelClase } from "../utils/formularios";
+import CampoPortada from "./CampoPortada";
 
 export default function FormularioEvento({
   titulo,
   valoresIniciales,
+  evento, // el evento que se está editando (en uno nuevo no se pasa): lo usa la imagen
   textoEnviar,
   textoEnviando,
   textoCancelar = "Cancelar",
@@ -13,6 +15,9 @@ export default function FormularioEvento({
   const [form, setForm] = useState(valoresIniciales);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
+
+  // Qué hay que hacer con la imagen al guardar: { archivo, quitar }
+  const [portada, setPortada] = useState({ archivo: null, quitar: false });
 
   // Fecha de hoy (AAAA-MM-DD), para no permitir elegir días pasados
   const hoy = new Date().toLocaleDateString("en-CA");
@@ -34,7 +39,8 @@ export default function FormularioEvento({
     setError("");
     setEnviando(true);
     try {
-      await onSubmit(form); // la página decide qué hacer con los datos
+      // La página decide qué hacer con los datos y con la imagen
+      await onSubmit(form, portada);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -85,6 +91,8 @@ export default function FormularioEvento({
 
       <div className="border-t border-crema/20 pt-5 space-y-4">
         <p className="text-sm text-crema/60">Datos opcionales</p>
+
+        <CampoPortada evento={evento} onChange={setPortada} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className={labelClase}>

@@ -1,7 +1,8 @@
 const express = require("express");
 const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
-const { subirFoto, borrarArchivo } = require("../middleware/subida");
+const recibirImagen = require("../middleware/recibirImagen");
+const { subirImagen, borrarImagenGuardada } = require("../utils/imagenes");
 const { texto, validarDatosArtista } = require("../middleware/artista");
 
 const router = express.Router();
@@ -84,57 +85,75 @@ router.put("/", verificarToken, requerirRol("fan", "artista"), async (req, res) 
 });
 
 // PUT /api/perfil/foto -> cualquier usuario con sesión cambia su foto de perfil
-router.put("/foto", verificarToken, subirFoto, async (req, res) => {
+router.put("/foto", verificarToken, recibirImagen("imagen"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Elegí una imagen" });
   }
 
   const usuario = req.user.nombre_usuario;
-  const url = `/uploads/${req.file.filename}`;
   const descripcion = (req.body.descripcion || `Foto de perfil de ${usuario}`)
     .trim()
     .slice(0, 200);
 
+  // 1) Se sube a Cloudinary, recortada en cuadrado (la foto de perfil se muestra en círculo)
+  let subida;
+  try {
+    subida = await subirImagen(req.file.buffer, {
+      carpeta: "perfiles",
+      transformacion: [{ width: 600, height: 600, crop: "fill", gravity: "auto" }],
+    });
+  } catch (error) {
+    console.error("Error al subir la foto a Cloudinary:", error.message);
+    return res
+      .status(502)
+      .json({ error: "No se pudo subir la imagen. Probá de nuevo en unos minutos." });
+  }
+
+  // 2) Se guarda en la base y se reemplaza la anterior
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     // Foto actual del usuario (si tiene)
     const { rows: actual } = await client.query(
-      `SELECT i.id_imagen, i.url
+      `SELECT i.id_imagen, i.url, i.public_id
          FROM usuario u
          LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
         WHERE u.nombre_usuario = $1`,
-      [usuario]
+      [usuario],
     );
     if (!actual[0]) {
       await client.query("ROLLBACK");
-      borrarArchivo(req.file.filename);
+      await borrarImagenGuardada({ public_id: subida.publicId });
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // 1) se crea la imagen nueva
+    // a) se crea la imagen nueva
     const { rows: nueva } = await client.query(
-      "INSERT INTO imagen (descripcion, url) VALUES ($1, $2) RETURNING url, descripcion",
-      [descripcion, url]
+      `INSERT INTO imagen (descripcion, url, public_id) VALUES ($1, $2, $3)
+       RETURNING id_imagen, url, descripcion`,
+      [descripcion, subida.url, subida.publicId],
     );
-    // 2) el usuario pasa a apuntar a ella
-    await client.query(
-      "UPDATE usuario SET id_imagen = (SELECT id_imagen FROM imagen WHERE url = $1) WHERE nombre_usuario = $2",
-      [url, usuario]
-    );
-    // 3) se elimina la imagen anterior
+    // b) el usuario pasa a apuntar a ella
+    await client.query("UPDATE usuario SET id_imagen = $1 WHERE nombre_usuario = $2", [
+      nueva[0].id_imagen,
+      usuario,
+    ]);
+    // c) se elimina la imagen anterior
     if (actual[0].id_imagen) {
       await client.query("DELETE FROM imagen WHERE id_imagen = $1", [actual[0].id_imagen]);
     }
 
     await client.query("COMMIT");
 
-    borrarArchivo(actual[0].url); // el archivo viejo se borra solo si todo salió bien
+    // El archivo viejo se borra solo si todo salió bien (de Cloudinary, o del disco si era una de las de antes)
+    if (actual[0].id_imagen) await borrarImagenGuardada(actual[0]);
+
     return res.json({ foto_url: nueva[0].url, foto_descripcion: nueva[0].descripcion });
   } catch (err) {
     await client.query("ROLLBACK");
-    borrarArchivo(req.file.filename);
+    // La base falló: la imagen recién subida quedó sin uso y se borra de Cloudinary
+    await borrarImagenGuardada({ public_id: subida.publicId });
     console.error(err);
     return res.status(500).json({ error: "Error del servidor" });
   } finally {
@@ -151,11 +170,11 @@ router.delete("/foto", verificarToken, async (req, res) => {
     await client.query("BEGIN");
 
     const { rows } = await client.query(
-      `SELECT i.id_imagen, i.url
+      `SELECT i.id_imagen, i.url, i.public_id
          FROM usuario u
          LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
         WHERE u.nombre_usuario = $1`,
-      [usuario]
+      [usuario],
     );
 
     if (rows[0]?.id_imagen) {
@@ -164,7 +183,7 @@ router.delete("/foto", verificarToken, async (req, res) => {
     }
 
     await client.query("COMMIT");
-    borrarArchivo(rows[0]?.url);
+    if (rows[0]?.id_imagen) await borrarImagenGuardada(rows[0]);
     return res.json({ foto_url: null, foto_descripcion: null });
   } catch (err) {
     await client.query("ROLLBACK");

@@ -27,6 +27,8 @@ dist-ssr
 
 # Imagenes
 backend/uploads
- 
- 
+  
 backend/.env
+
+livevibe*.sql
+uploads.zip

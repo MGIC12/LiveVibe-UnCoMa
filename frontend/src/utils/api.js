@@ -1,7 +1,13 @@
 export const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-// En la base se guarda la ruta relativa (/uploads/xxx.jpg).
-// Acá se arma la dirección completa para poder mostrarla.
-export function urlImagen(ruta) {
-  return ruta ? `${API}${ruta}` : null;
+// - Cloudinary: ya es una dirección completa (se le pide formato y calidad automáticos)
+// - Imágenes de antes, guardadas en el servidor: es una ruta relativa (/uploads/...)
+export function urlImagen(url) {
+  if (!url) return null;
+  if (/^https?:\/\//.test(url)) {
+    return url.includes("res.cloudinary.com") && url.includes("/upload/")
+      ? url.replace("/upload/", "/upload/f_auto,q_auto/")
+      : url;
+  }
+  return `${API}${url}`;
 }

@@ -31,6 +31,8 @@ app.use("/api/artistas", require("./routes/artistas"));
 
 app.use("/api/eventos", eventosRoutes);
 
+app.use("/api/eventos", require("./routes/eventosImagen"));
+
 app.use("/api/buscar", buscarRoutes);
 
 app.use("/api/artistas", artistasRoutes);

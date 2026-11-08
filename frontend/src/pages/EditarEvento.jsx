@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import FormularioEvento from "../components/FormularioEvento";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
+import { guardarPortada } from "../utils/portadas";
 
 function Mensaje({ children }) {
   return (
@@ -58,7 +59,7 @@ export default function EditarEvento() {
 
   // Estas comprobaciones son para mostrar un mensaje claro;
   // la seguridad real está en el backend.
-  if (evento.nombre_artista !== usuario.nombre_usuario) {
+  if (evento.nombre_artista !== usuario?.nombre_usuario) {
     return <Mensaje>Solo el artista que creó este evento puede modificarlo.</Mensaje>;
   }
   if (evento.estado === "cancelado") {
@@ -83,7 +84,8 @@ export default function EditarEvento() {
     gira: evento.gira ?? "",
   };
 
-  async function guardar(datos) {
+  // "portada" es lo que se eligió con la imagen: { archivo, quitar }
+  async function guardar(datos, portada) {
     const res = await fetch(`${API}/api/eventos/${id}`, {
       method: "PUT",
       headers: {
@@ -94,6 +96,13 @@ export default function EditarEvento() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "No se pudo guardar el evento");
+
+    // Los datos YA se guardaron. Si falla solo la imagen, se avisa pero no se lanza un error.
+    try {
+      await guardarPortada(id, portada, token);
+    } catch (err) {
+      alert(`Los cambios se guardaron, pero la imagen no se pudo actualizar (${err.message}).`);
+    }
 
     navigate(`/evento/${id}`);
   }
@@ -124,6 +133,7 @@ export default function EditarEvento() {
         <FormularioEvento
           titulo="Editar evento"
           valoresIniciales={inicial}
+          evento={evento}
           textoEnviar="Guardar cambios"
           textoEnviando="Guardando..."
           textoCancelar="Descartar cambios"

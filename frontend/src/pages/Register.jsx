@@ -8,6 +8,11 @@ import { FOTO_VACIA } from "../utils/formularios";
 import CampoContrasena from "../components/CampoContrasena";
 import FotoPerfil from "../components/FotoPerfil";
 
+// Aspecto común de los campos y sus etiquetas
+const campoClase =
+  "w-full px-4 py-2.5 rounded-xl bg-crema/10 border border-crema/25 text-crema text-sm placeholder:text-crema/40 focus:outline-none focus:ring-2 focus:ring-cielo";
+const etiquetaClase = "block text-sm font-bold text-crema/80 mb-1";
+
 const INICIAL = {
   foto: FOTO_VACIA,
   rol: "",
@@ -93,7 +98,7 @@ export default function Register() {
       ¿Ya tenés cuenta?{" "}
       <Link
         to="/login"
-        className="font-bold text-cielo hover:text-green-400 transition-colors ml-1"
+        className="font-bold text-cielo hover:text-crema transition-colors ml-1"
       >
         Iniciá sesión
       </Link>
@@ -105,17 +110,17 @@ export default function Register() {
     return (
       <>
         <Navbar />
-        <main className="min-h-screen bg-tinta flex items-center justify-center px-4 py-12 relative overflow-hidden">
-          <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-xl border border-neutral-800 rounded-3xl p-8 shadow-2xl relative z-10">
+        <main className="min-h-screen bg-tinta flex items-center justify-center px-4 pt-24 pb-12 relative overflow-hidden">
+          <div className="w-full max-w-lg bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-8 shadow-2xl relative z-10">
             <h1 className="text-3xl font-black text-crema text-center mb-6">
-              ¿Cómo querés <span className="text-green-500">registrarte?</span>
+              ¿Cómo querés <span className="text-fucsia">registrarte?</span>
             </h1>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <button
                 type="button"
                 onClick={() => cambiarCampo("rol", "fan")}
-                className="p-6 rounded-2xl border border-neutral-700 bg-neutral-800/40 hover:border-green-500 transition text-center"
+                className="p-6 rounded-2xl border border-crema/20 bg-crema/5 hover:border-fucsia hover:bg-crema/10 transition text-center"
               >
                 <span className="block text-4xl mb-2">🎧</span>
                 <span className="block text-xl font-bold text-crema">Fan</span>
@@ -127,7 +132,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => cambiarCampo("rol", "artista")}
-                className="p-6 rounded-2xl border border-neutral-700 bg-neutral-800/40 hover:border-green-500 transition text-center"
+                className="p-6 rounded-2xl border border-crema/20 bg-crema/5 hover:border-fucsia hover:bg-crema/10 transition text-center"
               >
                 <span className="block text-4xl mb-2">🎤</span>
                 <span className="block text-xl font-bold text-crema">
@@ -153,31 +158,29 @@ export default function Register() {
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-tinta flex items-center justify-center px-4 py-20 relative">
+      <main className="min-h-screen bg-tinta flex items-center justify-center px-4 pt-24 pb-16 relative">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-3xl bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6"
+          className="w-full max-w-3xl bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6"
         >
-          <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
+          <div className="flex justify-between items-center border-b border-crema/20 pb-4">
             <button
               type="button"
               onClick={() => cambiarCampo("rol", "")}
-              className="text-sm text-crema/70 hover:text-green-400 transition-colors font-medium"
+              className="text-sm text-crema/70 hover:text-cielo transition-colors font-medium"
             >
               &larr; Cambiar tipo de cuenta
             </button>
             <h1 className="text-2xl font-black text-crema">
               Registro de{" "}
-              <span className="text-green-500">
-                {esArtista ? "Artista" : "Fan"}
-              </span>
+              <span className="text-fucsia">{esArtista ? "Artista" : "Fan"}</span>
             </h1>
           </div>
 
           {/* Grid de dos columnas para aprovechar los costados y reducir la altura */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Columna Izquierda: Foto e info básica */}
-            <div className="space-y-4 flex flex-col items-center justify-center bg-neutral-800/30 p-6 rounded-2xl border border-neutral-800">
+            <div className="space-y-4 flex flex-col items-center justify-center bg-crema/5 p-6 rounded-2xl border border-crema/20">
               <FotoPerfil
                 urlActual={null}
                 valor={form.foto}
@@ -186,9 +189,7 @@ export default function Register() {
               />
 
               <div className="w-full">
-                <label className="block text-sm font-bold text-crema/80 mb-1">
-                  Nombre de usuario
-                </label>
+                <label className={etiquetaClase}>Nombre de usuario</label>
                 <input
                   type="text"
                   name="nombre_usuario"
@@ -196,21 +197,19 @@ export default function Register() {
                   onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
                   maxLength={30}
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className={campoClase}
                 />
               </div>
 
               <div className="w-full">
-                <label className="block text-sm font-bold text-crema/80 mb-1">
-                  Email
-                </label>
+                <label className={etiquetaClase}>Email</label>
                 <input
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className={campoClase}
                 />
               </div>
             </div>
@@ -234,35 +233,31 @@ export default function Register() {
               />
 
               <div>
-                <label className="block text-sm font-bold text-crema/80 mb-1">
-                  Fecha de nacimiento
-                </label>
+                <label className={etiquetaClase}>Fecha de nacimiento</label>
                 <input
                   type="date"
                   name="fecha_nac"
                   value={form.fecha_nac}
                   onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500 [color-scheme:dark]"
+                  className={`${campoClase} [color-scheme:dark]`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-crema/80 mb-1">
-                  Biografía (opcional)
-                </label>
+                <label className={etiquetaClase}>Biografía (opcional)</label>
                 <textarea
                   name="biografia"
                   value={form.biografia}
                   onChange={(e) => cambiarCampo(e.target.name, e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-crema text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  className={`${campoClase} resize-none`}
                 />
               </div>
             </div>
           </div>
 
           {/* Campos específicos abajo ocupando el ancho completo con estilo compacto */}
-          <div className="pt-2 border-t border-neutral-800">
+          <div className="pt-2 border-t border-crema/20">
             {esArtista ? (
               <CamposArtista valores={form} onChange={cambiarCampo} />
             ) : (
@@ -271,7 +266,10 @@ export default function Register() {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm font-medium">
+            <div
+              className="bg-mandarina/10 border border-mandarina/50 rounded-lg p-3 text-mandarina text-sm font-medium"
+              role="alert"
+            >
               ⚠️ {error}
             </div>
           )}
@@ -279,7 +277,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={enviando}
-            className="w-full py-3.5 rounded-xl font-bold text-lg bg-green-500 hover:bg-green-400 text-black transition-all shadow-lg"
+            className="w-full py-3.5 rounded-xl font-bold text-lg bg-fucsia hover:bg-chicle text-tinta transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {enviando ? "Creando cuenta..." : "Registrarme"}
           </button>

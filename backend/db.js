@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS imagen (
   url         VARCHAR(255) NOT NULL
 );
 
+-- Identificación de la imagen en Cloudinary (necesaria para borrarla). Las imágenes viejas, guardadas en el servidor, no la tienen.
+ALTER TABLE imagen ADD COLUMN IF NOT EXISTS public_id VARCHAR(255);
+
 CREATE TABLE IF NOT EXISTS usuario (
   nombre_usuario   VARCHAR(30)  PRIMARY KEY,
   email            VARCHAR(255) NOT NULL UNIQUE,
@@ -127,6 +130,10 @@ CREATE TABLE IF NOT EXISTS evento (
 ALTER TABLE evento
   ADD COLUMN IF NOT EXISTS estado VARCHAR(20) NOT NULL DEFAULT 'activo'
   CHECK (estado IN ('activo', 'cancelado'));
+
+ALTER TABLE evento
+  ADD COLUMN IF NOT EXISTS id_imagen INT
+  REFERENCES imagen(id_imagen) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS entrada (
     id_entrada     SERIAL PRIMARY KEY,

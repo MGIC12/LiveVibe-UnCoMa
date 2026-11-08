@@ -5,206 +5,16 @@ const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
 const { notificarSuscriptores, notificarUsuario } = require("../middleware/notificaciones");
 
-// GET /api/eventos - FEATURE 3: Catálogo con filtros por género y ciudad
-router.get("/", async (req, res) => {
-  try {
-    const { genero, ciudad } = req.query;
-
-    // Consulta SQL base
-    let query = `SELECT e.*,
-       (SELECT MIN(precio)::float8 FROM entrada
-         WHERE id_evento = e.id_evento) AS precio_desde,
-       (SELECT COALESCE(SUM(stock), 0)::int FROM entrada
-         WHERE id_evento = e.id_evento) AS entradas_disponibles
-      FROM evento e
-      WHERE e.estado = 'activo'`;
-    const values = [];
-
-    // Si el usuario filtra por género
-    if (genero) {
-      values.push(`%${genero}%`); // Los % le dicen a SQL que busque la palabra en cualquier parte del texto
-      query += ` AND genero ILIKE $${values.length}`;
-    }
-
-    // Si el usuario filtra por ciudad
-    if (ciudad) {
-      values.push(`%${ciudad}%`);
-      query += ` AND ciudad ILIKE $${values.length}`;
-    }
-
-    // Ordenamos por fecha de los más próximos a los más lejanos
-    query += " ORDER BY fecha ASC";
-
-    // Ejecutar la consulta en la base de datos
-    const result = await pool.query(query, values);
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Error al obtener el catálogo de eventos:", error);
-    res
-      .status(500)
-      .json({ error: "Error interno del servidor al obtener el catálogo" });
-  }
-});
-
-// GET /api/eventos/mios - Historial completo del artista (todos sus eventos)
-router.get("/mios", verificarToken, requerirRol("artista"), async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT e.id_evento, e.nombre, e.genero, e.ciudad, e.pais, e.lugar,
-              to_char(e.fecha, 'YYYY-MM-DD') AS fecha,
-              to_char(e.hora_apertura, 'HH24:MI') AS hora_apertura,
-              e.cant_entradas, e.clasificacion, e.gira, e.estado,
-              (SELECT MIN(precio)::float8 FROM entrada
-                WHERE id_evento = e.id_evento) AS precio_desde,
-              (SELECT COALESCE(SUM(stock), 0)::int FROM entrada
-                WHERE id_evento = e.id_evento) AS entradas_disponibles,
-              (SELECT COUNT(*)::int FROM reserva r
-                WHERE r.id_evento = e.id_evento AND r.estado <> 'cancelada') AS reservas,
-              CASE
-                WHEN e.estado = 'cancelado' THEN 'cancelado'
-                WHEN e.fecha < $2::date THEN 'pasado'
-                WHEN e.fecha = $2::date THEN 'hoy'
-                ELSE 'proximo'
-              END AS situacion
-         FROM evento e
-        WHERE e.nombre_artista = $1
-        ORDER BY e.fecha DESC, e.hora_apertura DESC NULLS LAST, e.id_evento DESC`,
-      [req.user.nombre_usuario, hoyEnArgentina()],
-    );
-    res.json(rows);
-  } catch (error) {
-    console.error("Error al obtener el historial del artista:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
-});
-
-// GET /api/evento/:id - Obtener el detalle de un evento específico
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-const result = await pool.query(
-  `SELECT e.*,
-          a.nombre_artistico AS artista_nombre,
-          (SELECT MIN(precio)::float8 FROM entrada WHERE id_evento = e.id_evento) AS precio_desde,
-          (SELECT COALESCE(SUM(stock), 0)::int FROM entrada WHERE id_evento = e.id_evento) AS entradas_disponibles
-     FROM evento e
-     LEFT JOIN artista a ON a.nombre_usuario = e.nombre_artista
-    WHERE e.id_evento = $1`,
-  [id],
-);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Evento no encontrado" });
-    }
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error("Error al obtener el evento:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
-});
-
-// POST /api/eventos/:id/reservar - Un usuario reserva una entrada
-router.post("/:id/reservar", verificarToken, async (req, res) => {
-  const { id } = req.params;
-  if (!/^\d+$/.test(id)) {
-    return res.status(404).json({ error: "Evento no existe" });
-  }
-  const fan = req.user.nombre_usuario;
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    // Se bloquea el evento: dos reservas simultáneas no pueden pasarse del stock
-    const { rows } = await client.query(
-      `SELECT nombre, nombre_artista, estado, to_char(fecha, 'YYYY-MM-DD') AS fecha
-         FROM evento WHERE id_evento = $1 FOR UPDATE`,
-      [id],
-    );
-    const evento = rows[0];
-
-    if (!evento) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Evento no existe" });
-    }
-    if (evento.estado === "cancelado") {
-      await client.query("ROLLBACK");
-      return res.status(409).json({ error: "El evento fue cancelado." });
-    }
-    if (evento.fecha < hoyEnArgentina()) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ error: "El evento ya ocurrió." });
-    }
-
-    // Reserva nueva, o reactiva una que el fan había cancelado
-    const { rows: reserva } = await client.query(
-      `INSERT INTO reserva (id_evento, nombre_usuario, estado)
-       VALUES ($1, $2, 'confirmada')
-       ON CONFLICT (id_evento, nombre_usuario)
-       DO UPDATE SET estado = 'confirmada', fecha_reserva = NOW()
-       WHERE reserva.estado = 'cancelada'
-       RETURNING *`,
-      [id, fan],
-    );
-    if (reserva.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Ya tienes una reserva para este evento." });
-    }
-
-    // Descuenta una entrada, solo si queda stock
-    const { rows: entrada } = await client.query(
-      `UPDATE entrada SET stock = stock - 1
-        WHERE id_evento = $1 AND tipo_acceso = 'General' AND stock > 0
-        RETURNING stock`,
-      [id],
-    );
-    if (entrada.length === 0) {
-      await client.query("ROLLBACK"); // también deshace la reserva recién insertada
-      return res.status(409).json({ error: "Las entradas están agotadas." });
-    }
-
-    await client.query("COMMIT");
-
-    // Avisos al artista (después del COMMIT, para no frenar la reserva)
-    if (evento.nombre_artista) {
-      await notificarUsuario(
-        evento.nombre_artista,
-        "nueva_reserva",
-        `${fan} reservó una entrada para ${evento.nombre}`,
-        { idEvento: Number(id), origen: fan },
-      );
-      if (entrada[0].stock === 0) {
-        await notificarUsuario(
-          evento.nombre_artista,
-          "entradas_agotadas",
-          `Se agotaron las entradas de ${evento.nombre}`,
-          { idEvento: Number(id) },
-        );
-      }
-    }
-
-    res.status(201).json({ mensaje: "Reserva confirmada", reserva: reserva[0] });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al reservar:", error);
-    res.status(500).json({ error: "Error del servidor" });
-  } finally {
-    client.release();
-  }
-});
-
 // ---------- Utilidades ----------
 
 // Devuelve el texto sin espacios de más ("" si no es texto)
 const texto = (valor) => (typeof valor === "string" ? valor.trim() : "");
 
 // ["la fecha", "el lugar"] -> "la fecha y el lugar"; ["a", "b", "c"] -> "a, b y c"
-  const unir = (lista) =>
-    lista.length > 1
-      ? `${lista.slice(0, -1).join(", ")} y ${lista[lista.length - 1]}`
-      : lista[0];
-
+const unir = (lista) =>
+  lista.length > 1
+    ? `${lista.slice(0, -1).join(", ")} y ${lista[lista.length - 1]}`
+    : lista[0];
 
 // Hoy en horario argentino (AAAA-MM-DD), para no depender de la hora del servidor
 const hoyEnArgentina = () =>
@@ -269,7 +79,7 @@ function validarEvento(b) {
 async function cargarEventoModificable(client, id, usuario) {
   if (!/^\d+$/.test(id)) return { status: 404, error: "Evento no encontrado" };
 
-   const { rows } = await client.query(
+  const { rows } = await client.query(
     `SELECT nombre, lugar, ciudad, nombre_artista, estado, cant_entradas,
             to_char(fecha, 'YYYY-MM-DD') AS fecha,
             to_char(hora_apertura, 'HH24:MI') AS hora_apertura
@@ -310,7 +120,172 @@ function responderError(error, res) {
   return res.status(500).json({ error: "Error interno del servidor" });
 }
 
+// ---------- Consultas ----------
+
+// GET /api/eventos - Catálogo de eventos vigentes (activos y que todavía no ocurrieron)
+// Filtros opcionales por género y ciudad
+router.get("/", async (req, res) => {
+  try {
+    const { genero, ciudad } = req.query;
+
+    // $1 = hoy: solo se listan los eventos de hoy en adelante
+    const values = [hoyEnArgentina()];
+
+    let query = `SELECT e.*,
+       a.nombre_artistico AS artista_nombre,
+       img.url AS imagen_url,
+       (SELECT MIN(precio)::float8 FROM entrada
+         WHERE id_evento = e.id_evento) AS precio_desde,
+       (SELECT COALESCE(SUM(stock), 0)::int FROM entrada
+         WHERE id_evento = e.id_evento) AS entradas_disponibles
+      FROM evento e
+      LEFT JOIN artista a ON a.nombre_usuario = e.nombre_artista
+      LEFT JOIN imagen img ON img.id_imagen = e.id_imagen
+      WHERE e.estado = 'activo' AND e.fecha >= $1::date`;
+
+    // Las columnas llevan "e." porque artista también tiene una columna "genero"
+    if (genero) {
+      values.push(`%${genero}%`); // Los % le dicen a SQL que busque la palabra en cualquier parte del texto
+      query += ` AND e.genero ILIKE $${values.length}`;
+    }
+
+    if (ciudad) {
+      values.push(`%${ciudad}%`);
+      query += ` AND e.ciudad ILIKE $${values.length}`;
+    }
+
+    // Ordenamos por fecha de los más próximos a los más lejanos
+    query += " ORDER BY e.fecha ASC";
+
+    const result = await pool.query(query, values);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener el catálogo de eventos:", error);
+    res
+      .status(500)
+      .json({ error: "Error interno del servidor al obtener el catálogo" });
+  }
+});
+
+// GET /api/eventos/mios - Historial completo del artista (todos sus eventos)
+router.get("/mios", verificarToken, requerirRol("artista"), async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT e.id_evento, e.nombre, e.genero, e.ciudad, e.pais, e.lugar,
+              to_char(e.fecha, 'YYYY-MM-DD') AS fecha,
+              to_char(e.hora_apertura, 'HH24:MI') AS hora_apertura,
+              e.cant_entradas, e.clasificacion, e.gira, e.estado,
+              img.url AS imagen_url,
+              (SELECT MIN(precio)::float8 FROM entrada
+                WHERE id_evento = e.id_evento) AS precio_desde,
+              (SELECT COALESCE(SUM(stock), 0)::int FROM entrada
+                WHERE id_evento = e.id_evento) AS entradas_disponibles,
+              (SELECT COUNT(*)::int FROM reserva r
+                WHERE r.id_evento = e.id_evento AND r.estado <> 'cancelada') AS reservas,
+              CASE
+                WHEN e.estado = 'cancelado' THEN 'cancelado'
+                WHEN e.fecha < $2::date THEN 'pasado'
+                WHEN e.fecha = $2::date THEN 'hoy'
+                ELSE 'proximo'
+              END AS situacion
+         FROM evento e
+         LEFT JOIN imagen img ON img.id_imagen = e.id_imagen
+        WHERE e.nombre_artista = $1
+        ORDER BY e.fecha DESC, e.hora_apertura DESC NULLS LAST, e.id_evento DESC`,
+      [req.user.nombre_usuario, hoyEnArgentina()],
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener el historial del artista:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// GET /api/eventos/:id - Detalle de un evento
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  if (!/^\d+$/.test(id)) {
+    return res.status(404).json({ error: "Evento no encontrado" });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT e.*,
+              a.nombre_artistico AS artista_nombre,
+              img.url AS imagen_url,
+              (SELECT MIN(precio)::float8 FROM entrada WHERE id_evento = e.id_evento) AS precio_desde,
+              (SELECT COALESCE(SUM(stock), 0)::int FROM entrada WHERE id_evento = e.id_evento) AS entradas_disponibles
+         FROM evento e
+         LEFT JOIN artista a ON a.nombre_usuario = e.nombre_artista
+         LEFT JOIN imagen img ON img.id_imagen = e.id_imagen
+        WHERE e.id_evento = $1`,
+      [id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Evento no encontrado" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error al obtener el evento:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // ---------- Crear ----------
+
+// POST /api/eventos - El artista crea un evento (la imagen se sube aparte: PUT /:id/imagen)
+router.post("/", verificarToken, requerirRol("artista"), async (req, res) => {
+  const { datos, error } = validarEvento(req.body);
+  if (error) return res.status(400).json({ error });
+
+  const artista = req.user.nombre_usuario;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Si el artista no completó el género, se usa el de su perfil
+    const { rows } = await client.query(
+      `INSERT INTO evento (nombre, genero, ciudad, pais, lugar, fecha, hora_apertura,
+                           cant_entradas, clasificacion, gira, nombre_artista)
+       VALUES ($1,
+               COALESCE($2::varchar, (SELECT genero FROM artista WHERE nombre_usuario = $3::varchar)),
+               $4, $5, $6, $7, $8, $9, $10, $11, $3::varchar)
+       RETURNING id_evento`,
+      [
+        datos.nombre, datos.genero, artista, datos.ciudad, datos.pais, datos.lugar,
+        datos.fecha, datos.hora, datos.cantidad, datos.clasificacion, datos.gira,
+      ],
+    );
+    const id = rows[0].id_evento;
+
+    // La entrada "General": tiene el precio y todo el stock disponible
+    await client.query(
+      `INSERT INTO entrada (id_evento, tipo_acceso, precio, stock)
+       VALUES ($1, 'General', $2, $3)`,
+      [id, Math.round(datos.precio * 100) / 100, datos.cantidad],
+    );
+
+    await client.query("COMMIT");
+
+    // Aviso a quienes activaron las novedades del artista
+    await notificarSuscriptores(
+      artista,
+      "evento_nuevo",
+      id,
+      `creó un nuevo evento: ${datos.nombre}`,
+    );
+
+    res.status(201).json({ id_evento: id });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    responderError(error, res);
+  } finally {
+    client.release();
+  }
+});
+
+// ---------- Reservar ----------
 
 // POST /api/eventos/:id/reservar - Un usuario reserva una entrada
 router.post("/:id/reservar", verificarToken, async (req, res) => {
