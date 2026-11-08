@@ -225,6 +225,59 @@ CREATE TABLE IF NOT EXISTS me_gusta (
   fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
   PRIMARY KEY (id_publicacion, nombre_usuario)
 );
+
+CREATE TABLE IF NOT EXISTS articulo (
+  id_articulo    SERIAL        PRIMARY KEY,
+  nombre_artista VARCHAR(30)   NOT NULL
+                 REFERENCES artista(nombre_usuario) ON DELETE CASCADE,
+  nombre         VARCHAR(120)  NOT NULL,
+  descripcion    TEXT,
+  precio         NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+  stock          INT           NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  id_imagen      INT           REFERENCES imagen(id_imagen) ON DELETE SET NULL,
+  activo         BOOLEAN       NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_articulo_artista ON articulo (nombre_artista);
+
+-- Carrito: una fila por artículo y por fan (el carrito es privado)
+CREATE TABLE IF NOT EXISTS carrito_item (
+  nombre_usuario VARCHAR(30) NOT NULL
+                 REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  id_articulo    INT         NOT NULL
+                 REFERENCES articulo(id_articulo) ON DELETE CASCADE,
+  cantidad       INT         NOT NULL CHECK (cantidad >= 1),
+  fecha          TIMESTAMP   NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (nombre_usuario, id_articulo)
+);
+
+CREATE TABLE IF NOT EXISTS compra (
+  id_compra         SERIAL        PRIMARY KEY,
+  nombre_usuario    VARCHAR(30)   NOT NULL
+                    REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  nombre_artista    VARCHAR(30)   NOT NULL
+                    REFERENCES artista(nombre_usuario) ON DELETE CASCADE,
+  estado            VARCHAR(20)   NOT NULL DEFAULT 'pago_pendiente'
+                    CHECK (estado IN ('pago_pendiente', 'en_preparacion', 'en_camino',
+                                      'cancelada', 'recibida')),
+  total             NUMERIC(10,2) NOT NULL CHECK (total >= 0),
+  fecha             TIMESTAMP     NOT NULL DEFAULT NOW(),
+  fecha_vencimiento TIMESTAMP     NOT NULL DEFAULT (NOW() + INTERVAL '7 days')
+);
+
+CREATE INDEX IF NOT EXISTS idx_compra_usuario ON compra (nombre_usuario, fecha DESC);
+CREATE INDEX IF NOT EXISTS idx_compra_artista ON compra (nombre_artista, fecha DESC);
+
+CREATE TABLE IF NOT EXISTS compra_item (
+  id_compra       INT           NOT NULL
+                  REFERENCES compra(id_compra) ON DELETE CASCADE,
+  id_articulo     INT           REFERENCES articulo(id_articulo) ON DELETE SET NULL,
+  nombre          VARCHAR(120)  NOT NULL,
+  precio_unitario NUMERIC(10,2) NOT NULL,
+  cantidad        INT           NOT NULL CHECK (cantidad >= 1)
+);
+
+CREATE INDEX IF NOT EXISTS idx_compra_item_compra ON compra_item (id_compra);
 `;
 
 async function initDb() {

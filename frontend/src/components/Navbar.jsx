@@ -3,9 +3,13 @@ import { useAuth } from "../../context/AuthContext";
 import Avatar from "./Avatar";
 import CampanaNotificaciones from "./CampanaNotificaciones";
 import { useState, useEffect } from "react";
+import { useCarrito } from "../../context/CarritoContext";
+import MenuDesplegable from "./MenuDesplegable";
+import IconoCarrito from "./IconoCarrito";
 
 const Navbar = () => {
   const { usuario, logout } = useAuth();
+  const { unidades } = useCarrito();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const enPaginaAuth = pathname === "/login" || pathname === "/registro";
@@ -113,11 +117,17 @@ const Navbar = () => {
 
           {/* Enlaces de Navegación (Escritorio) */}
           <div className="hidden lg:flex items-center space-x-6 text-cielo font-bold text-sm">
-            <Link to="/" className="hover:text-crema hover:scale-105 transition text-fucsia">
+            <Link
+              to="/"
+              className="hover:text-crema hover:scale-105 transition text-fucsia"
+            >
               Inicio
             </Link>
 
-            <Link to="/comunidad" className="hover:text-crema hover:scale-105 transition">
+            <Link
+              to="/comunidad"
+              className="hover:text-crema hover:scale-105 transition"
+            >
               Comunidad
             </Link>
 
@@ -137,16 +147,44 @@ const Navbar = () => {
                     >
                       Crear evento
                     </Link>
+                    <MenuDesplegable
+                      etiqueta="Mi Tienda"
+                      opciones={[
+                        { to: "/mi-merch", texto: "Mi merch" },
+                        { to: "/mis-ventas", texto: "Mis ventas" },
+                      ]}
+                    />
                   </>
                 )}
 
                 {usuario.rol === "fan" && (
-                  <Link
-                    to="/mis-reservas"
-                    className="hover:text-crema hover:scale-105 transition text-fucsia"
-                  >
-                    Mis entradas
-                  </Link>
+                  <>
+                    <Link
+                      to="/mis-reservas"
+                      className="hover:text-crema hover:scale-105 transition text-fucsia"
+                    >
+                      Mis entradas
+                    </Link>
+                    <Link
+                      to="/mis-compras"
+                      className="hover:text-crema hover:scale-105 transition"
+                    >
+                      Mis compras
+                    </Link>
+                    <Link
+                      to="/carrito"
+                      aria-label={`Mi carrito (${unidades} ${unidades === 1 ? "unidad" : "unidades"})`}
+                      title="Mi carrito"
+                      className="relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-crema/10 border border-crema/25 text-crema hover:border-fucsia hover:text-fucsia transition"
+                    >
+                      <IconoCarrito />
+                      {unidades > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-fucsia text-tinta text-[10px] font-black flex items-center justify-center">
+                          {unidades > 99 ? "99+" : unidades}
+                        </span>
+                      )}
+                    </Link>
+                  </>
                 )}
 
                 <div className="flex items-center gap-3">
@@ -274,6 +312,25 @@ const Navbar = () => {
                   >
                     Crear evento
                   </Link>
+                  <p className="px-3 pt-2 text-xs font-bold uppercase tracking-wider text-crema/50">
+                    Mi tienda
+                  </p>
+
+                  <Link
+                    to="/mi-merch"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block pl-6 pr-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    Mi merch
+                  </Link>
+
+                  <Link
+                    to="/mis-ventas"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block pl-6 pr-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    Mis ventas
+                  </Link>
                 </>
               )}
 
@@ -281,23 +338,45 @@ const Navbar = () => {
                 <Link
                   to="/publicar"
                   onClick={() => setMenuAbierto(false)}
-                  className="block px-3 py-2 text-base font-bold text-sol hover:bg-crema/10 rounded-md"                
-                  >
+                  className="block px-3 py-2 text-base font-bold text-sol hover:bg-crema/10 rounded-md"
+                >
                   ➕ Crear publicación
                 </Link>
               )}
 
               {usuario.rol === "fan" && (
-                <Link
-                  to="/mis-reservas"
-                  onClick={() => setMenuAbierto(false)}
-                  className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
-                >
-                  Mis entradas
-                </Link>
+                <>
+                  <Link
+                    to="/mis-reservas"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    Mis entradas
+                  </Link>
+                  <Link
+                    to="/mis-compras"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    Mis compras
+                  </Link>
+                  <Link
+                    to="/carrito"
+                    onClick={() => setMenuAbierto(false)}
+                    className="block px-3 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-md"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <IconoCarrito clases="w-5 h-5" />
+                      Mi carrito{unidades > 0 ? ` (${unidades})` : ""}
+                    </span>
+                  </Link>
+                </>
               )}
 
-              <CampanaNotificaciones etiqueta onClick={() => setMenuAbierto(false)} />
+              <CampanaNotificaciones
+                etiqueta
+                onClick={() => setMenuAbierto(false)}
+              />
 
               <Link
                 to={rutaPerfil}

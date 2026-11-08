@@ -7,6 +7,7 @@ const artistasRoutes = require("./routes/artistas");
 const reservasRoutes = require("./routes/reservas");
 const iaRoutes = require("./routes/ia");
 const { sincronizarInsigniasSeguro } = require("./utils/insignias");
+const { vencerComprasSeguro } = require("./utils/compras");
 const app = express();
 const port = 5000;
 const path = require("path");
@@ -44,12 +45,22 @@ app.use("/api/notificaciones", require("./routes/notificaciones"));
 app.use("/api/publicaciones", require("./routes/publicaciones"));
 
 app.use("/api/ia", iaRoutes);
+
+app.use("/api/merch", require("./routes/merch"));
+
+app.use("/api/carrito", require("./routes/carrito"));
+
+app.use("/api/compras", require("./routes/compras"));
+
 // Crear las tablas antes de empezar a escuchar
 initDb()
   .then(() => {
     // Insignias se actualizan al arrancar y después cada 10 minutos
     sincronizarInsigniasSeguro();
     setInterval(sincronizarInsigniasSeguro, 10 * 60 * 1000);
+    // Merch: las compras con el pago vencido se cancelan y devuelven el stock
+    vencerComprasSeguro();
+    setInterval(vencerComprasSeguro, 10 * 60 * 1000);
 
     app.listen(5000, () =>
       console.log("Servidor escuchando en el puerto 5000"),
