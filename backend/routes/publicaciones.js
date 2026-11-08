@@ -1,7 +1,8 @@
 const express = require("express");
 const pool = require("../db");
 const { verificarToken, requerirRol, tokenOpcional } = require("../middleware/auth");
-const { subirFoto, borrarArchivo } = require("../middleware/subida");
+const recibirImagen = require("../middleware/recibirImagen");
+const { subirImagen, borrarImagenGuardada } = require("../utils/imagenes");
 const { notificarNuevaPublicacion } = require("../middleware/notificaciones");
 
 const router = express.Router();
@@ -91,35 +92,49 @@ router.get("/usuario/:usuario", tokenOpcional, async (req, res) => {
 
 // POST /api/publicaciones - Publica en el propio perfil (con imagen opcional)
 // Se envía como multipart/form-data: contenido (texto) e imagen (archivo, opcional)
-router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), subirFoto, async (req, res) => {
+router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), recibirImagen("imagen"), async (req, res) => {
   const autor = req.user.nombre_usuario;
   const contenido =
     typeof req.body?.contenido === "string" ? req.body.contenido.trim() : "";
 
-  // Si algo falla, el archivo que ya se subió se descarta
-  const rechazar = (estado, mensaje) => {
-    borrarArchivo(req.file?.filename);
-    return res.status(estado).json({ error: mensaje });
-  };
-
-  if (!contenido) return rechazar(400, "La publicación no puede estar vacía");
+  // Primero se revisa el texto: si no sirve, ni siquiera se sube la imagen
+  if (!contenido) {
+    return res.status(400).json({ error: "La publicación no puede estar vacía" });
+  }
   if ([...contenido].length > MAX_CONTENIDO) {
-    return rechazar(400, `La publicación puede tener hasta ${MAX_CONTENIDO} caracteres`);
+    return res
+      .status(400)
+      .json({ error: `La publicación puede tener hasta ${MAX_CONTENIDO} caracteres` });
   }
 
   const descripcion =
     (typeof req.body?.descripcion === "string" ? req.body.descripcion.trim() : "")
       .slice(0, 200) || `Imagen de una publicación de ${autor}`;
 
+  // 1) Si trae imagen, se sube a Cloudinary
+  let subida = null;
+  if (req.file) {
+    try {
+      subida = await subirImagen(req.file.buffer, { carpeta: "publicaciones" });
+    } catch (error) {
+      console.error("Error al subir la imagen a Cloudinary:", error.message);
+      return res
+        .status(502)
+        .json({ error: "No se pudo subir la imagen. Probá de nuevo en unos minutos." });
+    }
+  }
+
+  // 2) Se guarda en la base
   const client = await pool.connect();
+  let guardada = false; // pasa a true cuando la publicación ya quedó confirmada en la base
   try {
     await client.query("BEGIN");
 
     let idImagen = null;
-    if (req.file) {
+    if (subida) {
       const { rows } = await client.query(
-        "INSERT INTO imagen (descripcion, url) VALUES ($1, $2) RETURNING id_imagen",
-        [descripcion, `/uploads/${req.file.filename}`],
+        "INSERT INTO imagen (descripcion, url, public_id) VALUES ($1, $2, $3) RETURNING id_imagen",
+        [descripcion, subida.url, subida.publicId],
       );
       idImagen = rows[0].id_imagen;
     }
@@ -133,6 +148,7 @@ router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), subirFoto, 
     );
 
     await client.query("COMMIT");
+    guardada = true;
 
     await notificarNuevaPublicacion(autor, contenido);
 
@@ -143,8 +159,11 @@ router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), subirFoto, 
     );
     res.status(201).json(nueva[0]);
   } catch (error) {
-    await client.query("ROLLBACK");
-    borrarArchivo(req.file?.filename);
+    // Si la publicación ya se guardó, la imagen se queda: está en uso
+    if (!guardada) {
+      await client.query("ROLLBACK");
+      if (subida) await borrarImagenGuardada({ public_id: subida.publicId });
+    }
     if (error.code === "23503") {
       return res.status(404).json({ error: "No se encontró tu cuenta" });
     }
@@ -187,17 +206,19 @@ router.delete("/:id", verificarToken, async (req, res) => {
     }
 
     // La imagen de la publicación también se elimina (la fila y el archivo)
-    let urlImagen = null;
+    let imagen = null;
     if (rows[0].id_imagen) {
       const r = await client.query(
-        "DELETE FROM imagen WHERE id_imagen = $1 RETURNING url",
+        "DELETE FROM imagen WHERE id_imagen = $1 RETURNING url, public_id",
         [rows[0].id_imagen],
       );
-      urlImagen = r.rows[0]?.url ?? null;
+      imagen = r.rows[0] ?? null;
     }
 
     await client.query("COMMIT");
-    borrarArchivo(urlImagen); // el archivo se borra recién cuando todo salió bien
+
+    // El archivo se borra recién cuando todo salió bien (de Cloudinary, o del disco si es una de las de antes)
+    if (imagen) await borrarImagenGuardada(imagen);
 
     res.json({ id_publicacion: Number(id) });
   } catch (error) {

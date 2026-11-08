@@ -1,62 +1,21 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
-const multer = require("multer");
 const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
+const recibirImagen = require("../middleware/recibirImagen");
+const { subirImagen, borrarImagenGuardada } = require("../utils/imagenes");
 
 const router = express.Router();
 
-// Por ahora las imágenes se guardan en el disco del servidor (backend/uploads).
-// Cuando pasemos a Cloudinary cambian la configuración de multer y las funciones de archivo.
-const CARPETA = path.join(__dirname, "..", "uploads");
-const EXTENSIONES = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" };
-const MAX_BYTES = 2 * 1024 * 1024;
-
-const subir = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      fs.mkdirSync(CARPETA, { recursive: true });
-      cb(null, CARPETA);
-    },
-    // El nombre es aleatorio y la extensión sale del tipo real, no del nombre que trae el archivo
-    filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}${EXTENSIONES[file.mimetype]}`),
-  }),
-  limits: { fileSize: MAX_BYTES },
-  // Si el tipo no es válido, el archivo se descarta y req.file queda vacío
-  fileFilter: (req, file, cb) => cb(null, Boolean(EXTENSIONES[file.mimetype])),
-});
-
-// Recibe el archivo del campo "imagen" y devuelve un error claro si algo falla
-function recibirImagen(req, res, next) {
-  subir.single("imagen")(req, res, (error) => {
-    if (error) {
-      const mensaje =
-        error.code === "LIMIT_FILE_SIZE"
-          ? "La imagen no puede superar los 2 MB"
-          : "No se pudo recibir la imagen";
-      return res.status(400).json({ error: mensaje });
-    }
-    next();
-  });
-}
-
-// Borra un archivo de la carpeta de imágenes (si no existe, no pasa nada)
-function borrarArchivo(url) {
-  if (!url || !url.startsWith("/uploads/")) return;
-  fs.unlink(path.join(CARPETA, path.basename(url)), () => {});
-}
-
 // Comprueba que el evento exista y que sea del artista con sesión.
-// Se hace ANTES de recibir el archivo, así no se guarda nada si no corresponde.
+// Se hace ANTES de recibir el archivo, así no se sube nada si no corresponde.
 async function cargarEventoPropio(req, res, next) {
   if (!/^\d+$/.test(req.params.id)) {
     return res.status(404).json({ error: "Evento no encontrado" });
   }
   try {
     const { rows } = await pool.query(
-      `SELECT e.id_evento, e.nombre, e.nombre_artista, e.id_imagen, i.url AS imagen_url
+      `SELECT e.id_evento, e.nombre, e.nombre_artista, e.id_imagen,
+              i.url, i.public_id
          FROM evento e
          LEFT JOIN imagen i ON i.id_imagen = e.id_imagen
         WHERE e.id_evento = $1`,
@@ -84,19 +43,30 @@ router.put(
   verificarToken,
   requerirRol("artista"),
   cargarEventoPropio,
-  recibirImagen,
+  recibirImagen("imagen"),
   async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "Elegí una imagen JPG, PNG o WebP de hasta 2 MB" });
     }
 
-    const url = `/uploads/${req.file.filename}`;
+    // 1) Se sube a Cloudinary
+    let subida;
+    try {
+      subida = await subirImagen(req.file.buffer, { carpeta: "eventos" });
+    } catch (error) {
+      console.error("Error al subir la imagen a Cloudinary:", error.message);
+      return res
+        .status(502)
+        .json({ error: "No se pudo subir la imagen. Probá de nuevo en unos minutos." });
+    }
+
+    // 2) Se guarda en la base y se reemplaza la anterior
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
       const { rows } = await client.query(
-        "INSERT INTO imagen (descripcion, url) VALUES ($1, $2) RETURNING id_imagen",
-        [`Portada de ${req.evento.nombre}`.slice(0, 200), url],
+        "INSERT INTO imagen (descripcion, url, public_id) VALUES ($1, $2, $3) RETURNING id_imagen",
+        [`Portada de ${req.evento.nombre}`.slice(0, 200), subida.url, subida.publicId],
       );
       await client.query("UPDATE evento SET id_imagen = $1 WHERE id_evento = $2", [
         rows[0].id_imagen,
@@ -108,11 +78,14 @@ router.put(
       }
       await client.query("COMMIT");
 
-      borrarArchivo(req.evento.imagen_url); // y también su archivo
-      res.json({ imagen_url: url });
+      // Y recién después se borra su archivo (de Cloudinary, o del disco si era una de las de antes)
+      if (req.evento.id_imagen) await borrarImagenGuardada(req.evento);
+
+      res.json({ imagen_url: subida.url });
     } catch (error) {
       await client.query("ROLLBACK");
-      borrarArchivo(url); // se descarta el archivo nuevo, que quedó sin usar
+      // La base falló: la imagen recién subida quedó sin uso y se borra de Cloudinary
+      await borrarImagenGuardada({ public_id: subida.publicId });
       console.error("Error al guardar la imagen del evento:", error);
       res.status(500).json({ error: "Error interno del servidor" });
     } finally {
@@ -132,7 +105,7 @@ router.delete(
       // evento.id_imagen tiene ON DELETE SET NULL: al borrar la fila, el evento queda sin imagen
       if (req.evento.id_imagen) {
         await pool.query("DELETE FROM imagen WHERE id_imagen = $1", [req.evento.id_imagen]);
-        borrarArchivo(req.evento.imagen_url);
+        await borrarImagenGuardada(req.evento);
       }
       res.json({ imagen_url: null });
     } catch (error) {

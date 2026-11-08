@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS imagen (
   url         VARCHAR(255) NOT NULL
 );
 
+-- Identificación de la imagen en Cloudinary (necesaria para borrarla). Las imágenes viejas, guardadas en el servidor, no la tienen.
+ALTER TABLE imagen ADD COLUMN IF NOT EXISTS public_id VARCHAR(255);
+
 CREATE TABLE IF NOT EXISTS usuario (
   nombre_usuario   VARCHAR(30)  PRIMARY KEY,
   email            VARCHAR(255) NOT NULL UNIQUE,
