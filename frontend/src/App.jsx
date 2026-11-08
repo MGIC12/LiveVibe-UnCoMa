@@ -16,7 +16,10 @@ import MisEventos from "./pages/MisEventos";
 import Notificaciones from "./pages/Notificaciones";
 import Comunidad from "./pages/Comunidad";
 import Publicar from "./pages/Publicar";
-
+import Carrito from "./pages/Carrito";
+import MisCompras from "./pages/MisCompras";
+import MisVentas from "./pages/MisVentas";
+import MiMerch from "./pages/MiMerch";
 
 function App() {
   return (
@@ -97,7 +100,39 @@ function App() {
         />
 
         <Route path="/comunidad" element={<Comunidad />} />
-        
+        <Route
+          path="/carrito"
+          element={
+            <RutaProtegida roles={["fan"]}>
+              <Carrito />
+            </RutaProtegida>
+          }
+        />
+
+        <Route
+          path="/mis-compras"
+          element={
+            <RutaProtegida roles={["fan"]}>
+              <MisCompras />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/mi-merch"
+          element={
+            <RutaProtegida roles={["artista"]}>
+              <MiMerch />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/mis-ventas"
+          element={
+            <RutaProtegida roles={["artista"]}>
+              <MisVentas />
+            </RutaProtegida>
+          }
+        />
         <Route
           path="/publicar"
           element={

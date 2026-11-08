@@ -8,6 +8,7 @@ import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
 import BotonesSeguimiento from "../components/BotonesSeguimiento";
 import Publicaciones from "../components/Publicaciones";
+import MerchArtista from "../components/MerchArtista";
 
 // Marco común: Navbar, contenido y Footer
 function Marco({ children }) {
@@ -56,7 +57,9 @@ export default function PerfilArtista() {
   if (estado === "cargando") {
     return (
       <Marco>
-        <p className="text-center text-crema/70 py-20 animate-pulse">Cargando perfil...</p>
+        <p className="text-center text-crema/70 py-20 animate-pulse">
+          Cargando perfil...
+        </p>
       </Marco>
     );
   }
@@ -70,7 +73,10 @@ export default function PerfilArtista() {
               ? "Este artista no existe."
               : "No pudimos cargar el perfil. Probá de nuevo en unos minutos."}
           </p>
-          <Link to="/" className="inline-block text-cielo hover:text-crema font-bold">
+          <Link
+            to="/"
+            className="inline-block text-cielo hover:text-crema font-bold"
+          >
             Volver al inicio
           </Link>
         </div>
@@ -84,7 +90,10 @@ export default function PerfilArtista() {
   // Los botones de seguir los ve un fan o quien no inició sesión;
   // el dueño del perfil ve en su lugar el acceso para editarlo
   const mostrarAcciones =
-  esMiPerfil || !usuario || usuario.rol === "fan" || usuario.rol === "artista";
+    esMiPerfil ||
+    !usuario ||
+    usuario.rol === "fan" ||
+    usuario.rol === "artista";
 
   return (
     <Marco>
@@ -112,7 +121,9 @@ export default function PerfilArtista() {
           ) : (
             <BotonesSeguimiento
               artista={artista.nombre_usuario}
-              onCambio={(nuevos) => setArtista((a) => ({ ...a, seguidores: nuevos }))}
+              onCambio={(nuevos) =>
+                setArtista((a) => ({ ...a, seguidores: nuevos }))
+              }
             />
           ))}
       </CabeceraPerfil>
@@ -144,7 +155,9 @@ export default function PerfilArtista() {
                 <span className="font-bold text-crema">
                   {i.nombre} {i.apellido}
                 </span>
-                {i.instrumento && <span className="text-crema/70">{i.instrumento}</span>}
+                {i.instrumento && (
+                  <span className="text-crema/70">{i.instrumento}</span>
+                )}
               </li>
             ))}
           </ul>
@@ -155,7 +168,9 @@ export default function PerfilArtista() {
       <section className="space-y-3">
         <h2 className="text-2xl font-black text-crema">
           Próximos <span className="text-fucsia">shows</span>{" "}
-          <span className="text-base font-bold text-crema/60">({shows.length})</span>
+          <span className="text-base font-bold text-crema/60">
+            ({shows.length})
+          </span>
         </h2>
 
         {shows.length === 0 ? (
@@ -173,7 +188,9 @@ export default function PerfilArtista() {
                     className="group flex items-center gap-4 bg-crema/5 hover:bg-crema/10 border border-crema/20 hover:border-fucsia/60 rounded-xl p-4 transition-all"
                   >
                     <div className="text-center min-w-[64px] bg-tinta/80 rounded-lg py-2 px-3 border border-crema/20 group-hover:border-fucsia/50 transition-colors">
-                      <p className="text-2xl font-black text-crema">{fecha.getDate()}</p>
+                      <p className="text-2xl font-black text-crema">
+                        {fecha.getDate()}
+                      </p>
                       <p className="text-xs font-bold uppercase tracking-widest text-crema/70">
                         {fecha.toLocaleString("es-AR", { month: "short" })}
                       </p>
@@ -184,7 +201,8 @@ export default function PerfilArtista() {
                         {e.nombre}
                       </h3>
                       <p className="text-sm text-crema/70 truncate">
-                        📍 {e.lugar}, <strong className="text-crema/80">{e.ciudad}</strong>
+                        📍 {e.lugar},{" "}
+                        <strong className="text-crema/80">{e.ciudad}</strong>
                         {e.hora_apertura ? ` · ${e.hora_apertura} hs` : ""}
                       </p>
                     </div>
@@ -201,7 +219,12 @@ export default function PerfilArtista() {
           </ul>
         )}
       </section>
-            <Publicaciones key={artista.nombre_usuario} perfil={artista} esMiPerfil={esMiPerfil} />
+      <Publicaciones
+        key={artista.nombre_usuario}
+        perfil={artista}
+        esMiPerfil={esMiPerfil}
+      />
+      <MerchArtista artista={artista.nombre_usuario} />
     </Marco>
   );
 }
