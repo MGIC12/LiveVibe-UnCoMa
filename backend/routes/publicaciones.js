@@ -1,6 +1,10 @@
 const express = require("express");
 const pool = require("../db");
-const { verificarToken, requerirRol, tokenOpcional } = require("../middleware/auth");
+const {
+  verificarToken,
+  requerirRol,
+  tokenOpcional,
+} = require("../middleware/auth");
 const recibirImagen = require("../middleware/recibirImagen");
 const { subirImagen, borrarImagenGuardada } = require("../utils/imagenes");
 const { notificarNuevaPublicacion } = require("../middleware/notificaciones");
@@ -93,50 +97,28 @@ router.get("/usuario/:usuario", tokenOpcional, async (req, res) => {
 
 // POST /api/publicaciones - Publica en el propio perfil (con imagen opcional)
 // Se envía como multipart/form-data: contenido (texto) e imagen (archivo, opcional)
-router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), recibirImagen("imagen"), async (req, res) => {
-  const autor = req.user.nombre_usuario;
-  const contenido =
-    typeof req.body?.contenido === "string" ? req.body.contenido.trim() : "";
+router.post(
+  "/",
+  verificarToken,
+  requerirRol(...PUEDEN_INTERACTUAR),
+  recibirImagen("imagen"),
+  async (req, res) => {
+    const autor = req.user.nombre_usuario;
+    const contenido =
+      typeof req.body?.contenido === "string" ? req.body.contenido.trim() : "";
 
-  // Primero se revisa el texto: si no sirve, ni siquiera se sube la imagen
-  if (!contenido) {
-    return res.status(400).json({ error: "La publicación no puede estar vacía" });
-  }
-  if ([...contenido].length > MAX_CONTENIDO) {
-    return res
-      .status(400)
-      .json({ error: `La publicación puede tener hasta ${MAX_CONTENIDO} caracteres` });
-  }
-
-  const descripcion =
-    (typeof req.body?.descripcion === "string" ? req.body.descripcion.trim() : "")
-      .slice(0, 200) || `Imagen de una publicación de ${autor}`;
-
-  // 1) Si trae imagen, se sube a Cloudinary
-  let subida = null;
-  if (req.file) {
-    try {
-      subida = await subirImagen(req.file.buffer, { carpeta: "publicaciones" });
-    } catch (error) {
-      console.error("Error al subir la imagen a Cloudinary:", error.message);
+    // Primero se revisa el texto: si no sirve, ni siquiera se sube la imagen
+    if (!contenido) {
       return res
-        .status(502)
-        .json({ error: "No se pudo subir la imagen. Probá de nuevo en unos minutos." });
+        .status(400)
+        .json({ error: "La publicación no puede estar vacía" });
     }
-  }
-
-  // 2) Se guarda en la base
-  const client = await pool.connect();
-  let guardada = false; // pasa a true cuando la publicación ya quedó confirmada en la base
-  try {
-    await client.query("BEGIN");
-
-    let idImagen = null;
-    if (subida) {
-      const { rows } = await client.query(
-        "INSERT INTO imagen (descripcion, url, public_id) VALUES ($1, $2, $3) RETURNING id_imagen",
-        [descripcion, subida.url, subida.publicId],
-      );
+    if ([...contenido].length > MAX_CONTENIDO) {
+      return res
+        .status(400)
+        .json({
+          error: `La publicación puede tener hasta ${MAX_CONTENIDO} caracteres`,
+        });
     }
 
     const descripcion =
@@ -145,15 +127,35 @@ router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), recibirImag
         : ""
       ).slice(0, 200) || `Imagen de una publicación de ${autor}`;
 
+    // 1) Si trae imagen, se sube a Cloudinary
+    let subida = null;
+    if (req.file) {
+      try {
+        subida = await subirImagen(req.file.buffer, {
+          carpeta: "publicaciones",
+        });
+      } catch (error) {
+        console.error("Error al subir la imagen a Cloudinary:", error.message);
+        return res
+          .status(502)
+          .json({
+            error:
+              "No se pudo subir la imagen. Probá de nuevo en unos minutos.",
+          });
+      }
+    }
+
+    // 2) Se guarda en la base
     const client = await pool.connect();
+    let guardada = false; // pasa a true cuando la publicación ya quedó confirmada en la base
     try {
       await client.query("BEGIN");
 
       let idImagen = null;
-      if (req.file) {
+      if (subida) {
         const { rows } = await client.query(
-          "INSERT INTO imagen (descripcion, url) VALUES ($1, $2) RETURNING id_imagen",
-          [descripcion, `/uploads/${req.file.filename}`],
+          "INSERT INTO imagen (descripcion, url, public_id) VALUES ($1, $2, $3) RETURNING id_imagen",
+          [descripcion, subida.url, subida.publicId],
         );
         idImagen = rows[0].id_imagen;
       }
@@ -166,25 +168,30 @@ router.post("/", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), recibirImag
         [autor, contenido, idImagen],
       );
 
-    await client.query("COMMIT");
-    guardada = true;
+      await client.query("COMMIT");
+      guardada = true;
 
       await notificarNuevaPublicacion(autor, contenido);
 
-    // Se devuelve con el mismo formato que la lista, así la pantalla la muestra directo
-    const { rows: nueva } = await pool.query(
-      `${SELECT_PUBLICACION} WHERE p.id_publicacion = $2`,
-      [autor, rows[0].id_publicacion],
-    );
-    res.status(201).json(nueva[0]);
-  } catch (error) {
-    // Si la publicación ya se guardó, la imagen se queda: está en uso
-    if (!guardada) {
-      await client.query("ROLLBACK");
-      if (subida) await borrarImagenGuardada({ public_id: subida.publicId });
-    }
-    if (error.code === "23503") {
-      return res.status(404).json({ error: "No se encontró tu cuenta" });
+      // Se devuelve con el mismo formato que la lista, así la pantalla la muestra directo
+      const { rows: nueva } = await pool.query(
+        `${SELECT_PUBLICACION} WHERE p.id_publicacion = $2`,
+        [autor, rows[0].id_publicacion],
+      );
+      res.status(201).json(nueva[0]);
+    } catch (error) {
+      // Si la publicación ya se guardó, la imagen se queda: está en uso
+      if (!guardada) {
+        await client.query("ROLLBACK");
+        if (subida) await borrarImagenGuardada({ public_id: subida.publicId });
+      }
+      if (error.code === "23503") {
+        return res.status(404).json({ error: "No se encontró tu cuenta" });
+      }
+      console.error("Error al crear la publicación:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    } finally {
+      client.release();
     }
   },
 );
