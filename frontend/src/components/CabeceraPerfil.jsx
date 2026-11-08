@@ -4,7 +4,7 @@ export default function CabeceraPerfil({
   avatar, // objeto con foto_url, foto_descripcion y nombre_usuario (para la inicial)
   titulo,
   subtitulo,
-  etiquetas = [], // [{ texto, destacada }]
+  etiquetas = [], // [{ texto, destacada, clases }]
   banner = "bg-fucsia", // color del banner
   children, // acciones (botones); si no hay, no se muestra el bloque
 }) {
@@ -18,8 +18,22 @@ export default function CabeceraPerfil({
           aria-hidden="true"
         >
           <circle cx="75" cy="75" r="72" fill="#0F0D14" />
-          <circle cx="75" cy="75" r="58" fill="none" stroke="#FFF4E3" opacity=".3" />
-          <circle cx="75" cy="75" r="46" fill="none" stroke="#FFF4E3" opacity=".3" />
+          <circle
+            cx="75"
+            cy="75"
+            r="58"
+            fill="none"
+            stroke="#FFF4E3"
+            opacity=".3"
+          />
+          <circle
+            cx="75"
+            cy="75"
+            r="46"
+            fill="none"
+            stroke="#FFF4E3"
+            opacity=".3"
+          />
           <circle cx="75" cy="75" r="22" fill="#FFC62E" />
           <circle cx="75" cy="75" r="4" fill="#0F0D14" />
         </svg>
@@ -46,7 +60,10 @@ export default function CabeceraPerfil({
               <span
                 key={n}
                 className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
-                  e.destacada ? "bg-sol text-tinta" : "bg-crema/10 text-crema/80"
+                  e.clases ??
+                  (e.destacada
+                    ? "bg-sol text-tinta"
+                    : "bg-crema/10 text-crema/80")
                 }`}
               >
                 {e.texto}

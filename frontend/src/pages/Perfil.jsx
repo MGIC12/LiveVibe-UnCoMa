@@ -3,8 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Avatar from "../components/Avatar";
+import Insignia from "../components/Insignia";
 import FotoPerfil from "../components/FotoPerfil";
-import CamposArtista from "../components/CamposArtista"; // ← misma ruta que en Register.jsx
+import CamposArtista from "../components/CamposArtista";
 import { useAuth } from "../../context/AuthContext";
 import { FOTO_VACIA } from "../utils/formularios";
 import { urlImagen } from "../utils/api";
@@ -74,7 +75,8 @@ export default function Perfil() {
         await editarPerfil({
           biografia,
           ...artista,
-          integrantes: artista.tipo_artista === "banda" ? artista.integrantes : [],
+          integrantes:
+            artista.tipo_artista === "banda" ? artista.integrantes : [],
         });
       }
 
@@ -96,9 +98,11 @@ export default function Perfil() {
   const nombrePrincipal = esArtista
     ? usuario.nombre_artistico || usuario.nombre_usuario
     : usuario.nombre_usuario;
-  const etiqueta = esArtista ? (usuario.tipo_artista ?? "artista") : usuario.rol;
+  const etiqueta = esArtista
+    ? (usuario.tipo_artista ?? "artista")
+    : usuario.rol;
 
-    // Dónde está tu perfil público (los artistas tienen su propia página)
+  // Dónde está tu perfil público (los artistas tienen su propia página)
   const rutaPublica = esArtista
     ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
     : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`;
@@ -129,6 +133,7 @@ export default function Perfil() {
               <span className="inline-block px-3 py-1 rounded-full bg-sol text-tinta text-xs font-bold uppercase tracking-wider">
                 {etiqueta}
               </span>
+              {esFan && <Insignia nivel={usuario.insignia} grande />}
               {esArtista && usuario.genero && (
                 <span className="inline-block px-3 py-1 rounded-full bg-crema/10 text-crema/80 border border-crema/20 text-xs font-bold uppercase tracking-wider">
                   {usuario.genero}
@@ -180,16 +185,16 @@ export default function Perfil() {
               </div>
 
               {(esFan || esArtista) && (
-              <Link
-                to={
-                  esArtista
-                    ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
-                    : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`
-                }
-                className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
-              >
-                👁️ Ver mi perfil público
-              </Link>
+                <Link
+                  to={
+                    esArtista
+                      ? `/artista/${encodeURIComponent(usuario.nombre_usuario)}`
+                      : `/usuario/${encodeURIComponent(usuario.nombre_usuario)}`
+                  }
+                  className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
+                >
+                  👁️ Ver mi perfil público
+                </Link>
               )}
             </div>
 
@@ -221,7 +226,6 @@ export default function Perfil() {
             </div>
           </form>
         ) : (
-
           /* ---------- MODO VISTA ---------- */
           <section className="bg-crema/5 backdrop-blur-xl border border-crema/20 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
             {aviso && (
@@ -279,11 +283,15 @@ export default function Perfil() {
                   </div>
                   <div>
                     <dt className="text-crema/60">Género</dt>
-                    <dd className="font-bold text-crema">{usuario.genero || "—"}</dd>
+                    <dd className="font-bold text-crema">
+                      {usuario.genero || "—"}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-crema/60">Nacionalidad</dt>
-                    <dd className="font-bold text-crema">{usuario.nacionalidad || "—"}</dd>
+                    <dd className="font-bold text-crema">
+                      {usuario.nacionalidad || "—"}
+                    </dd>
                   </div>
                 </dl>
               </div>

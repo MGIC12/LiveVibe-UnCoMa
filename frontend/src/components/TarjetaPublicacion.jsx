@@ -1,19 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
+import Insignia from "./Insignia";
 import Comentarios from "./Comentarios";
 import { useAuth } from "../../context/AuthContext";
 import { API, urlImagen } from "../utils/api";
 import { tiempoRelativo } from "../utils/tiempo";
 
-export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) {
+export default function TarjetaPublicacion({
+  publicacion,
+  esMia,
+  onEliminada,
+}) {
   const { usuario, token } = useAuth();
   const puedeInteractuar = usuario?.rol === "fan" || usuario?.rol === "artista";
   const id = publicacion.id_publicacion;
 
   // Los artistas se muestran con su nombre artístico y tienen su propia página
   const esArtistaAutor = publicacion.rol_autor === "artista";
-  const nombreMostrado = publicacion.nombre_artistico || publicacion.nombre_autor;
+  const nombreMostrado =
+    publicacion.nombre_artistico || publicacion.nombre_autor;
   const rutaAutor = `${esArtistaAutor ? "/artista" : "/usuario"}/${encodeURIComponent(
     publicacion.nombre_autor,
   )}`;
@@ -22,7 +28,9 @@ export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) 
     cant: publicacion.cant_likes,
     mio: publicacion.me_gusto,
   });
-  const [cantComentarios, setCantComentarios] = useState(publicacion.cant_comentarios);
+  const [cantComentarios, setCantComentarios] = useState(
+    publicacion.cant_comentarios,
+  );
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -38,7 +46,8 @@ export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) 
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo guardar tu me gusta");
+      if (!res.ok)
+        throw new Error(data.error || "No se pudo guardar tu me gusta");
       setLikes({ cant: data.cant_likes, mio: data.me_gusto });
     } catch (err) {
       setError(err.message);
@@ -56,7 +65,8 @@ export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) 
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo eliminar la publicación");
+      if (!res.ok)
+        throw new Error(data.error || "No se pudo eliminar la publicación");
       onEliminada(id);
     } catch (err) {
       setError(err.message);
@@ -72,7 +82,8 @@ export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) 
       <span>{likes.cant}</span>
     </>
   );
-  const base = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition";
+  const base =
+    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition";
 
   let botonMeGusta;
   if (puedeInteractuar && !esMia) {
@@ -142,8 +153,11 @@ export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) 
                 Artista
               </span>
             )}
+            <Insignia nivel={publicacion.autor_insignia} />
           </div>
-          <p className="text-xs text-crema/50">{tiempoRelativo(publicacion.fecha_publicacion)}</p>
+          <p className="text-xs text-crema/50">
+            {tiempoRelativo(publicacion.fecha_publicacion)}
+          </p>
         </div>
       </div>
 
@@ -169,7 +183,9 @@ export default function TarjetaPublicacion({ publicacion, esMia, onEliminada }) 
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
             className={`${base} ${
-              abierto ? "bg-cielo/20 text-cielo" : "text-crema/70 hover:bg-crema/10 hover:text-cielo"
+              abierto
+                ? "bg-cielo/20 text-cielo"
+                : "text-crema/70 hover:bg-crema/10 hover:text-cielo"
             }`}
           >
             <span>💬</span>

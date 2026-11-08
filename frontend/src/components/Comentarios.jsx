@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
+import Insignia from "./Insignia";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { tiempoRelativo } from "../utils/tiempo";
@@ -45,7 +46,10 @@ function FormularioComentario({
         autoFocus={Boolean(onCancelar)}
         // Al responder, el cursor queda al final del "@usuario "
         onFocus={(e) =>
-          e.target.setSelectionRange(e.target.value.length, e.target.value.length)
+          e.target.setSelectionRange(
+            e.target.value.length,
+            e.target.value.length,
+          )
         }
         className="w-full px-3 py-2 rounded-xl bg-crema/10 border border-crema/25 text-crema placeholder-crema/60 focus:outline-none focus:ring-2 focus:ring-cielo text-sm resize-none"
       />
@@ -120,12 +124,15 @@ function Comentario({
             >
               {nombre}
             </Link>
+            <Insignia nivel={c.insignia} />
             {esAutor && (
               <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-sol text-tinta">
                 Autor
               </span>
             )}
-            <span className="text-xs text-crema/50">{tiempoRelativo(c.fecha_hora)}</span>
+            <span className="text-xs text-crema/50">
+              {tiempoRelativo(c.fecha_hora)}
+            </span>
           </div>
           <p className="text-sm text-crema/90 whitespace-pre-line break-words">
             {c.contenido}
@@ -134,7 +141,9 @@ function Comentario({
 
         {puedeResponder && (
           <button
-            onClick={() => setRespondiendoA(respondiendo ? null : c.id_comentario)}
+            onClick={() =>
+              setRespondiendoA(respondiendo ? null : c.id_comentario)
+            }
             className="text-xs font-bold text-cielo hover:text-crema transition px-2"
           >
             Responder
@@ -155,7 +164,11 @@ function Comentario({
   );
 }
 
-export default function Comentarios({ idPublicacion, autorPublicacion, onNuevoComentario }) {
+export default function Comentarios({
+  idPublicacion,
+  autorPublicacion,
+  onNuevoComentario,
+}) {
   const { usuario, token } = useAuth();
   const puedeInteractuar = usuario?.rol === "fan" || usuario?.rol === "artista";
 
@@ -170,7 +183,10 @@ export default function Comentarios({ idPublicacion, autorPublicacion, onNuevoCo
     fetch(`${API}/api/publicaciones/${idPublicacion}/comentarios`)
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || "No se pudieron cargar los comentarios");
+        if (!res.ok)
+          throw new Error(
+            data.error || "No se pudieron cargar los comentarios",
+          );
         return data;
       })
       .then((data) => {
@@ -189,16 +205,20 @@ export default function Comentarios({ idPublicacion, autorPublicacion, onNuevoCo
 
   // Sirve para comentar (idPadre = null) y para responder
   async function enviar(contenido, idPadre = null) {
-    const res = await fetch(`${API}/api/publicaciones/${idPublicacion}/comentarios`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const res = await fetch(
+      `${API}/api/publicaciones/${idPublicacion}/comentarios`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ contenido, id_comentario_padre: idPadre }),
       },
-      body: JSON.stringify({ contenido, id_comentario_padre: idPadre }),
-    });
+    );
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "No se pudo enviar el comentario");
+    if (!res.ok)
+      throw new Error(data.error || "No se pudo enviar el comentario");
 
     setRespondiendoA(null);
     setVersion((v) => v + 1); // se vuelve a pedir la lista: siempre queda igual que en el servidor
@@ -216,7 +236,9 @@ export default function Comentarios({ idPublicacion, autorPublicacion, onNuevoCo
   return (
     <div className="mt-4 pt-4 border-t border-crema/20 space-y-4">
       {cargando ? (
-        <p className="text-crema/60 text-sm animate-pulse">Cargando comentarios...</p>
+        <p className="text-crema/60 text-sm animate-pulse">
+          Cargando comentarios...
+        </p>
       ) : error ? (
         <p className="text-mandarina text-sm" role="alert">
           {error}

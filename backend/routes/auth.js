@@ -16,7 +16,7 @@ function firmarToken(usuario) {
   return jwt.sign(
     { nombre_usuario: usuario.nombre_usuario, rol: usuario.rol },
     process.env.JWT_SECRET,
-    { expiresIn: "2h" }
+    { expiresIn: "2h" },
   );
 }
 
@@ -42,27 +42,39 @@ router.post("/register", async (req, res) => {
   } = req.body;
 
   if (!nombre_usuario || !email || !contrasenia || !rol) {
-    return res.status(400).json({ error: "Completá usuario, email, contraseña y tipo de cuenta" });
+    return res
+      .status(400)
+      .json({ error: "Completá usuario, email, contraseña y tipo de cuenta" });
   }
   if (!ROLES_PUBLICOS.includes(rol)) {
-    return res.status(400).json({ error: "El tipo de cuenta debe ser fan o artista" });
+    return res
+      .status(400)
+      .json({ error: "El tipo de cuenta debe ser fan o artista" });
   }
   if (contrasenia.length < 8) {
-    return res.status(400).json({ error: "La contraseña debe tener al menos 8 caracteres" });
+    return res
+      .status(400)
+      .json({ error: "La contraseña debe tener al menos 8 caracteres" });
   }
 
   // Validaciones propias del artista
   let listaIntegrantes = [];
   if (rol === "artista") {
     if (!nombre_artistico) {
-      return res.status(400).json({ error: "Los artistas deben indicar su nombre artístico" });
+      return res
+        .status(400)
+        .json({ error: "Los artistas deben indicar su nombre artístico" });
     }
     if (!TIPOS_ARTISTA.includes(tipo_artista)) {
-      return res.status(400).json({ error: "El tipo de artista debe ser solista o banda" });
+      return res
+        .status(400)
+        .json({ error: "El tipo de artista debe ser solista o banda" });
     }
 
     if (tipo_artista === "solista" && integrantes.length > 0) {
-      return res.status(400).json({ error: "Un solista no puede tener integrantes" });
+      return res
+        .status(400)
+        .json({ error: "Un solista no puede tener integrantes" });
     }
 
     if (tipo_artista === "banda") {
@@ -78,7 +90,11 @@ router.post("/register", async (req, res) => {
 
       for (const i of integrantes) {
         if (!i.nombre?.trim() || !i.apellido?.trim()) {
-          return res.status(400).json({ error: "Completá nombre y apellido de todos los integrantes" });
+          return res
+            .status(400)
+            .json({
+              error: "Completá nombre y apellido de todos los integrantes",
+            });
         }
       }
 
@@ -109,27 +125,40 @@ router.post("/register", async (req, res) => {
         fecha_nac || null,
         biografia || null,
         rol,
-      ]
+      ],
     );
 
     if (rol === "artista") {
       await client.query(
         `INSERT INTO artista (nombre_usuario, nombre_artistico, nacionalidad, genero, tipo_artista)
          VALUES ($1, $2, $3, $4, $5)`,
-        [nombre_usuario.trim(), nombre_artistico, nacionalidad || null, genero || null, tipo_artista]
+        [
+          nombre_usuario.trim(),
+          nombre_artistico,
+          nacionalidad || null,
+          genero || null,
+          tipo_artista,
+        ],
       );
 
       for (const i of listaIntegrantes) {
         await client.query(
           `INSERT INTO integrante (nombre_usuario, nombre, apellido, instrumento, fecha_nac, nacionalidad)
            VALUES ($1, $2, $3, $4, $5, $6)`,
-          [nombre_usuario.trim(), i.nombre, i.apellido, i.instrumento, i.fecha_nac, i.nacionalidad]
+          [
+            nombre_usuario.trim(),
+            i.nombre,
+            i.apellido,
+            i.instrumento,
+            i.fecha_nac,
+            i.nacionalidad,
+          ],
         );
       }
     } else {
       await client.query(
         `INSERT INTO fan (nombre_usuario, cancion_favorita) VALUES ($1, $2)`,
-        [nombre_usuario.trim(), cancion_favorita || null]
+        [nombre_usuario.trim(), cancion_favorita || null],
       );
     }
 
@@ -143,7 +172,9 @@ router.post("/register", async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     if (err.code === "23505") {
-      return res.status(409).json({ error: "Ese usuario o email ya está registrado" });
+      return res
+        .status(409)
+        .json({ error: "Ese usuario o email ya está registrado" });
     }
     console.error(err);
     return res.status(500).json({ error: "Error del servidor" });
@@ -158,7 +189,12 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { usuario, contrasenia } = req.body;
 
-  if (typeof usuario !== "string" || typeof contrasenia !== "string" || !usuario || !contrasenia) {
+  if (
+    typeof usuario !== "string" ||
+    typeof contrasenia !== "string" ||
+    !usuario ||
+    !contrasenia
+  ) {
     return res.status(400).json({ error: "Ingresá usuario y contraseña" });
   }
 
@@ -167,19 +203,24 @@ router.post("/login", async (req, res) => {
       `SELECT nombre_usuario, email, contrasenia_hash, rol
          FROM usuario
         WHERE nombre_usuario = $1 OR email = $2`,
-      [usuario.trim(), usuario.trim().toLowerCase()]
+      [usuario.trim(), usuario.trim().toLowerCase()],
     );
 
     const fila = rows[0];
     // Mismo mensaje si falla el usuario o la contraseña, para no dar pistas
-    const ok = fila && (await bcrypt.compare(contrasenia, fila.contrasenia_hash));
+    const ok =
+      fila && (await bcrypt.compare(contrasenia, fila.contrasenia_hash));
     if (!ok) {
       return res.status(401).json({ error: "Credenciales inválidas" });
     }
 
     return res.json({
       token: firmarToken(fila),
-      usuario: { nombre_usuario: fila.nombre_usuario, email: fila.email, rol: fila.rol },
+      usuario: {
+        nombre_usuario: fila.nombre_usuario,
+        email: fila.email,
+        rol: fila.rol,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -195,16 +236,17 @@ router.get("/me", verificarToken, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT u.nombre_usuario, u.email, u.rol, u.biografia, u.fecha_alta,
               i.url AS foto_url, i.descripcion AS foto_descripcion,
-              f.cancion_favorita,
+              f.cancion_favorita, f.insignia,
               a.nombre_artistico, a.nacionalidad, a.genero, a.tipo_artista
          FROM usuario u
          LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
          LEFT JOIN fan f ON f.nombre_usuario = u.nombre_usuario
          LEFT JOIN artista a ON a.nombre_usuario = u.nombre_usuario
         WHERE u.nombre_usuario = $1`,
-      [req.user.nombre_usuario]
+      [req.user.nombre_usuario],
     );
-    if (!rows[0]) return res.status(404).json({ error: "Usuario no encontrado" });
+    if (!rows[0])
+      return res.status(404).json({ error: "Usuario no encontrado" });
 
     const usuario = rows[0];
 
@@ -216,7 +258,7 @@ router.get("/me", verificarToken, async (req, res) => {
            FROM integrante
           WHERE nombre_usuario = $1
           ORDER BY id_integrante`,
-        [usuario.nombre_usuario]
+        [usuario.nombre_usuario],
       );
       usuario.integrantes = integrantes;
     }
@@ -228,4 +270,4 @@ router.get("/me", verificarToken, async (req, res) => {
   }
 });
 
-module.exports = router
+module.exports = router;

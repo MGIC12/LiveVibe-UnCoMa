@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CabeceraPerfil from "../components/CabeceraPerfil";
+import { etiquetaInsignia, INSIGNIAS } from "../utils/insignias";
 import Publicaciones from "../components/Publicaciones";
 import { useAuth } from "../../context/AuthContext";
 import BotonesSeguimiento from "../components/BotonesSeguimiento";
@@ -55,7 +56,9 @@ export default function PerfilFan() {
   if (estado === "cargando") {
     return (
       <Marco>
-        <p className="text-center text-crema/70 py-20 animate-pulse">Cargando perfil...</p>
+        <p className="text-center text-crema/70 py-20 animate-pulse">
+          Cargando perfil...
+        </p>
       </Marco>
     );
   }
@@ -69,7 +72,10 @@ export default function PerfilFan() {
               ? "Este usuario no existe."
               : "No pudimos cargar el perfil. Probá de nuevo en unos minutos."}
           </p>
-          <Link to="/" className="inline-block text-cielo hover:text-crema font-bold">
+          <Link
+            to="/"
+            className="inline-block text-cielo hover:text-crema font-bold"
+          >
             Volver al inicio
           </Link>
         </div>
@@ -79,7 +85,12 @@ export default function PerfilFan() {
 
   // Los artistas tienen su propia página
   if (perfil.rol === "artista") {
-    return <Navigate to={`/artista/${encodeURIComponent(perfil.nombre_usuario)}`} replace />;
+    return (
+      <Navigate
+        to={`/artista/${encodeURIComponent(perfil.nombre_usuario)}`}
+        replace
+      />
+    );
   }
 
   const esMiPerfil = usuario?.nombre_usuario === perfil.nombre_usuario;
@@ -98,7 +109,17 @@ export default function PerfilFan() {
         subtitulo={`Miembro desde ${miembroDesde} · ${seguidores} ${
           seguidores === 1 ? "seguidor" : "seguidores"
         } · ${siguiendo} siguiendo`}
-        etiquetas={[{ texto: "Fan", destacada: true }]}
+        etiquetas={[
+          { texto: "Fan", destacada: true },
+          ...(etiquetaInsignia(perfil.insignia)
+            ? [
+                {
+                  texto: etiquetaInsignia(perfil.insignia),
+                  clases: INSIGNIAS[perfil.insignia].clases,
+                },
+              ]
+            : []),
+        ]}
         banner="bg-cielo"
       >
         {esMiPerfil ? (
@@ -111,17 +132,22 @@ export default function PerfilFan() {
         ) : !usuario || usuario.rol === "fan" || usuario.rol === "artista" ? (
           <BotonesSeguimiento
             usuarioPerfil={perfil.nombre_usuario}
-            onCambio={(nuevos) => setPerfil((p) => ({ ...p, seguidores: nuevos }))}
+            onCambio={(nuevos) =>
+              setPerfil((p) => ({ ...p, seguidores: nuevos }))
+            }
           />
         ) : null}
-        
       </CabeceraPerfil>
 
       <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
-        <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">Biografía</h2>
+        <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">
+          Biografía
+        </h2>
         <p className="whitespace-pre-line text-crema/90 leading-relaxed">
           {perfil.biografia || (
-            <span className="text-crema/40 italic">Todavía no escribió su biografía.</span>
+            <span className="text-crema/40 italic">
+              Todavía no escribió su biografía.
+            </span>
           )}
         </p>
       </section>
@@ -141,7 +167,11 @@ export default function PerfilFan() {
         </p>
       </section>
 
-      <Publicaciones key={perfil.nombre_usuario} perfil={perfil} esMiPerfil={esMiPerfil} />
+      <Publicaciones
+        key={perfil.nombre_usuario}
+        perfil={perfil}
+        esMiPerfil={esMiPerfil}
+      />
     </Marco>
   );
 }
