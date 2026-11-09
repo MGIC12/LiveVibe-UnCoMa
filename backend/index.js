@@ -6,8 +6,15 @@ const buscarRoutes = require("./routes/buscar");
 const artistasRoutes = require("./routes/artistas");
 const reservasRoutes = require("./routes/reservas");
 const iaRoutes = require("./routes/ia");
+const { limiteLogin, limiteRegistro } = require("./middleware/limites");
 const { sincronizarInsigniasSeguro } = require("./utils/insignias");
 const { vencerComprasSeguro } = require("./utils/compras");
+// Sin esta clave no se pueden firmar ni verificar sesiones: mejor no arrancar
+if (!process.env.JWT_SECRET) {
+  console.error("Falta JWT_SECRET en backend/.env (ver .env.example). El servidor no puede iniciar.");
+  process.exit(1);
+}
+
 const app = express();
 const port = process.env.PORT || 5000;
 const path = require("path");
@@ -27,6 +34,9 @@ app.get("/", (req, res) => {
   res.send("¡Backend de LiveVibe funcionando!");
 });
 
+// Límites de intentos antes de las rutas de autenticación
+app.use("/api/auth/login", limiteLogin);
+app.use("/api/auth/register", limiteRegistro);
 app.use("/api/auth", require("./routes/auth"));
 
 app.use("/api/perfil", require("./routes/perfil"));

@@ -2,12 +2,16 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { verificarToken } = require("../middleware/auth");
+const { verificarToken, tokenOpcional } = require("../middleware/auth");
+const { limiteChatbot, limiteIA } = require("../middleware/limites");
+const chatbot = require("../utils/chatbot");
+const recomendador = require("../utils/recomendador");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL;
 const TIMEOUT_MS = 10000;
+const MAX_MENSAJE = 300;
 
 // Modelos principales
 const modelTexto = genAI.getGenerativeModel({ model: MODEL_NAME });
@@ -46,70 +50,91 @@ async function generar(principal, respaldo, prompt) {
   throw ultimoError;
 }
 
+// Modelo del chatbot: trae las herramientas (consultar eventos, reservas, proponer reserva)
+// y las instrucciones del día. Se arma en cada consulta porque dependen de quién escribe.
+function modeloChat(nombre, contexto) {
+  return genAI.getGenerativeModel({
+    model: nombre,
+    systemInstruction: chatbot.instrucciones(contexto),
+    tools: [{ functionDeclarations: chatbot.declaraciones }],
+  });
+}
+
+const hoyArgentina = () =>
+  new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+
 // Feature 10: Asistente Virtual del Fan
-router.post("/chatbot", async (req, res) => {
-  try {
-    const { mensaje } = req.body;
-    console.log("Chatbot recibió:", mensaje);
-
-    const eventosRes = await pool.query(
-      "SELECT id_evento, nombre, genero, ciudad, lugar, fecha FROM evento WHERE estado = 'activo' AND fecha >= CURRENT_DATE",
-    );
-    const eventos = eventosRes.rows;
-
-    const prompt = `
-      Eres el asistente virtual de LiveVibe, una plataforma de venta de entradas.
-      Responde de forma breve, amable y en lenguaje natural.
-      Contexto estricto de eventos disponibles: ${JSON.stringify(eventos)}.
-      Reglas:
-      1. Solo recomienda eventos de este contexto. No inventes fechas ni lugares.
-      2. Guía al usuario a reservar su entrada en la plataforma.
-      Pregunta del usuario: "${mensaje}"
-    `;
-
-    const result = await generar(modelTexto, modelTextoFallback, prompt);
-    res.json({ respuesta: result.response.text() });
-  } catch (error) {
-    console.error("Error en chatbot IA:", error);
-    res.status(500).json({
-      error:
-        "Lo siento, ocurrió un error temporal al procesar tu consulta con la IA.",
-    });
+// Body: { mensaje, historial?: [{ rol: "user" | "model", texto }] }
+// Responde { respuesta, eventos: [...enlaces], acciones: [{ tipo: "reservar", id_evento, ... }] }
+router.post("/chatbot", limiteChatbot, tokenOpcional, async (req, res) => {
+  const mensaje = typeof req.body?.mensaje === "string" ? req.body.mensaje.trim() : "";
+  if (!mensaje) return res.status(400).json({ error: "Escribí tu consulta." });
+  if ([...mensaje].length > MAX_MENSAJE) {
+    return res.status(400).json({ error: `Tu mensaje puede tener hasta ${MAX_MENSAJE} caracteres.` });
   }
+
+  const contexto = { usuario: req.user ?? null, hoy: hoyArgentina() };
+  const entrada = {
+    mensaje,
+    historial: chatbot.normalizarHistorial(req.body?.historial),
+    usuario: contexto.usuario,
+  };
+
+  // Mismos reintentos que el resto: 2 con el modelo principal y 1 con el de respaldo.
+  // Es seguro repetir: las funciones del chatbot solo leen, nunca reservan.
+  const modelos = [MODEL_NAME, MODEL_NAME, FALLBACK_MODEL].filter(Boolean);
+  let ultimoError;
+  for (const nombre of modelos) {
+    try {
+      return res.json(await chatbot.conversar(modeloChat(nombre, contexto), entrada));
+    } catch (e) {
+      ultimoError = e;
+      if (!esTemporal(e)) break;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  console.error("Error en chatbot IA:", ultimoError);
+  res.status(500).json({
+    error: "Lo siento, ocurrió un error temporal al procesar tu consulta con la IA.",
+  });
 });
 
-// Feature 9: Recomendador Personalizado
-router.get("/recomendaciones", verificarToken, async (req, res) => {
+// Feature 9: Recomendador personalizado
+// Devuelve hasta 3 eventos con el motivo de cada uno. Se guarda unos minutos por usuario.
+const CACHE_RECOMENDACIONES_MS = 10 * 60 * 1000;
+const cacheRecomendaciones = new Map(); // usuario -> { hasta, datos }
+
+router.get("/recomendaciones", limiteIA, verificarToken, async (req, res) => {
+  const usuario = req.user.nombre_usuario;
+
+  const guardado = cacheRecomendaciones.get(usuario);
+  if (guardado && guardado.hasta > Date.now()) return res.json(guardado.datos);
+
   try {
-    const username = req.user.nombre_usuario;
+    const [perfil, candidatos] = await Promise.all([
+      recomendador.armarPerfil(usuario),
+      recomendador.eventosCandidatos(usuario),
+    ]);
+    if (candidatos.length === 0) return res.json([]);
 
-    const userRes = await pool.query(
-      "SELECT biografia FROM usuario WHERE nombre_usuario = $1",
-      [username],
-    );
-    const preferencias = userRes.rows[0]?.biografia || "Rock, Pop, Indie";
+    let elegidos = [];
+    try {
+      const result = await generar(modelJSON, modelJSONFallback, recomendador.armarPrompt(perfil, candidatos));
+      elegidos = recomendador.leerRespuestaIA(result.response.text(), candidatos);
+    } catch (error) {
+      console.error("La IA no pudo recomendar, se usa el puntaje:", error.message);
+    }
+    // Sin IA (o si respondió mal) se recomienda por puntaje, así nunca queda vacío
+    if (elegidos.length === 0) elegidos = recomendador.recomendarPorPuntaje(candidatos, perfil);
+    // Un motivo vacío se completa con el del puntaje
+    elegidos = elegidos.map((e) => ({
+      ...e,
+      motivo: e.motivo || recomendador.evaluar(e, perfil).motivo,
+    }));
 
-    const eventosRes = await pool.query(
-      "SELECT id_evento, nombre, genero, ciudad FROM evento WHERE estado = 'activo' AND fecha >= CURRENT_DATE",
-    );
-    if (eventosRes.rows.length === 0) return res.json([]);
-
-    const prompt = `
-      El usuario tiene estas preferencias musicales: "${preferencias}".
-      Eventos disponibles: ${JSON.stringify(eventosRes.rows)}.
-      Devuelve ÚNICAMENTE un arreglo JSON con los IDs (id_evento) numéricos de los 3 eventos de mayor similitud.
-      Ejemplo: [1, 4, 5].
-    `;
-
-    const result = await generar(modelJSON, modelJSONFallback, prompt);
-    const idsRecomendados = JSON.parse(result.response.text());
-
-    if (!Array.isArray(idsRecomendados)) return res.json([]);
-
-    const eventosRecomendados = eventosRes.rows.filter((e) =>
-      idsRecomendados.includes(e.id_evento),
-    );
-    res.json(eventosRecomendados);
+    const datos = elegidos.map(recomendador.publico);
+    cacheRecomendaciones.set(usuario, { hasta: Date.now() + CACHE_RECOMENDACIONES_MS, datos });
+    res.json(datos);
   } catch (error) {
     console.error("Error IA Recomendador:", error);
     res.status(500).json({ error: "No se pudieron generar recomendaciones." });
@@ -118,7 +143,7 @@ router.get("/recomendaciones", verificarToken, async (req, res) => {
 
 // Soundtrack del evento: temas afines sugeridos por IA.
 // Se genera la primera vez que alguien abre el evento y queda guardado en la base.
-router.get("/eventos/:id/soundtrack", async (req, res) => {
+router.get("/eventos/:id/soundtrack", limiteIA, async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(id)) return res.status(404).json({ error: "Evento no encontrado" });
 

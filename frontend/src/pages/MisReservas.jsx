@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
 import { primeraMayuscula } from "../utils/tiempo";
+import { descargarICS } from "../utils/calendario";
 
 const MisReservas = () => {
   const [reservas, setReservas] = useState([]);
@@ -140,12 +141,30 @@ const MisReservas = () => {
                   </div>
 
                   {puedeCancelar && (
-                    <button
-                      onClick={() => handleCancelar(r.id_reserva)}
-                      className="shrink-0 border border-mandarina text-mandarina hover:bg-mandarina hover:text-tinta font-bold py-2 px-6 rounded-full transition"
-                    >
-                      Cancelar Reserva
-                    </button>
+                    <div className="shrink-0 flex flex-col gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() =>
+                          descargarICS({
+                            id: r.id_evento,
+                            nombre: r.evento_nombre,
+                            fecha: r.evento_fecha,
+                            hora: r.hora_apertura,
+                            lugar: r.lugar,
+                            ciudad: r.ciudad,
+                            url: `${window.location.origin}/evento/${r.id_evento}`,
+                          })
+                        }
+                        className="border border-cielo text-cielo hover:bg-cielo hover:text-tinta font-bold py-2 px-6 rounded-full transition"
+                      >
+                        📅 Agregar al calendario
+                      </button>
+                      <button
+                        onClick={() => handleCancelar(r.id_reserva)}
+                        className="border border-mandarina text-mandarina hover:bg-mandarina hover:text-tinta font-bold py-2 px-6 rounded-full transition"
+                      >
+                        Cancelar reserva
+                      </button>
+                    </div>
                   )}
                 </div>
               );

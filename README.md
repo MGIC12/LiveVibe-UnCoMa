@@ -20,7 +20,8 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
 1. **Catálogo y reserva de eventos**
    * Descubrir próximos conciertos con filtros por género y ciudad, y buscador general.
    * Reserva y cancelación de entradas; el artista crea, edita y cancela sus eventos (con imagen).
-   * Detalle del evento con datos reales, perfil del artista y acceso a su merch.
+   * Detalle del evento con datos reales, mapa, "Cómo llegar" (auto, transporte público o a pie), perfil del artista y acceso a su merch.
+   * "Agregar al calendario": descarga un archivo .ics de la reserva, con recordatorio un día antes.
 
 2. **Comunidad musical**
    * Perfiles de fans y de artistas (foto, biografía, canción favorita), seguidores y novedades.
@@ -37,8 +38,8 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
    * Estados de la compra: pago pendiente, en preparación, en camino, recibida o cancelada. El pago pendiente vence a los 7 días y devuelve el stock.
 
 5. **Inteligencia Artificial (Google Gemini)**
-   * **Asistente virtual** del fan: chatbot que responde sobre eventos disponibles.
-   * **Recomendador personalizado** de eventos según las preferencias del usuario.
+   * **Asistente virtual** con herramientas: busca eventos reales, muestra tus reservas y te prepara una reserva que se concreta solo cuando tocás "Confirmar reserva". Recuerda el contexto de la conversación.
+   * **Recomendador personalizado**: arma tu perfil con los artistas que seguís, los conciertos a los que fuiste, tus compras de merch y tu biografía, y explica por qué te recomienda cada evento. Si la IA no responde, usa un puntaje con las mismas señales.
    * **Soundtrack por evento**: cinco temas afines generados por IA; se guardan en la base para no repetir la llamada.
 
 ---
@@ -68,3 +69,9 @@ El proyecto cumple con los requisitos de la cátedra utilizando frameworks comer
    ```
 
    Frontend en <http://localhost:3000> y backend en <http://localhost:5000>. Las tablas se crean solas al iniciar el backend.
+
+## Seguridad básica
+
+* Límite de intentos de inicio de sesión (10 fallidos cada 15 minutos) y de registros por conexión.
+* El chatbot y las funciones de IA tienen límite de consultas por minuto, y los mensajes se acotan a 300 caracteres.
+* El servidor no arranca si falta `JWT_SECRET`.

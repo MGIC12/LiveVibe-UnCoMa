@@ -24,7 +24,10 @@ const Recomendador = () => {
   return (
     <div className="mb-12 bg-neutral-800/40 p-6 rounded-2xl border border-neutral-700/60 shadow-xl backdrop-blur-md">
       <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-        Recomendados para ti
+        Recomendados para vos
+        <span className="text-xs font-semibold uppercase tracking-wider text-cielo bg-cielo/10 border border-cielo/30 rounded-full px-2 py-0.5">
+          IA
+        </span>
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {recomendados.map((evento) => (
@@ -37,10 +40,15 @@ const Recomendador = () => {
               {evento.nombre}
             </h3>
             <p className="text-green-400 text-sm font-medium mt-1">
-              {evento.genero}
+              {[evento.artista, evento.genero].filter(Boolean).join(" · ")}
             </p>
+            {evento.motivo && (
+              <p className="text-neutral-200 text-sm mt-3 leading-snug">
+                ✨ {evento.motivo}
+              </p>
+            )}
             <p className="text-neutral-400 text-xs mt-3">
-              📍 {evento.lugar}, {evento.ciudad}
+              📍 {[evento.lugar, evento.ciudad].filter(Boolean).join(", ")}
             </p>
           </Link>
         ))}

@@ -7,7 +7,9 @@ import { useAuth } from "../../context/AuthContext";
 import { formatearPrecio } from "../utils/formularios";
 import { API } from "../utils/api";
 import { primeraMayuscula } from "../utils/tiempo";
+import { descargarICS } from "../utils/calendario";
 import Avatar from "../components/Avatar";
+import MapaEvento from "../components/MapaEvento";
 
 const EventoDetalle = () => {
   const { id } = useParams();
@@ -285,6 +287,22 @@ const EventoDetalle = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
+                <button
+                  onClick={() =>
+                    descargarICS({
+                      id: evento.id_evento,
+                      nombre: evento.nombre,
+                      fecha: evento.fecha,
+                      hora: evento.hora_apertura,
+                      lugar: evento.lugar,
+                      ciudad: evento.ciudad,
+                      url: window.location.href,
+                    })
+                  }
+                  className="border border-cielo text-cielo hover:bg-cielo hover:text-tinta font-bold py-4 px-8 rounded-full transition text-lg"
+                >
+                  📅 Agregar al calendario
+                </button>
                 <Link
                   to="/mis-reservas"
                   className="bg-fucsia hover:bg-chicle text-tinta font-bold py-4 px-8 rounded-full transition shadow-lg text-lg"
@@ -400,6 +418,8 @@ const EventoDetalle = () => {
                         `${evento.gira ? `Parte de la gira "${evento.gira}". ` : ""}Un show de ${evento.genero || "música en vivo"}${evento.lugar ? ` en ${evento.lugar}` : ""}${evento.ciudad ? `, ${evento.ciudad}` : ""}.`}
                     </p>
                   </div>
+
+                  <MapaEvento lugar={evento.lugar} ciudad={evento.ciudad} pais={evento.pais} />
                 </div>
               </div>
 

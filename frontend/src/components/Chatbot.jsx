@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { API } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const getToken = () => localStorage.getItem("token");
-const rutaEvento = (id) => `/eventos/${id}`;
+const rutaEvento = (id) => `/evento/${id}`;
+
+// Cuántos mensajes anteriores se mandan a la IA para que entienda "ese", "el primero", etc.
+const MENSAJES_DE_CONTEXTO = 8;
 
 // Animaciones propias
 const estilos = `
@@ -22,7 +26,7 @@ const Chatbot = () => {
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState([
     {
-      texto: "¡Hola! Soy tu asistente de LiveVibe. ¿Qué recital buscas?",
+      texto: "¡Hola! Soy tu asistente de LiveVibe. ¿Qué recital buscás? También puedo mostrarte tus reservas o ayudarte a reservar.",
       emisor: "ia",
     },
   ]);
@@ -47,7 +51,12 @@ const Chatbot = () => {
   const enviarMensaje = async () => {
     if (!input.trim() || cargando) return;
 
-    const textoUsuario = input;
+    const textoUsuario = input.trim();
+    // Lo conversado hasta ahora (sin el saludo inicial), para darle contexto a la IA
+    const historial = mensajes
+      .slice(1)
+      .slice(-MENSAJES_DE_CONTEXTO)
+      .map((m) => ({ rol: m.emisor === "ia" ? "model" : "user", texto: m.texto }));
     setInput("");
     setMensajes((prev) => [
       ...prev,
@@ -66,7 +75,7 @@ const Chatbot = () => {
           "Content-Type": "application/json",
           ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ mensaje: textoUsuario }),
+        body: JSON.stringify({ mensaje: textoUsuario, historial }),
         signal: controller.signal,
       });
 
@@ -78,7 +87,13 @@ const Chatbot = () => {
 
       setMensajes((prev) => [
         ...prev,
-        { texto, emisor: "ia", eventos: data.eventos ?? [] },
+        {
+          texto,
+          emisor: "ia",
+          eventos: data.eventos ?? [],
+          // Reservas propuestas por la IA: se concretan solo si la persona confirma
+          acciones: (data.acciones ?? []).map((a) => ({ ...a, estado: "pendiente" })),
+        },
       ]);
     } catch (error) {
       console.error("Error al conectar con el chatbot:", error);
@@ -90,6 +105,39 @@ const Chatbot = () => {
     } finally {
       clearTimeout(timeoutId);
       setCargando(false);
+    }
+  };
+
+  // Confirma una reserva propuesta por el asistente (usa la ruta normal de reservas)
+  const confirmarReserva = async (idxMensaje, idEvento) => {
+    const marcar = (cambios) =>
+      setMensajes((prev) =>
+        prev.map((m, i) =>
+          i !== idxMensaje
+            ? m
+            : {
+                ...m,
+                acciones: m.acciones.map((a) =>
+                  a.id_evento === idEvento ? { ...a, ...cambios } : a,
+                ),
+              },
+        ),
+      );
+
+    marcar({ estado: "enviando" });
+    try {
+      const res = await fetch(`${API}/api/eventos/${idEvento}/reservar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        marcar({ estado: "listo" });
+      } else {
+        marcar({ estado: "error", error: data.error || "No se pudo reservar." });
+      }
+    } catch {
+      marcar({ estado: "error", error: "Error de conexión. Probá de nuevo." });
     }
   };
 
@@ -144,16 +192,50 @@ const Chatbot = () => {
                 {msg.eventos?.length > 0 && (
                   <div className="flex flex-col gap-1.5 mt-2">
                     {msg.eventos.map((ev) => (
-                      <a
+                      <Link
                         key={ev.id_evento}
-                        href={rutaEvento(ev.id_evento)}
+                        to={rutaEvento(ev.id_evento)}
                         className="text-xs rounded-full px-3 py-1.5 bg-purple-500/20 border border-purple-400/40 text-purple-100 hover:bg-purple-500/40 hover:-translate-y-0.5 transition"
                       >
                         🎟️ Ver y reservar: {ev.nombre}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 )}
+
+                {msg.acciones?.map((a) => (
+                  <div
+                    key={a.id_evento}
+                    className="mt-2 rounded-2xl border border-fuchsia-400/40 bg-fuchsia-500/10 p-3 text-sm text-white"
+                  >
+                    <p className="font-semibold">{a.nombre}</p>
+                    <p className="text-xs text-white/70">
+                      {a.fecha}
+                      {a.lugar ? ` · ${a.lugar}` : ""}
+                    </p>
+                    {a.estado === "listo" ? (
+                      <p className="mt-2 text-emerald-300">
+                        ✅ ¡Reserva confirmada!{" "}
+                        <Link to="/mis-reservas" className="underline">
+                          Ver mis entradas
+                        </Link>
+                      </p>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => confirmarReserva(idx, a.id_evento)}
+                          disabled={a.estado === "enviando"}
+                          className="mt-2 w-full rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-600 py-1.5 text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+                        >
+                          {a.estado === "enviando" ? "Reservando..." : "Confirmar reserva"}
+                        </button>
+                        {a.estado === "error" && (
+                          <p className="mt-1 text-xs text-red-300">{a.error}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
             ))}
 
@@ -180,7 +262,7 @@ const Chatbot = () => {
                 maxLength={500}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && enviarMensaje()}
-                placeholder="Pregunta sobre recitales..."
+                placeholder="Preguntá sobre recitales..."
                 className="flex-1 bg-transparent text-white placeholder-gray-400 text-sm focus:outline-none"
               />
               <button
