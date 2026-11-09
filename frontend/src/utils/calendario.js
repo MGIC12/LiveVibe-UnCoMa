@@ -8,7 +8,7 @@ const DURACION_HORAS = 4; // duración estimada del show cuando se conoce la hor
 const escapar = (texto) =>
   String(texto ?? "")
     .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\;")
+    .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
     .replace(/\r?\n/g, "\\n");
 
@@ -26,6 +26,7 @@ function plegar(linea) {
 
 const pad = (n) => String(n).padStart(2, "0");
 
+// "2026-11-23" + "21:00" -> { inicio: "20261123T210000", fin: "20261124T010000" }
 function fechas(dia, hora) {
   const [a, m, d] = dia.split("-").map(Number);
   const [hh, mm] = hora.split(":").map(Number);
