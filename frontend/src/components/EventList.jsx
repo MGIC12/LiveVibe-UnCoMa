@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Filtros from "../components/Filtros";
 import { formatearPrecio } from "../utils/formularios";
+import { API } from "../utils/api";
 
 const EventList = () => {
   const [eventos, setEventos] = useState([]);
@@ -24,7 +25,7 @@ const EventList = () => {
         if (filtroCiudad) params.append("ciudad", filtroCiudad);
 
         const response = await fetch(
-          `http://localhost:5000/api/eventos?${params.toString()}`,
+          `${API}/api/eventos?${params.toString()}`,
         );
         const data = await response.json();
 

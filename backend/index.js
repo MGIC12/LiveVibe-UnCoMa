@@ -9,10 +9,15 @@ const iaRoutes = require("./routes/ia");
 const { sincronizarInsigniasSeguro } = require("./utils/insignias");
 const { vencerComprasSeguro } = require("./utils/compras");
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 const path = require("path");
 
-app.use(cors({ origin: "http://localhost:3000" }));
+// Origen permitido del frontend: FRONTEND_URL (varias separadas por coma); por defecto, el de desarrollo
+const origenes = (process.env.FRONTEND_URL || "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+app.use(cors({ origin: origenes }));
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -62,8 +67,8 @@ initDb()
     vencerComprasSeguro();
     setInterval(vencerComprasSeguro, 10 * 60 * 1000);
 
-    app.listen(5000, () =>
-      console.log("Servidor escuchando en el puerto 5000"),
+    app.listen(port, () =>
+      console.log(`Servidor escuchando en el puerto ${port}`),
     );
   })
   .catch((err) => {

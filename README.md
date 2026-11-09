@@ -15,19 +15,31 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
 * Verónica López [FAI-5481]
 ---
 
-## Características Principales (MVP)
+## Características Principales
 
-1. **Catálogo y Reserva de Eventos:** 
-   * Los usuarios pueden descubrir las fechas de los próximos conciertos en su zona.
-   * Sistema rápido y seguro para reservar entradas y asegurar su asistencia.
+1. **Catálogo y reserva de eventos**
+   * Descubrir próximos conciertos con filtros por género y ciudad, y buscador general.
+   * Reserva y cancelación de entradas; el artista crea, edita y cancela sus eventos (con imagen).
+   * Detalle del evento con datos reales, perfil del artista y acceso a su merch.
 
-2. **Comunidad Musical (Red Social Minimalista):**
-   * Perfiles de usuario donde pueden exhibir su canción preferida.
-   * Muro (Feed) para conectar con la comunidad mediante publicaciones de texto, comentarios y "me gusta".
+2. **Comunidad musical**
+   * Perfiles de fans y de artistas (foto, biografía, canción favorita), seguidores y novedades.
+   * Feed con publicaciones (texto e imagen), comentarios y "me gusta"; página de Comunidad en columnas.
+   * Notificaciones (nuevo seguidor, novedades de artistas).
 
-3. **Asistente Virtual del Fan (IA):**
-   * Integración significativa de Inteligencia Artificial mediante un chatbot conversacional.
-   * El asistente responde dudas sobre fechas de eventos, recintos, transporte y ayuda con la gestión de reservas.
+3. **Insignias de asistencia**
+   * El fan gana *Aficionado* (1 concierto), *Fanático* (5) u *Obsesionado* (10) según los eventos a los que asistió.
+   * El perfil muestra cuántos conciertos le faltan para el próximo nivel.
+
+4. **Merchandising**
+   * Cada artista carga, edita y elimina sus artículos (con foto) desde "Mi tienda".
+   * Los fans los ven en el perfil del artista, los agregan al carrito y compran (el pago es simulado).
+   * Estados de la compra: pago pendiente, en preparación, en camino, recibida o cancelada. El pago pendiente vence a los 7 días y devuelve el stock.
+
+5. **Inteligencia Artificial (Google Gemini)**
+   * **Asistente virtual** del fan: chatbot que responde sobre eventos disponibles.
+   * **Recomendador personalizado** de eventos según las preferencias del usuario.
+   * **Soundtrack por evento**: cinco temas afines generados por IA; se guardan en la base para no repetir la llamada.
 
 ---
 
@@ -41,3 +53,18 @@ El proyecto cumple con los requisitos de la cátedra utilizando frameworks comer
 * **Infraestructura:** Docker
 
 ---
+
+## Cómo correrlo
+
+1. Crear `backend/.env` a partir de `backend/.env.example` y completar:
+   * `GEMINI_API_KEY`: clave de Google AI Studio (sin ella no funcionan las funciones de IA).
+   * `JWT_SECRET`: un valor aleatorio.
+   * `CLOUDINARY_URL`: para subir imágenes (fotos de perfil, eventos y merch).
+   * `FRONTEND_URL`: dirección del frontend permitida por CORS (por defecto `http://localhost:3000`).
+2. Levantar todo con Docker:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   Frontend en <http://localhost:3000> y backend en <http://localhost:5000>. Las tablas se crean solas al iniciar el backend.
