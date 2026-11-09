@@ -278,6 +278,13 @@ CREATE TABLE IF NOT EXISTS compra_item (
 );
 
 CREATE INDEX IF NOT EXISTS idx_compra_item_compra ON compra_item (id_compra);
+
+-- Soundtrack sugerido por IA para cada evento (se genera una vez y se guarda)
+CREATE TABLE IF NOT EXISTS recomendacion_evento (
+  id_evento INT PRIMARY KEY REFERENCES evento(id_evento) ON DELETE CASCADE,
+  temas     JSONB NOT NULL,
+  generada  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 async function initDb() {

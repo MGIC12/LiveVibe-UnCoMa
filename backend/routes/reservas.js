@@ -70,7 +70,7 @@ router.put("/:id/cancelar", verificarToken, async (req, res) => {
     }
     if (reserva.ya_ocurrio) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "No puedes cancelar un evento que ya ocurrió." });
+      return res.status(400).json({ error: "No podés cancelar un evento que ya ocurrió." });
     }
 
     const { rows: actualizada } = await client.query(

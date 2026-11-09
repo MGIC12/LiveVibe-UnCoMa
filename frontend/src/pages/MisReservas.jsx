@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
+import { primeraMayuscula } from "../utils/tiempo";
 
 const MisReservas = () => {
   const [reservas, setReservas] = useState([]);
@@ -68,7 +69,7 @@ const MisReservas = () => {
         ) : reservas.length === 0 ? (
           <div className="bg-crema/5 p-10 rounded-2xl text-center border border-crema/20">
             <p className="text-xl mb-4 text-crema/80">
-              Aún no tienes entradas reservadas.
+              Todavía no tenés entradas reservadas.
             </p>
             <Link
               to="/"
@@ -103,14 +104,16 @@ const MisReservas = () => {
                     <p className="text-crema/70 text-sm">
                       📍 {r.lugar}, {r.ciudad}
                     </p>
-                    <p className="text-crema/70 font-medium capitalize">
+                    <p className="text-crema/70 font-medium">
                       📅{" "}
-                      {fecha.toLocaleDateString("es-AR", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {primeraMayuscula(
+                        fecha.toLocaleDateString("es-AR", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }),
+                      )}
                       {r.hora_apertura ? ` · ${r.hora_apertura} hs` : ""}
                     </p>
                     {r.precio != null && (

@@ -119,7 +119,7 @@ const Buscador = () => {
               No encontramos resultados para "{query}"
             </h3>
             <p className="text-crema/70 mb-8 max-w-md">
-              Asegúrate de que las palabras estén escritas correctamente o intenta usar
+              Asegurate de que las palabras estén escritas correctamente o probá usar
               menos palabras clave.
             </p>
             <Link

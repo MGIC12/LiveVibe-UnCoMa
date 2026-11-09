@@ -175,7 +175,7 @@ export default function Perfil() {
                   placeholder={
                     esArtista
                       ? "Contale a tus fans quién sos y qué hacés..."
-                      : "Cuéntanos algo sobre ti..."
+                      : "Contanos algo sobre vos..."
                   }
                   className="w-full px-4 py-3 rounded-xl bg-crema/10 border border-crema/25 text-crema placeholder-crema/60 focus:outline-none focus:ring-2 focus:ring-cielo transition-all resize-none text-sm"
                 />

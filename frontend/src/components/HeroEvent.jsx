@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
 import ImagenEvento from "./ImagenEvento";
+import { primeraMayuscula } from "../utils/tiempo";
 
 const HeroEvent = () => {
   const { usuario, token } = useAuth();
@@ -191,7 +192,7 @@ const HeroEvent = () => {
           {eventoDestacado.nombre}
         </h1>
         <p className="text-crema/80 text-lg md:text-xl max-w-2xl mb-8 drop-shadow-md font-medium">
-          <span className="capitalize">{fechaFormateada}</span> {hora} |{" "}
+          <span>{primeraMayuscula(fechaFormateada)}</span> {hora} |{" "}
           {eventoDestacado.lugar}, {eventoDestacado.ciudad} <br />
           <span className="text-sm mt-2 block text-crema/70">
             Género: {eventoDestacado.genero}
@@ -209,12 +210,12 @@ const HeroEvent = () => {
         <div className="flex flex-wrap gap-4">
           {accionReserva}
 
-          {/* Botón Más Información: lleva al detalle */}
+          {/* Botón Más información: lleva al detalle */}
           <Link
             to={`/evento/${eventoDestacado.id_evento}`}
             className="border-2 border-crema/60 text-crema hover:bg-crema hover:text-tinta font-bold py-3 px-8 rounded-full backdrop-blur-sm transition flex items-center gap-2"
           >
-            Más Información
+            Más información
           </Link>
         </div>
 

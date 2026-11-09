@@ -18,3 +18,7 @@ export function tiempoRelativo(fecha) {
     year: "numeric",
   });
 }
+// Solo la primera letra en mayúscula: "sábado 14 de noviembre" -> "Sábado 14 de noviembre"
+export function primeraMayuscula(texto) {
+  return texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : texto;
+}

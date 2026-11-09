@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ImagenArticulo from "./ImagenArticulo";
 import { useAuth } from "../../context/AuthContext";
 import { useCarrito } from "../../context/CarritoContext";
@@ -8,12 +8,12 @@ import { formatearPrecio } from "../utils/formularios";
 
 const MAX_POR_CLIC = 10;
 
-// Features 15 y 16: merchandising oficial de un artista, dentro de su perfil.
 // Si el artista no tiene artículos, no muestra nada.
 export default function MerchArtista({ artista }) {
   const { token, usuario } = useAuth();
   const { refrescar } = useCarrito();
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const esFan = usuario?.rol === "fan";
 
   const [articulos, setArticulos] = useState([]);
@@ -34,6 +34,15 @@ export default function MerchArtista({ artista }) {
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artista]);
+
+  const hayArticulos = articulos.length > 0;
+  useEffect(() => {
+    if (hash === "#merch" && hayArticulos) {
+      document
+        .getElementById("merch")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [hash, hayArticulos]);
 
   const esMio =
     usuario?.rol === "artista" && usuario.nombre_usuario === artista;
@@ -93,7 +102,7 @@ export default function MerchArtista({ artista }) {
   }
 
   return (
-    <section className="space-y-3">
+    <section id="merch" className="space-y-3 scroll-mt-24">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-2xl font-black text-crema">
           <span className="text-fucsia">Merch</span> oficial{" "}

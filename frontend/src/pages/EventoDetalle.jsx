@@ -6,6 +6,8 @@ import ImagenEvento from "../components/ImagenEvento";
 import { useAuth } from "../../context/AuthContext";
 import { formatearPrecio } from "../utils/formularios";
 import { API } from "../utils/api";
+import { primeraMayuscula } from "../utils/tiempo";
+import Avatar from "../components/Avatar";
 
 const EventoDetalle = () => {
   const { id } = useParams();
@@ -14,6 +16,8 @@ const EventoDetalle = () => {
 
   const [evento, setEvento] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cantMerch, setCantMerch] = useState(0);
+  const [soundtrack, setSoundtrack] = useState([]); // temas sugeridos por IA
 
   const [isReserving, setIsReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(false);
@@ -42,11 +46,41 @@ const EventoDetalle = () => {
     };
   }, [id]);
 
+  // Si el artista del evento vende merch, se ofrece el enlace a su tienda
+  const artistaEvento = evento?.nombre_artista;
+  useEffect(() => {
+    if (!artistaEvento) return;
+    let activo = true;
+    fetch(`${API}/api/merch?artista=${encodeURIComponent(artistaEvento)}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (activo) setCantMerch(Array.isArray(data) ? data.length : 0);
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, [artistaEvento]);
+
+  // Soundtrack sugerido por IA; si falla, la tarjeta simplemente no aparece
+  useEffect(() => {
+    let activo = true;
+    fetch(`${API}/api/ia/eventos/${id}/soundtrack`)
+      .then((res) => (res.ok ? res.json() : { temas: [] }))
+      .then((data) => {
+        if (activo) setSoundtrack(Array.isArray(data.temas) ? data.temas : []);
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, [id]);
+
   const handleReserva = async () => {
     setErrorMessage("");
 
     if (!usuario) {
-      alert("Debes iniciar sesión o registrarte para poder reservar entradas.");
+      alert("Tenés que iniciar sesión o registrarte para poder reservar entradas.");
       navigate("/login");
       return;
     }
@@ -202,7 +236,7 @@ const EventoDetalle = () => {
               ? "Entradas agotadas"
               : isReserving
                 ? "Procesando..."
-                : "Reservar Entrada"}
+                : "Reservar entrada"}
       </button>
     );
   }
@@ -220,7 +254,7 @@ const EventoDetalle = () => {
                 ¡Reserva Confirmada!
               </h2>
               <p className="text-crema/70 mb-8 text-lg">
-                Ya tienes tu lugar asegurado para{" "}
+                Ya tenés tu lugar asegurado para{" "}
                 <strong className="text-crema uppercase">{evento.nombre}</strong>
                 {evento.nombre_artista &&
                   ` de ${evento.artista_nombre || evento.nombre_artista}`}
@@ -238,8 +272,8 @@ const EventoDetalle = () => {
                 </div>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-crema/70 text-xl">📅</span>
-                  <p className="font-semibold text-lg text-cielo capitalize">
-                    {fechaFormateada} {evento.hora_apertura}
+                  <p className="font-semibold text-lg text-cielo">
+                    {primeraMayuscula(fechaFormateada)} {evento.hora_apertura}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -255,13 +289,13 @@ const EventoDetalle = () => {
                   to="/mis-reservas"
                   className="bg-fucsia hover:bg-chicle text-tinta font-bold py-4 px-8 rounded-full transition shadow-lg text-lg"
                 >
-                  Ver Mis Entradas
+                  Ver mis entradas
                 </Link>
                 <Link
                   to="/"
                   className="border border-crema/30 text-crema hover:bg-crema hover:text-tinta font-bold py-4 px-8 rounded-full transition text-lg"
                 >
-                  Volver al Catálogo
+                  Volver al catálogo
                 </Link>
               </div>
             </div>
@@ -316,7 +350,7 @@ const EventoDetalle = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span>📅</span>{" "}
-                      <span className="capitalize">{fechaFormateada}</span>
+                      <span>{primeraMayuscula(fechaFormateada)}</span>
                     </div>
                     {evento.clasificacion && (
                       <div className="flex items-center gap-2">
@@ -363,67 +397,113 @@ const EventoDetalle = () => {
                     </h3>
                     <p className="text-crema/70 leading-relaxed text-lg max-w-3xl">
                       {evento.descripcion ||
-                        "Únete a este increíble evento y vive la mejor música en directo junto a tu comunidad. Un show imperdible que marcará la agenda musical del mes."}
+                        `${evento.gira ? `Parte de la gira "${evento.gira}". ` : ""}Un show de ${evento.genero || "música en vivo"}${evento.lugar ? ` en ${evento.lugar}` : ""}${evento.ciudad ? `, ${evento.ciudad}` : ""}.`}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Columna Derecha: Playlist */}
+              {/* Columna derecha: datos del evento y del artista */}
               <div className="lg:w-1/3">
-                <div className="bg-tinta/80 backdrop-blur-md rounded-2xl p-6 border border-crema/20 sticky top-24 shadow-2xl">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 bg-crema/10 rounded-full flex items-center justify-center text-2xl">
-                      🎧
-                    </div>
-                    <div>
-                      <h4 className="font-black text-crema text-xl">Soundtrack</h4>
-                      <p className="text-xs text-cielo font-semibold uppercase tracking-wider">
-                        Generada por IA
-                      </p>
-                    </div>
+                <div className="bg-tinta/80 backdrop-blur-md rounded-2xl p-6 border border-crema/20 sticky top-24 shadow-2xl space-y-6">
+                  <div>
+                    <h4 className="font-black text-crema text-xl mb-4">Datos del evento</h4>
+                    <dl className="space-y-3 text-sm">
+                      {[
+                        ["Género", evento.genero],
+                        ["Ciudad", [evento.ciudad, evento.pais].filter(Boolean).join(", ")],
+                        ["Lugar", evento.lugar],
+                        ["Apertura de puertas", evento.hora_apertura ? `${String(evento.hora_apertura).slice(0, 5)} hs` : null],
+                        ["Clasificación", evento.clasificacion],
+                        ["Gira", evento.gira],
+                      ]
+                        .filter(([, valor]) => valor)
+                        .map(([etiqueta, valor]) => (
+                          <div key={etiqueta} className="flex justify-between gap-4">
+                            <dt className="text-crema/60">{etiqueta}</dt>
+                            <dd className="font-bold text-crema text-right">{valor}</dd>
+                          </div>
+                        ))}
+                    </dl>
                   </div>
 
-                  <p className="text-sm text-crema/70 mb-8 font-medium leading-relaxed">
-                    Prepárate para el show con las canciones favoritas de los fans de{" "}
-                    <strong className="text-crema">{evento.genero}</strong> que ya
-                    reservaron su lugar.
-                  </p>
-                  <ul className="space-y-4 mb-6">
-                    <li className="flex items-center gap-4 group cursor-pointer">
-                      <div className="text-crema/60 font-medium w-4 text-center group-hover:hidden">
-                        1
+                  {evento.nombre_artista && (
+                    <div className="border-t border-crema/20 pt-6">
+                      <p className="text-xs text-cielo font-semibold uppercase tracking-wider mb-3">
+                        El artista
+                      </p>
+                      <Link
+                        to={`/artista/${encodeURIComponent(evento.nombre_artista)}`}
+                        className="flex items-center gap-3 group"
+                      >
+                        <Avatar
+                          usuario={{ nombre_usuario: evento.artista_nombre || evento.nombre_artista }}
+                          clases="w-12 h-12 text-lg"
+                        />
+                        <span className="font-black text-crema text-lg group-hover:text-cielo transition">
+                          {evento.artista_nombre || evento.nombre_artista}
+                        </span>
+                      </Link>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <Link
+                          to={`/artista/${encodeURIComponent(evento.nombre_artista)}`}
+                          className="w-full text-center bg-transparent hover:bg-crema/10 text-crema font-bold py-3 rounded-full border border-crema/30 hover:border-crema/60 transition text-sm"
+                        >
+                          Ver perfil
+                        </Link>
+                        {cantMerch > 0 && (
+                          <Link
+                            to={`/artista/${encodeURIComponent(evento.nombre_artista)}#merch`}
+                            className="w-full text-center bg-fucsia/15 hover:bg-fucsia/30 text-fucsia font-bold py-3 rounded-full border border-fucsia/40 transition text-sm"
+                          >
+                            🛍️ Ver merch de {evento.artista_nombre || evento.nombre_artista}
+                          </Link>
+                        )}
                       </div>
-                      <div className="text-fucsia font-medium w-4 text-center hidden group-hover:block">
-                        ▶
+                    </div>
+                  )}
+
+                  {soundtrack.length > 0 && (
+                    <div className="border-t border-crema/20 pt-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="text-2xl">🎧</span>
+                        <div>
+                          <h4 className="font-black text-crema text-lg leading-tight">
+                            Para ir entrando en clima
+                          </h4>
+                          <p className="text-xs text-cielo font-semibold uppercase tracking-wider">
+                            Sugerido por IA
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-crema font-medium group-hover:text-cielo transition">
-                          Tema Principal
-                        </p>
-                        <p className="text-crema/60 text-sm">
-                          {evento.artista_nombre || evento.nombre_artista || "Artista del Evento"}
-                        </p>
-                      </div>
-                    </li>
-                    <li className="flex items-center gap-4 group cursor-pointer">
-                      <div className="text-crema/60 font-medium w-4 text-center group-hover:hidden">
-                        2
-                      </div>
-                      <div className="text-fucsia font-medium w-4 text-center hidden group-hover:block">
-                        ▶
-                      </div>
-                      <div>
-                        <p className="text-crema font-medium group-hover:text-cielo transition">
-                          Sugerencia IA
-                        </p>
-                        <p className="text-crema/60 text-sm">Basado en {evento.genero}</p>
-                      </div>
-                    </li>
-                  </ul>
-                  <button className="w-full bg-transparent hover:bg-crema/10 text-crema font-bold py-3 rounded-full border border-crema/30 hover:border-crema/60 transition text-sm flex items-center justify-center gap-2">
-                    <span className="text-cielo">Spotify</span> Abrir Playlist
-                  </button>
+                      <ul className="space-y-3">
+                        {soundtrack.map((t, i) => (
+                          <li key={`${t.titulo}-${i}`}>
+                            <a
+                              href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${t.titulo} ${t.artista}`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={t.motivo || undefined}
+                              className="flex items-start gap-3 group"
+                            >
+                              <span className="w-4 text-center text-crema/60 text-sm pt-0.5 group-hover:text-fucsia">
+                                {i + 1}
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-crema font-medium group-hover:text-cielo transition">
+                                  {t.titulo}
+                                </span>
+                                <span className="block text-crema/60 text-sm">{t.artista}</span>
+                              </span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-[11px] text-crema/40 mt-4">
+                        Generado con IA: puede equivocarse. Cada tema abre una búsqueda en YouTube.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

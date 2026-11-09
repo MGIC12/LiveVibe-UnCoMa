@@ -2,6 +2,32 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { API, urlImagen } from "../utils/api";
 
+// Foto del artista; si no tiene (o no carga), una portada con su inicial en los colores de la marca
+function FotoArtista({ foto, nombre }) {
+  const [fallo, setFallo] = useState(false);
+  if (foto && !fallo) {
+    return (
+      <img
+        src={foto}
+        alt={nombre}
+        onError={() => setFallo(true)}
+        className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
+      />
+    );
+  }
+  return (
+    <div
+      role="img"
+      aria-label={nombre}
+      className="w-full h-full flex items-center justify-center bg-gradient-to-br from-fucsia via-fucsia/70 to-sol/80"
+    >
+      <span className="text-6xl md:text-7xl font-black text-tinta/80 select-none">
+        {(nombre || "?").trim().charAt(0).toUpperCase()}
+      </span>
+    </div>
+  );
+}
+
 const Carrusel = () => {
   const [artistas, setArtistas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -52,8 +78,7 @@ const Carrusel = () => {
       <div className="py-8">
         <div className="flex gap-6 animate-infinite-scroll px-4 hover:[animation-play-state:paused]">
           {duplicatedArtists.map((artist, index) => {
-            // Si no hay foto, se genera una imagen con la inicial, con los colores de la paleta
-            const placeholderImg = `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.nombre_artistico)}&background=FF2E93&color=0F0D14&bold=true&size=300&font-size=0.33`;
+            const foto = urlImagen(artist.foto_url);
 
             return (
               <Link
@@ -61,11 +86,7 @@ const Carrusel = () => {
                 key={`${artist.nombre_usuario}-${index}`}
                 className="relative shrink-0 w-40 md:w-48 h-60 md:h-72 bg-crema/5 rounded-lg overflow-hidden cursor-pointer transform transition-transform duration-300 hover:scale-110 hover:z-10 shadow-2xl block"
               >
-                <img
-                  src={urlImagen(artist.foto_url) || placeholderImg}
-                  alt={artist.nombre_artistico}
-                  className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity duration-300"
-                />
+                <FotoArtista foto={foto} nombre={artist.nombre_artistico} />
 
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-tinta to-transparent pointer-events-none"></div>
 

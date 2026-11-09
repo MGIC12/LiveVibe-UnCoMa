@@ -15,6 +15,9 @@ router.get("/:usuario", async (req, res) => {
       `SELECT u.nombre_usuario, u.rol, u.biografia, u.fecha_alta,
               i.url AS foto_url, i.descripcion AS foto_descripcion,
               f.cancion_favorita, f.insignia,
+              (SELECT COUNT(*)::int FROM reserva r
+                WHERE r.nombre_usuario = u.nombre_usuario
+                  AND r.estado = 'asistió') AS conciertos_asistidos,
               (SELECT COUNT(*)::int FROM seguimiento
                 WHERE nombre_seguido = u.nombre_usuario AND tipo = 'sigue') AS seguidores,
               (SELECT COUNT(*)::int FROM seguimiento

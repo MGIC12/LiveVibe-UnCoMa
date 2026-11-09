@@ -332,7 +332,7 @@ router.post("/:id/reservar", verificarToken, async (req, res) => {
     );
     if (reserva.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Ya tienes una reserva para este evento." });
+      return res.status(400).json({ error: "Ya tenés una reserva para este evento." });
     }
 
     // Descuenta una entrada, solo si queda stock

@@ -9,7 +9,6 @@ const EventList = () => {
   const [filtroCiudad, setFiltroCiudad] = useState("");
   const [cargando, setCargando] = useState(true);
 
-  // Agregamos useNavigate para manejar el clic de la tarjeta principal
   const navigate = useNavigate();
 
   // Estados para la paginación
@@ -84,8 +83,8 @@ const EventList = () => {
                 Sin resultados
               </h3>
               <p className="text-crema/70 text-sm md:text-base">
-                No encontramos conciertos que coincidan con esos filtros.
-                ¡Prueba buscando otra cosa!
+                No encontramos conciertos que coincidan con esos filtros. ¡Probá
+                buscando otra cosa!
               </p>
               <button
                 onClick={() => {
@@ -115,7 +114,7 @@ const EventList = () => {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                       {/* Bloque de Fecha y Género */}
-                      <div className="flex items-center gap-4 sm:gap-6 sm:w-1/4">
+                      <div className="flex items-center gap-4 sm:gap-6 sm:w-56 sm:shrink-0">
                         <div className="text-center min-w-[60px] sm:min-w-[70px] bg-tinta/80 rounded-lg py-2 px-3 border border-crema/20 group-hover:border-fucsia/50 transition-colors">
                           <p className="text-2xl sm:text-3xl font-black text-crema">
                             {day}
@@ -135,7 +134,7 @@ const EventList = () => {
                       </div>
 
                       {/* Info Principal */}
-                      <div className="flex-grow">
+                      <div className="flex-grow min-w-0 sm:pl-2">
                         <h2 className="text-xl sm:text-2xl font-bold text-crema mb-1 group-hover:text-cielo transition-colors line-clamp-2">
                           {evento.nombre}
                         </h2>
@@ -168,11 +167,13 @@ const EventList = () => {
                       {/* Acción / Botón */}
                       <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 sm:gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 border-t border-crema/20 sm:border-t-0">
                         <div className="text-xs sm:text-sm font-medium text-crema/70">
-                          {(evento.entradas_disponibles ?? evento.cant_entradas) > 0 ? (
+                          {(evento.entradas_disponibles ??
+                            evento.cant_entradas) > 0 ? (
                             <span>
                               Quedan{" "}
                               <strong className="text-crema">
-                                {evento.entradas_disponibles ?? evento.cant_entradas}
+                                {evento.entradas_disponibles ??
+                                  evento.cant_entradas}
                               </strong>
                             </span>
                           ) : (

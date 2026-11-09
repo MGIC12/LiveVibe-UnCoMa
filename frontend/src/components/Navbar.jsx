@@ -241,13 +241,13 @@ const Navbar = () => {
                     to="/login"
                     className="hover:text-crema hover:scale-105 transition text-fucsia"
                   >
-                    Iniciar Sesión
+                    Iniciar sesión
                   </Link>
                   <Link
                     to="/registro"
                     className="px-5 py-2 rounded-full bg-fucsia text-tinta hover:bg-chicle hover:scale-105 transition-all shadow-[0_0_12px_rgba(255,46,147,0.45)]"
                   >
-                    Regístrate
+                    Registrate
                   </Link>
                 </>
               )
@@ -406,14 +406,14 @@ const Navbar = () => {
                   onClick={() => setMenuAbierto(false)}
                   className="block text-center px-4 py-2 text-base font-bold text-crema hover:bg-crema/10 rounded-full border border-crema/30"
                 >
-                  Iniciar Sesión
+                  Iniciar sesión
                 </Link>
                 <Link
                   to="/registro"
                   onClick={() => setMenuAbierto(false)}
                   className="block text-center px-4 py-2 text-base font-bold text-tinta bg-fucsia hover:bg-chicle rounded-full"
                 >
-                  Regístrate
+                  Registrate
                 </Link>
               </div>
             )

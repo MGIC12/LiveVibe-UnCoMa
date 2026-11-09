@@ -41,7 +41,7 @@ export default function Login() {
               Bienvenido!
             </h1>
             <p className="text-crema/60 text-sm">
-              Ingresa a tu cuenta para seguir conectado con la mejor música.
+              Ingresá a tu cuenta para seguir conectado con la mejor música.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export default function Login() {
                 to="/registro"
                 className="font-bold text-cielo hover:text-crema transition-colors ml-1"
               >
-                Regístrate acá
+                Registrate acá
               </Link>
             </p>
           </div>

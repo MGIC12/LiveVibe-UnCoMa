@@ -3,7 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CabeceraPerfil from "../components/CabeceraPerfil";
-import { etiquetaInsignia, INSIGNIAS } from "../utils/insignias";
+import { etiquetaInsignia, INSIGNIAS, progresoInsignia } from "../utils/insignias";
 import Publicaciones from "../components/Publicaciones";
 import { useAuth } from "../../context/AuthContext";
 import BotonesSeguimiento from "../components/BotonesSeguimiento";
@@ -100,6 +100,8 @@ export default function PerfilFan() {
   });
   const seguidores = perfil.seguidores ?? 0;
   const siguiendo = perfil.siguiendo ?? 0;
+  const asistidos = perfil.conciertos_asistidos ?? 0;
+  const progreso = progresoInsignia(asistidos);
 
   return (
     <Marco>
@@ -138,6 +140,42 @@ export default function PerfilFan() {
           />
         ) : null}
       </CabeceraPerfil>
+
+      <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
+        <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">
+          Conciertos
+        </h2>
+        <p className="text-crema/90 font-medium">
+          🎟️ {asistidos} {asistidos === 1 ? "concierto" : "conciertos"} a los que{" "}
+          {esMiPerfil ? "fuiste" : "fue"}
+        </p>
+        {progreso.siguiente ? (
+          <div className="mt-3">
+            <div
+              className="h-2 rounded-full bg-crema/10 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={progreso.porcentaje}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-fucsia transition-all"
+                style={{ width: `${progreso.porcentaje}%` }}
+              />
+            </div>
+            <p className="text-sm text-crema/70 mt-2">
+              {esMiPerfil ? "Te" : "Le"} {progreso.faltan === 1 ? "falta" : "faltan"}{" "}
+              <strong className="text-crema">{progreso.faltan}</strong>{" "}
+              {progreso.faltan === 1 ? "concierto" : "conciertos"} para{" "}
+              {INSIGNIAS[progreso.siguiente].icono} {INSIGNIAS[progreso.siguiente].texto}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-crema/70 mt-2">
+            🔥 {esMiPerfil ? "Llegaste" : "Llegó"} al nivel máximo.
+          </p>
+        )}
+      </section>
 
       <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
         <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">
