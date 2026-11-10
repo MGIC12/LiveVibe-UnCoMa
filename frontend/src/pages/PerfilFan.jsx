@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { EsqueletoPerfil } from "../components/Esqueleto";
 import { Link, Navigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -56,9 +57,7 @@ export default function PerfilFan() {
   if (estado === "cargando") {
     return (
       <Marco>
-        <p className="text-center text-crema/70 py-20 animate-pulse">
-          Cargando perfil...
-        </p>
+        <EsqueletoPerfil />
       </Marco>
     );
   }

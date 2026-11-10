@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import { EsqueletoLista } from "../components/Esqueleto";
 import { ESTADOS_COMPRA, fechaLarga, pedirMerch } from "../utils/merch";
 import { formatearPrecio } from "../utils/formularios";
 
 // Feature 16: compras de merchandising del fan
 export default function MisCompras() {
   const { token } = useAuth();
+  const toast = useToast();
   const [compras, setCompras] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -35,6 +38,13 @@ export default function MisCompras() {
         metodo: "PUT",
       });
       setError("");
+      toast.exito(
+        {
+          pagar: "¡Pago registrado! El artista ya prepara tu pedido.",
+          cancelar: "Compra cancelada.",
+          recibida: "¡Listo! Marcaste la compra como recibida.",
+        }[accion] ?? "Compra actualizada.",
+      );
     } catch (e) {
       setError(e.message);
     }
@@ -59,9 +69,7 @@ export default function MisCompras() {
         )}
 
         {cargando ? (
-          <p className="text-center text-crema/60 animate-pulse">
-            Cargando tus compras...
-          </p>
+          <EsqueletoLista texto="Cargando tus compras..." />
         ) : compras.length === 0 ? (
           <div className="bg-crema/5 p-10 rounded-2xl text-center border border-crema/20">
             <p className="text-xl mb-4 text-crema/80">

@@ -5,7 +5,6 @@ import Footer from "../components/Footer";
 import Avatar from "../components/Avatar";
 import Insignia from "../components/Insignia";
 import FotoPerfil from "../components/FotoPerfil";
-import CamposArtista from "../components/CamposArtista";
 import { useAuth } from "../../context/AuthContext";
 import { FOTO_VACIA } from "../utils/formularios";
 import { urlImagen } from "../utils/api";
@@ -31,10 +30,6 @@ export default function Perfil() {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
-
-  function cambiarArtista(nombre, valor) {
-    setArtista((actual) => ({ ...actual, [nombre]: valor }));
-  }
 
   function empezarEdicion() {
     setBiografia(usuario.biografia ?? "");
@@ -348,6 +343,15 @@ export default function Perfil() {
                   >
                     👀 Ver mi perfil público
                   </Link>
+
+                  {esFan && (
+                    <Link
+                      to="/bienvenida"
+                      className="w-full text-center py-4 rounded-xl border border-crema/30 text-crema/80 hover:border-fucsia hover:text-crema font-bold transition-all text-sm"
+                    >
+                      🎵 Mis gustos musicales
+                    </Link>
+                  )}
 
                   <button
                     onClick={empezarEdicion}

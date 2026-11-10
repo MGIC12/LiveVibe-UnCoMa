@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 import Filtros from "../components/Filtros";
 import { formatearPrecio } from "../utils/formularios";
 import { API } from "../utils/api";
+import { EsqueletoLista } from "./Esqueleto";
 
 const EventList = () => {
   const [eventos, setEventos] = useState([]);
   const [filtroGenero, setFiltroGenero] = useState("");
-  const [filtroCiudad, setFiltroCiudad] = useState("");
+  const [filtroPais, setFiltroPais] = useState("");
   const [cargando, setCargando] = useState(true);
 
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const EventList = () => {
       try {
         const params = new URLSearchParams();
         if (filtroGenero) params.append("genero", filtroGenero);
-        if (filtroCiudad) params.append("ciudad", filtroCiudad);
+        if (filtroPais) params.append("pais", filtroPais);
 
         const response = await fetch(
           `${API}/api/eventos?${params.toString()}`,
@@ -45,7 +46,7 @@ const EventList = () => {
     };
 
     fetchEventos();
-  }, [filtroGenero, filtroCiudad]);
+  }, [filtroGenero, filtroPais]);
 
   // Cálculos de paginación
   const indiceUltimoEvento = paginaActual * eventosPorPagina;
@@ -67,16 +68,20 @@ const EventList = () => {
         <Filtros
           filtroGenero={filtroGenero}
           setFiltroGenero={setFiltroGenero}
-          filtroCiudad={filtroCiudad}
-          setFiltroCiudad={setFiltroCiudad}
+          filtroPais={filtroPais}
+          setFiltroPais={setFiltroPais}
         />
 
-        <div className="mt-8 md:mt-12">
+        {!cargando && eventos.length > 0 && (
+          <p className="text-sm text-crema/60 -mt-2" aria-live="polite">
+            {eventos.length} {eventos.length === 1 ? "evento" : "eventos"}
+            {filtroGenero || filtroPais ? " con estos filtros" : ""}
+          </p>
+        )}
+
+        <div className="mt-4 md:mt-6">
           {cargando ? (
-            <div className="text-center text-crema/70 py-16 md:py-20 animate-pulse">
-              <span className="text-4xl block mb-4">🎧</span>
-              Buscando los mejores shows...
-            </div>
+            <EsqueletoLista cantidad={4} texto="Buscando los mejores shows..." />
           ) : eventos.length === 0 ? (
             <div className="text-center bg-crema/5 rounded-2xl p-8 md:p-12 border border-crema/20 backdrop-blur-sm mx-2">
               <span className="text-4xl md:text-5xl block mb-4">🥺</span>
@@ -90,7 +95,7 @@ const EventList = () => {
               <button
                 onClick={() => {
                   setFiltroGenero("");
-                  setFiltroCiudad("");
+                  setFiltroPais("");
                 }}
                 className="mt-6 text-cielo font-bold hover:text-crema transition-colors"
               >

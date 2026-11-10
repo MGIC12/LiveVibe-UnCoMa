@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { API, urlImagen } from "../utils/api";
+import { EsqueletoCarrusel } from "./Esqueleto";
 
 // Foto del artista; si no tiene (o no carga), una portada con su inicial en los colores de la marca
 function FotoArtista({ foto, nombre }) {
@@ -61,9 +62,7 @@ const Carrusel = () => {
         <h3 className="text-2xl font-bold mb-2 text-crema">
           Artistas en Tendencia
         </h3>
-        <div className="py-8 text-crema/70 animate-pulse">
-          Cargando artistas...
-        </div>
+        <EsqueletoCarrusel />
       </section>
     );
   }

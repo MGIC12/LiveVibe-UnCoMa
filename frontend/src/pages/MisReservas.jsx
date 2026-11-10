@@ -3,15 +3,18 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
 import { primeraMayuscula } from "../utils/tiempo";
 import { descargarICS } from "../utils/calendario";
+import { EsqueletoLista } from "../components/Esqueleto";
 
 const MisReservas = () => {
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
+  const toast = useToast();
 
   useEffect(() => {
     cargarReservas();
@@ -43,13 +46,14 @@ const MisReservas = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Reserva cancelada exitosamente.");
+        toast.exito("Reserva cancelada.");
         cargarReservas(); // Recargar la lista
       } else {
-        alert(data.error);
+        toast.error(data.error || "No se pudo cancelar la reserva.");
       }
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Error de conexión. Probá de nuevo.");
     }
   };
 
@@ -64,9 +68,7 @@ const MisReservas = () => {
         </h1>
 
         {loading ? (
-          <p className="text-center text-crema/60 animate-pulse">
-            Cargando tus entradas...
-          </p>
+          <EsqueletoLista texto="Cargando tus entradas..." />
         ) : reservas.length === 0 ? (
           <div className="bg-crema/5 p-10 rounded-2xl text-center border border-crema/20">
             <p className="text-xl mb-4 text-crema/80">

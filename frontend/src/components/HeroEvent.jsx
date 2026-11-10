@@ -18,20 +18,6 @@ const HeroEvent = () => {
   const [reservado, setReservado] = useState(false);
   const [error, setError] = useState("");
 
-  // Imagen según el género
-  const getImagenPorGenero = (genero) => {
-    const generosBuscados = genero ? genero.toLowerCase() : "";
-    if (generosBuscados.includes("rock"))
-      return "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=2000&auto=format&fit=crop";
-    if (generosBuscados.includes("jazz"))
-      return "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=2000&auto=format&fit=crop";
-    if (generosBuscados.includes("urbano") || generosBuscados.includes("trap"))
-      return "https://images.unsplash.com/photo-1470229722913-7c090be01246?q=80&w=2000&auto=format&fit=crop";
-    if (generosBuscados.includes("indie"))
-      return "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2000&auto=format&fit=crop";
-    return "https://images.unsplash.com/photo-1540039155732-d674d6e3f0be?q=80&w=2000&auto=format&fit=crop";
-  };
-
   useEffect(() => {
     let activo = true;
     fetch(`${API}/api/eventos`)
@@ -125,8 +111,6 @@ const HeroEvent = () => {
   const hora = eventoDestacado.hora_apertura
     ? `${String(eventoDestacado.hora_apertura).slice(0, 5)} hs`
     : "";
-
-  const imagenFondo = getImagenPorGenero(eventoDestacado.genero);
 
   const esDueno =
     usuario && usuario.nombre_usuario === eventoDestacado.nombre_artista;

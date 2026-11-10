@@ -14,7 +14,7 @@ const norm = (t) => (typeof t === "string" ? t.trim().toLowerCase() : "");
 
 // Qué sabemos del usuario
 async function armarPerfil(usuario) {
-  const [bio, seguidos, historial, compras] = await Promise.all([
+  const [bio, seguidos, historial, compras, elegidos] = await Promise.all([
     pool.query(
       `SELECT u.biografia, f.cancion_favorita
          FROM usuario u LEFT JOIN fan f ON f.nombre_usuario = u.nombre_usuario
@@ -38,6 +38,7 @@ async function armarPerfil(usuario) {
         WHERE nombre_usuario = $1 AND estado <> 'cancelada'`,
       [usuario],
     ),
+    pool.query("SELECT genero FROM fan_genero WHERE nombre_usuario = $1", [usuario]),
   ]);
 
   const contar = (filas, clave) => {
@@ -57,6 +58,8 @@ async function armarPerfil(usuario) {
       nombre: a.nombre_artistico,
       genero: a.genero,
     })),
+    // Géneros que dijo que le gustan en la bienvenida (lo más explícito que sabemos)
+    generos_elegidos: elegidos.rows.map((g) => norm(g.genero)).filter(Boolean),
     // Géneros que más escuchó: de los conciertos y de los artistas que sigue
     generos: contar([...historial.rows, ...seguidos.rows], "genero"),
     ciudades: contar(historial.rows, "ciudad"),
@@ -103,7 +106,10 @@ function evaluar(evento, perfil) {
     motivos.push(`Le compraste merch a ${evento.artista}`);
   }
   const posGenero = perfil.generos.indexOf(norm(evento.genero));
-  if (posGenero !== -1) {
+  if (perfil.generos_elegidos.includes(norm(evento.genero))) {
+    puntos += 3;
+    motivos.push(`Elegiste ${evento.genero} entre tus géneros favoritos`);
+  } else if (posGenero !== -1) {
     puntos += posGenero === 0 ? 3 : 2;
     motivos.push(`Es de ${evento.genero}, un género que ya elegiste`);
   }
@@ -129,6 +135,7 @@ function armarPrompt(perfil, candidatos) {
       biografia: perfil.biografia,
       cancion_favorita: perfil.cancion_favorita,
       artistas_seguidos: perfil.artistas_seguidos.map((a) => ({ nombre: a.nombre, genero: a.genero })),
+      generos_favoritos_elegidos: perfil.generos_elegidos,
       generos_frecuentes: perfil.generos,
       ciudades_frecuentes: perfil.ciudades,
       conciertos_asistidos: perfil.conciertos_asistidos,
@@ -188,7 +195,11 @@ const publico = ({ id_evento, nombre, genero, ciudad, lugar, fecha, artista, pre
   motivo,
 });
 
+// Recomendaciones ya calculadas: usuario -> { hasta, datos } (las usa routes/ia.js)
+const cache = new Map();
+
 module.exports = {
+  cache,
   armarPerfil,
   eventosCandidatos,
   recomendarPorPuntaje,

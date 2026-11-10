@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ImagenArticulo from "../components/ImagenArticulo";
 import { useAuth } from "../../context/AuthContext";
+import { EsqueletoLista } from "../components/Esqueleto";
 import { useCarrito } from "../../context/CarritoContext";
 import { pedirMerch } from "../utils/merch";
 import { formatearPrecio } from "../utils/formularios";
@@ -131,9 +132,7 @@ export default function Carrito() {
         )}
 
         {cargando ? (
-          <p className="text-center text-crema/60 animate-pulse">
-            Cargando tu carrito...
-          </p>
+          <EsqueletoLista texto="Cargando tu carrito..." cantidad={2} />
         ) : carrito.items.length === 0 ? (
           <div className="bg-crema/5 p-10 rounded-2xl text-center border border-crema/20">
             <p className="text-xl mb-4 text-crema/80">

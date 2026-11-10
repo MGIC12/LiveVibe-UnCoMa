@@ -124,9 +124,50 @@ function responderError(error, res) {
 
 // GET /api/eventos - Catálogo de eventos vigentes (activos y que todavía no ocurrieron)
 // Filtros opcionales por género y ciudad
+// Texto de un parámetro de la consulta (vacío si no vino o no es texto)
+const textoConsulta = (valor) => (typeof valor === "string" ? valor.trim() : "");
+
+// GET /api/eventos/filtros - Géneros y países que existen entre los eventos vigentes,
+// con cuántos eventos tiene cada uno. Los conteos respetan el otro filtro elegido:
+// los géneros se cuentan dentro del país elegido y los países dentro del género elegido,
+// así nunca se ofrece una combinación sin resultados.
+router.get("/filtros", async (req, res) => {
+  try {
+    const genero = textoConsulta(req.query.genero);
+    const pais = textoConsulta(req.query.pais);
+
+    // Cuenta eventos vigentes agrupados por una columna, con un filtro opcional sobre la otra
+    const contar = async (columna, otraColumna, otroValor) => {
+      const { rows } = await pool.query(
+        `SELECT MODE() WITHIN GROUP (ORDER BY TRIM(e.${columna})) AS nombre,
+                COUNT(*)::int AS cantidad
+           FROM evento e
+          WHERE e.estado = 'activo' AND e.fecha >= $1::date
+            AND NULLIF(TRIM(e.${columna}), '') IS NOT NULL
+            AND ($2 = '' OR LOWER(TRIM(e.${otraColumna})) = LOWER($2))
+          GROUP BY LOWER(TRIM(e.${columna}))
+          ORDER BY cantidad DESC, nombre ASC`,
+        [hoyEnArgentina(), otroValor],
+      );
+      return rows;
+    };
+
+    const [generos, paises] = await Promise.all([
+      contar("genero", "pais", pais),
+      contar("pais", "genero", genero),
+    ]);
+    res.json({ generos, paises });
+  } catch (error) {
+    console.error("Error al obtener los filtros de eventos:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
-    const { genero, ciudad } = req.query;
+    const { ciudad } = req.query;
+    const genero = textoConsulta(req.query.genero);
+    const pais = textoConsulta(req.query.pais);
 
     // $1 = hoy: solo se listan los eventos de hoy en adelante
     const values = [hoyEnArgentina()];
@@ -144,9 +185,15 @@ router.get("/", async (req, res) => {
       WHERE e.estado = 'activo' AND e.fecha >= $1::date`;
 
     // Las columnas llevan "e." porque artista también tiene una columna "genero"
+    // Género y país se comparan completos (sin distinguir mayúsculas): "Rock" no incluye "Rock Nacional"
     if (genero) {
-      values.push(`%${genero}%`); // Los % le dicen a SQL que busque la palabra en cualquier parte del texto
-      query += ` AND e.genero ILIKE $${values.length}`;
+      values.push(genero);
+      query += ` AND LOWER(TRIM(e.genero)) = LOWER($${values.length})`;
+    }
+
+    if (pais) {
+      values.push(pais);
+      query += ` AND LOWER(TRIM(e.pais)) = LOWER($${values.length})`;
     }
 
     if (ciudad) {

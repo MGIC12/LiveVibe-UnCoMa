@@ -61,6 +61,8 @@ app.use("/api/publicaciones", require("./routes/publicaciones"));
 
 app.use("/api/ia", iaRoutes);
 
+app.use("/api/preferencias", require("./routes/preferencias"));
+
 app.use("/api/merch", require("./routes/merch"));
 
 app.use("/api/carrito", require("./routes/carrito"));

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { API } from "../utils/api";
 import FormularioEvento from "../components/FormularioEvento";
 import { EVENTO_VACIO } from "../utils/formularios";
@@ -8,6 +9,7 @@ import { guardarPortada } from "../utils/portadas";
 
 export default function CrearEvento() {
   const { token } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   // "portada" es lo que se eligió con la imagen: { archivo, quitar }
@@ -28,7 +30,7 @@ export default function CrearEvento() {
     try {
       await guardarPortada(data.id_evento, portada, token);
     } catch (err) {
-      alert(
+      toast.aviso(
         `El evento se creó, pero la imagen no se pudo subir (${err.message}). Podés agregarla desde "Editar evento".`,
       );
     }

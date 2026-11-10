@@ -1,12 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { API } from "../utils/api";
+import { useAuth } from "../../context/AuthContext";
 
 const getToken = () => localStorage.getItem("token");
 const rutaEvento = (id) => `/evento/${id}`;
 
 // Cuántos mensajes anteriores se mandan a la IA para que entienda "ese", "el primero", etc.
 const MENSAJES_DE_CONTEXTO = 8;
+
+// Máximo que acepta el servidor por mensaje
+const MAX_MENSAJE = 300;
+
+// Consultas rápidas: se muestran como botones para que se vea qué sabe hacer el asistente
+const SUGERENCIAS_VISITANTE = [
+  "¿Qué shows hay este mes?",
+  "¿Qué géneros tienen?",
+  "Recomendame un show de rock",
+];
+const SUGERENCIAS_SESION = [
+  "¿Qué shows hay este mes?",
+  "Mostrame mis reservas",
+  "Quiero reservar un show de rock",
+];
 
 // Animaciones propias
 const estilos = `
@@ -23,6 +39,7 @@ const estilos = `
 `;
 
 const Chatbot = () => {
+  const { usuario } = useAuth();
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState([
     {
@@ -48,10 +65,12 @@ const Chatbot = () => {
     if (abierto) inputRef.current?.focus();
   }, [abierto]);
 
-  const enviarMensaje = async () => {
-    if (!input.trim() || cargando) return;
+  const enviarMensaje = () => enviar(input);
 
-    const textoUsuario = input.trim();
+  const enviar = async (texto) => {
+    const textoUsuario = texto.trim();
+    if (!textoUsuario || cargando) return;
+
     // Lo conversado hasta ahora (sin el saludo inicial), para darle contexto a la IA
     const historial = mensajes
       .slice(1)
@@ -140,6 +159,13 @@ const Chatbot = () => {
       marcar({ estado: "error", error: "Error de conexión. Probá de nuevo." });
     }
   };
+
+  // Las sugerencias aparecen al empezar y después de cada respuesta, salvo que haya una reserva por confirmar
+  const ultimo = mensajes[mensajes.length - 1];
+  const mostrarSugerencias =
+    !cargando &&
+    ultimo.emisor === "ia" &&
+    !ultimo.acciones?.some((a) => a.estado === "pendiente" || a.estado === "enviando");
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -254,12 +280,26 @@ const Chatbot = () => {
 
           {/* Entrada */}
           <div className="p-3 border-t border-white/10 bg-black/20">
+            {mostrarSugerencias && (
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-1 cb-scroll" aria-label="Consultas sugeridas">
+                {(usuario ? SUGERENCIAS_SESION : SUGERENCIAS_VISITANTE).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => enviar(s)}
+                    className="shrink-0 rounded-full border border-purple-400/40 bg-purple-500/10 px-3 py-1.5 text-xs text-purple-100 hover:bg-purple-500/25 transition"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-2 rounded-full bg-white/10 border border-white/10 pl-4 pr-1.5 py-1.5 focus-within:border-purple-400/70 focus-within:bg-white/15 transition">
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
-                maxLength={500}
+                maxLength={MAX_MENSAJE}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && enviarMensaje()}
                 placeholder="Preguntá sobre recitales..."

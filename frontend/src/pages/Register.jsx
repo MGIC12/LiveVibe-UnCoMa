@@ -83,6 +83,9 @@ export default function Register() {
             aviso: `Tu cuenta se creó, pero no pudimos subir la foto (${fotoError}).`,
           },
         });
+      } else if (form.rol === "fan") {
+        // Los fans nuevos eligen sus géneros y artistas favoritos antes de entrar
+        navigate("/bienvenida");
       } else {
         navigate("/");
       }

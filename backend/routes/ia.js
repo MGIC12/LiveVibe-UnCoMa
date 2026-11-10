@@ -102,7 +102,7 @@ router.post("/chatbot", limiteChatbot, tokenOpcional, async (req, res) => {
 // Feature 9: Recomendador personalizado
 // Devuelve hasta 3 eventos con el motivo de cada uno. Se guarda unos minutos por usuario.
 const CACHE_RECOMENDACIONES_MS = 10 * 60 * 1000;
-const cacheRecomendaciones = new Map(); // usuario -> { hasta, datos }
+const cacheRecomendaciones = recomendador.cache; // usuario -> { hasta, datos }
 
 router.get("/recomendaciones", limiteIA, verificarToken, async (req, res) => {
   const usuario = req.user.nombre_usuario;

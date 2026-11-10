@@ -20,6 +20,7 @@ import Carrito from "./pages/Carrito";
 import MisCompras from "./pages/MisCompras";
 import MisVentas from "./pages/MisVentas";
 import MiMerch from "./pages/MiMerch";
+import Bienvenida from "./pages/Bienvenida";
 
 function App() {
   return (
@@ -143,6 +144,15 @@ function App() {
         />
 
         {/* Ruta comodín */}
+        <Route
+          path="/bienvenida"
+          element={
+            <RutaProtegida roles={["fan"]}>
+              <Bienvenida />
+            </RutaProtegida>
+          }
+        />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

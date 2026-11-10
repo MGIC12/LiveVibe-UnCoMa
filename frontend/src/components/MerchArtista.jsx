@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ImagenArticulo from "./ImagenArticulo";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { useCarrito } from "../../context/CarritoContext";
 import { pedirMerch } from "../utils/merch";
 import { formatearPrecio } from "../utils/formularios";
@@ -11,6 +12,7 @@ const MAX_POR_CLIC = 10;
 // Si el artista no tiene artículos, no muestra nada.
 export default function MerchArtista({ artista }) {
   const { token, usuario } = useAuth();
+  const toast = useToast();
   const { refrescar } = useCarrito();
   const navigate = useNavigate();
   const { hash } = useLocation();
@@ -73,7 +75,7 @@ export default function MerchArtista({ artista }) {
         metodo: "POST",
         cuerpo: { id_articulo: a.id_articulo, cantidad: cantidadDe(a) },
       });
-      avisar(a.id_articulo, true, "Agregado al carrito");
+      toast.exito(`Agregamos "${a.nombre}" al carrito.`);
       refrescar();
     } catch (e) {
       avisar(a.id_articulo, false, e.message);

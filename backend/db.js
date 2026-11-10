@@ -279,6 +279,14 @@ CREATE TABLE IF NOT EXISTS compra_item (
 
 CREATE INDEX IF NOT EXISTS idx_compra_item_compra ON compra_item (id_compra);
 
+-- Géneros favoritos que el fan elige en la bienvenida (los usa el recomendador)
+CREATE TABLE IF NOT EXISTS fan_genero (
+  nombre_usuario VARCHAR(30) NOT NULL
+                 REFERENCES usuario(nombre_usuario) ON DELETE CASCADE,
+  genero         VARCHAR(60) NOT NULL,
+  PRIMARY KEY (nombre_usuario, genero)
+);
+
 -- Soundtrack sugerido por IA para cada evento (se genera una vez y se guarda)
 CREATE TABLE IF NOT EXISTS recomendacion_evento (
   id_evento INT PRIMARY KEY REFERENCES evento(id_evento) ON DELETE CASCADE,

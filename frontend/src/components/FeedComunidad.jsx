@@ -4,6 +4,7 @@ import FormularioPublicacion from "./FormularioPublicacion";
 import TarjetaPublicacion from "./TarjetaPublicacion";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
+import { EsqueletoPublicaciones } from "./Esqueleto";
 
 // encabezado: título de la sección (si no se indica, usa el de la página Comunidad)
 // max: cuántas publicaciones mostrar (si no se indica, todas las que trae el servidor)
@@ -100,7 +101,7 @@ export default function FeedComunidad({ encabezado, max, soloArtistas = false })
       )}
 
       {cargando ? (
-        <p className="text-crema/60 text-center py-10 animate-pulse">Cargando publicaciones...</p>
+        <EsqueletoPublicaciones />
       ) : error ? (
         <p className="text-mandarina text-center py-10" role="alert">
           {error}

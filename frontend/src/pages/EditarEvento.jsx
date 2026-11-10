@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FormularioEvento from "../components/FormularioEvento";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { API } from "../utils/api";
 import { guardarPortada } from "../utils/portadas";
 
@@ -23,6 +24,7 @@ function Mensaje({ children }) {
 export default function EditarEvento() {
   const { id } = useParams();
   const { usuario, token } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   const [evento, setEvento] = useState(null);
@@ -101,7 +103,7 @@ export default function EditarEvento() {
     try {
       await guardarPortada(id, portada, token);
     } catch (err) {
-      alert(`Los cambios se guardaron, pero la imagen no se pudo actualizar (${err.message}).`);
+      toast.aviso(`Los cambios se guardaron, pero la imagen no se pudo actualizar (${err.message}).`);
     }
 
     navigate(`/evento/${id}`);

@@ -4,17 +4,20 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ImagenEvento from "../components/ImagenEvento";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { formatearPrecio } from "../utils/formularios";
 import { API } from "../utils/api";
 import { primeraMayuscula } from "../utils/tiempo";
 import { descargarICS } from "../utils/calendario";
 import Avatar from "../components/Avatar";
 import MapaEvento from "../components/MapaEvento";
+import { EsqueletoEvento } from "../components/Esqueleto";
 
 const EventoDetalle = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { usuario, token } = useAuth();
+  const toast = useToast();
 
   const [evento, setEvento] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +85,7 @@ const EventoDetalle = () => {
     setErrorMessage("");
 
     if (!usuario) {
-      alert("Tenés que iniciar sesión o registrarte para poder reservar entradas.");
+      toast.info("Iniciá sesión o registrate para poder reservar entradas.");
       navigate("/login");
       return;
     }
@@ -133,8 +136,9 @@ const EventoDetalle = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-tinta text-crema flex items-center justify-center">
-        Cargando evento...
+      <div className="min-h-screen bg-tinta text-crema">
+        <Navbar />
+        <EsqueletoEvento />
       </div>
     );
   }
