@@ -335,7 +335,7 @@ router.post("/", verificarToken, requerirRol("artista"), async (req, res) => {
 // ---------- Reservar ----------
 
 // POST /api/eventos/:id/reservar - Un usuario reserva una entrada
-router.post("/:id/reservar", verificarToken, async (req, res) => {
+router.post("/:id/reservar", verificarToken, requerirRol("fan"), async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(id)) {
     return res.status(404).json({ error: "Evento no existe" });

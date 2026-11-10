@@ -139,6 +139,13 @@ const HeroEvent = () => {
         Administrar evento
       </Link>
     );
+  } else if (usuario?.rol === "artista") {
+    // Los artistas no reservan entradas: solo las cuentas de fans
+    accionReserva = (
+      <span className="text-sm text-crema/80 font-medium px-5 py-3 bg-tinta/80 border border-crema/20 rounded-full">
+        Solo las cuentas de Fans pueden reservar entradas.
+      </span>
+    );
   } else {
     const bloqueado = reservando || agotado;
     accionReserva = (

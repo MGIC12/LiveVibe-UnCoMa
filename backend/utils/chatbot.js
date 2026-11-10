@@ -165,6 +165,9 @@ async function proponerReserva(args, ctx) {
         "La persona no inició sesión. Pedile que inicie sesión para reservar.",
     };
   }
+  if (ctx.usuario.rol !== "fan") {
+    return { error: "Solo las cuentas de fans pueden reservar entradas." };
+  }
   const id = Number(args.id_evento);
   if (!Number.isInteger(id) || id < 1)
     return { error: "El evento indicado no es válido." };
