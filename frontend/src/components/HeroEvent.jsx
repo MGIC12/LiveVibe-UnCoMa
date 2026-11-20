@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { formatearPrecio } from "../utils/formularios";
+import SelectorCantidad from "./SelectorCantidad";
+import { maximoReservable, textoEntradas } from "../utils/reservas";
 import ImagenEvento from "./ImagenEvento";
 import { primeraMayuscula } from "../utils/tiempo";
 
@@ -16,6 +18,8 @@ const HeroEvent = () => {
   // Reserva directa desde el hero
   const [reservando, setReservando] = useState(false);
   const [reservado, setReservado] = useState(false);
+  const [cantidad, setCantidad] = useState(1);
+  const [reservadas, setReservadas] = useState(1);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -34,7 +38,9 @@ const HeroEvent = () => {
           : [];
         if (vigentes.length > 0) {
           // Evento random
-          setEventoDestacado(vigentes[Math.floor(Math.random() * vigentes.length)]);
+          setEventoDestacado(
+            vigentes[Math.floor(Math.random() * vigentes.length)],
+          );
         }
       })
       .catch((error) => {
@@ -63,12 +69,18 @@ const HeroEvent = () => {
         `${API}/api/eventos/${eventoDestacado.id_evento}/reservar`,
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ cantidad }),
         },
       );
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo procesar la reserva");
+      if (!res.ok)
+        throw new Error(data.error || "No se pudo procesar la reserva");
 
+      setReservadas(cantidad);
       setReservado(true);
     } catch (err) {
       setError(err.message);
@@ -121,7 +133,9 @@ const HeroEvent = () => {
   if (reservado) {
     accionReserva = (
       <div className="flex flex-wrap items-center gap-4 bg-tinta/80 backdrop-blur-sm rounded-full px-6 py-3">
-        <span className="font-bold text-cielo">✅ ¡Reserva confirmada!</span>
+        <span className="font-bold text-cielo">
+          ✅ ¡Reserva confirmada! ({textoEntradas(reservadas)})
+        </span>
         <Link
           to="/mis-reservas"
           className="font-bold text-crema hover:text-sol underline underline-offset-4 transition"
@@ -148,22 +162,36 @@ const HeroEvent = () => {
     );
   } else {
     const bloqueado = reservando || agotado;
+    const maxEntradas = maximoReservable(eventoDestacado.entradas_disponibles);
+    const cantidadValida = Math.min(cantidad, maxEntradas);
     accionReserva = (
-      <button
-        onClick={handleReservar}
-        disabled={bloqueado}
-        className={`font-bold py-3 px-8 rounded-full transition flex items-center gap-2 ${
-          bloqueado
-            ? "bg-crema/10 text-crema/50 cursor-not-allowed"
-            : "bg-fucsia hover:bg-chicle text-tinta shadow-[0_0_15px_rgba(255,46,147,0.45)]"
-        }`}
-      >
-        {agotado
-          ? "ENTRADAS AGOTADAS"
-          : reservando
-            ? "PROCESANDO..."
-            : "RESERVAR AHORA"}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        {!agotado && (
+          <SelectorCantidad
+            valor={cantidadValida}
+            max={maxEntradas}
+            disabled={reservando}
+            onChange={(n) => setCantidad(Math.min(Math.max(n, 1), maxEntradas))}
+          />
+        )}
+        <button
+          onClick={handleReservar}
+          disabled={bloqueado}
+          className={`font-bold py-3 px-8 rounded-full transition flex items-center gap-2 ${
+            bloqueado
+              ? "bg-crema/10 text-crema/50 cursor-not-allowed"
+              : "bg-fucsia hover:bg-chicle text-tinta shadow-[0_0_15px_rgba(255,46,147,0.45)]"
+          }`}
+        >
+          {agotado
+            ? "ENTRADAS AGOTADAS"
+            : reservando
+              ? "PROCESANDO..."
+              : cantidadValida === 1
+                ? "RESERVAR AHORA"
+                : `RESERVAR ${cantidadValida} ENTRADAS`}
+        </button>
+      </div>
     );
   }
 
@@ -186,6 +214,14 @@ const HeroEvent = () => {
           <span>{primeraMayuscula(fechaFormateada)}</span> {hora} |{" "}
           {eventoDestacado.lugar}, {eventoDestacado.ciudad} <br />
           <span className="text-sm mt-2 block text-crema/70">
+            {eventoDestacado.nombre_artista && (
+              <>
+                🎤{" "}
+                {eventoDestacado.artista_nombre ||
+                  eventoDestacado.nombre_artista}
+                {" · "}
+              </>
+            )}
             Género: {eventoDestacado.genero}
             {eventoDestacado.precio_desde != null && (
               <>

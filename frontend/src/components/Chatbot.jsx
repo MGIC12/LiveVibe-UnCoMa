@@ -128,7 +128,7 @@ const Chatbot = () => {
   };
 
   // Confirma una reserva propuesta por el asistente (usa la ruta normal de reservas)
-  const confirmarReserva = async (idxMensaje, idEvento) => {
+  const confirmarReserva = async (idxMensaje, idEvento, cantidad = 1) => {
     const marcar = (cambios) =>
       setMensajes((prev) =>
         prev.map((m, i) =>
@@ -147,7 +147,8 @@ const Chatbot = () => {
     try {
       const res = await fetch(`${API}/api/eventos/${idEvento}/reservar`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}` },
+        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ cantidad }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -249,11 +250,15 @@ const Chatbot = () => {
                     ) : (
                       <>
                         <button
-                          onClick={() => confirmarReserva(idx, a.id_evento)}
+                          onClick={() => confirmarReserva(idx, a.id_evento, a.cantidad ?? 1)}
                           disabled={a.estado === "enviando"}
                           className="mt-2 w-full rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-600 py-1.5 text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
                         >
-                          {a.estado === "enviando" ? "Reservando..." : "Confirmar reserva"}
+                          {a.estado === "enviando"
+                            ? "Reservando..."
+                            : (a.cantidad ?? 1) > 1
+                              ? `Confirmar reserva (${a.cantidad} entradas)`
+                              : "Confirmar reserva"}
                         </button>
                         {a.estado === "error" && (
                           <p className="mt-1 text-xs text-red-300">{a.error}</p>

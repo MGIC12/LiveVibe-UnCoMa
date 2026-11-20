@@ -9,6 +9,7 @@ import { formatearPrecio } from "../utils/formularios";
 import { primeraMayuscula } from "../utils/tiempo";
 import { descargarICS } from "../utils/calendario";
 import { EsqueletoLista } from "../components/Esqueleto";
+import { textoEntradas } from "../utils/reservas";
 
 const MisReservas = () => {
   const [reservas, setReservas] = useState([]);
@@ -119,9 +120,14 @@ const MisReservas = () => {
                       )}
                       {r.hora_apertura ? ` · ${r.hora_apertura} hs` : ""}
                     </p>
+                    <p className="text-crema/80 text-sm font-semibold">
+                      🎟️ {textoEntradas(r.cantidad ?? 1)}
+                    </p>
                     {r.precio != null && (
                       <p className="text-sol font-bold">
-                        {formatearPrecio(r.precio)}
+                        {(r.cantidad ?? 1) > 1
+                          ? `${formatearPrecio(r.precio * r.cantidad)} en total (${formatearPrecio(r.precio)} c/u)`
+                          : formatearPrecio(r.precio)}
                       </p>
                     )}
 
