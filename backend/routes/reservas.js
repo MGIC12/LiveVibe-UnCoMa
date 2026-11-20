@@ -10,13 +10,14 @@ router.get("/mis-reservas", verificarToken, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT r.id_reserva, r.estado, r.fecha_reserva, r.cantidad,
               e.id_evento, e.nombre AS evento_nombre, e.lugar, e.ciudad,
-              e.estado AS evento_estado,
+              e.estado AS evento_estado, im.url AS imagen_url,
               to_char(e.fecha, 'YYYY-MM-DD') AS evento_fecha,
               to_char(e.hora_apertura, 'HH24:MI') AS hora_apertura,
               (SELECT MIN(precio)::float8 FROM entrada
                 WHERE id_evento = e.id_evento) AS precio
          FROM reserva r
          JOIN evento e ON e.id_evento = r.id_evento
+         LEFT JOIN imagen im ON im.id_imagen = e.id_imagen
         WHERE r.nombre_usuario = $1
         ORDER BY e.fecha ASC`,
       [req.user.nombre_usuario],

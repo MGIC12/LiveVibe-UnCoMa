@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ImagenArticulo from "../components/ImagenArticulo";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../utils/paginacion";
 import { useAuth } from "../../context/AuthContext";
 import { pedirMerch } from "../utils/merch";
 import { urlImagen } from "../utils/api";
@@ -12,6 +14,7 @@ import {
   MAX_BYTES_IMAGEN,
 } from "../utils/formularios";
 
+const POR_PAGINA = 6; // 2 columnas x 3 filas junto al formulario
 const VACIO = { nombre: "", descripcion: "", precio: "", stock: "" };
 const CAMPO =
   "w-full px-4 py-3 rounded-xl bg-crema/10 border border-crema/25 text-crema placeholder-crema/50 focus:outline-none focus:ring-2 focus:ring-cielo text-sm";
@@ -30,6 +33,7 @@ export default function MiMerch() {
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const pag = usePaginacion(articulos, POR_PAGINA);
 
   async function cargar() {
     try {
@@ -151,7 +155,7 @@ export default function MiMerch() {
   return (
     <div className="min-h-screen bg-tinta text-crema flex flex-col">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 pt-28 pb-12 max-w-3xl space-y-8">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 pt-28 pb-12 max-w-6xl space-y-8">
         <div>
           <h1 className="text-4xl font-black mb-2">
             Mi <span className="text-fucsia">Merch</span>
@@ -168,236 +172,259 @@ export default function MiMerch() {
           </p>
         </div>
 
-        {/* Formulario: crea un artículo, o edita el elegido */}
-        <form
-          onSubmit={guardar}
-          className="bg-crema/5 border border-crema/20 rounded-2xl p-6 space-y-4"
-        >
-          <h2 className="text-xs font-bold text-cielo uppercase tracking-wider">
-            {editando ? `Editando: ${editando.nombre}` : "Nuevo artículo"}
-          </h2>
+        <div className="grid gap-8 lg:grid-cols-[24rem_minmax(0,1fr)] items-start">
+          {/* Formulario: crea un artículo, o edita el elegido */}
+          <form
+            onSubmit={guardar}
+            className="bg-crema/5 border border-crema/20 rounded-2xl p-6 space-y-4 lg:sticky lg:top-24"
+          >
+            <h2 className="text-xs font-bold text-cielo uppercase tracking-wider">
+              {editando ? `Editando: ${editando.nombre}` : "Nuevo artículo"}
+            </h2>
 
-          <div>
-            <label
-              htmlFor="merch-nombre"
-              className="block text-sm font-bold text-crema/80 mb-1"
-            >
-              Nombre
-            </label>
-            <input
-              id="merch-nombre"
-              value={datos.nombre}
-              onChange={cambiar("nombre")}
-              maxLength={120}
-              required
-              placeholder="Ej.: Remera negra con logo"
-              className={CAMPO}
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="merch-desc"
-              className="block text-sm font-bold text-crema/80 mb-1"
-            >
-              Descripción{" "}
-              <span className="font-normal text-crema/50">(opcional)</span>
-            </label>
-            <textarea
-              id="merch-desc"
-              value={datos.descripcion}
-              onChange={cambiar("descripcion")}
-              maxLength={500}
-              rows={3}
-              placeholder="Talles, materiales, detalles..."
-              className={`${CAMPO} resize-none`}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label
-                htmlFor="merch-precio"
+                htmlFor="merch-nombre"
                 className="block text-sm font-bold text-crema/80 mb-1"
               >
-                Precio ($)
+                Nombre
               </label>
               <input
-                id="merch-precio"
-                type="number"
-                min="0"
-                step="0.01"
-                value={datos.precio}
-                onChange={cambiar("precio")}
+                id="merch-nombre"
+                value={datos.nombre}
+                onChange={cambiar("nombre")}
+                maxLength={120}
                 required
+                placeholder="Ej.: Remera negra con logo"
                 className={CAMPO}
               />
             </div>
+
             <div>
               <label
-                htmlFor="merch-stock"
+                htmlFor="merch-desc"
                 className="block text-sm font-bold text-crema/80 mb-1"
               >
-                Stock (unidades)
+                Descripción{" "}
+                <span className="font-normal text-crema/50">(opcional)</span>
               </label>
-              <input
-                id="merch-stock"
-                type="number"
-                min="0"
-                step="1"
-                value={datos.stock}
-                onChange={cambiar("stock")}
-                required
-                className={CAMPO}
+              <textarea
+                id="merch-desc"
+                value={datos.descripcion}
+                onChange={cambiar("descripcion")}
+                maxLength={500}
+                rows={3}
+                placeholder="Talles, materiales, detalles..."
+                className={`${CAMPO} resize-none`}
               />
             </div>
-          </div>
 
-          {/* Foto */}
-          <div className="space-y-2">
-            <p className="text-sm font-bold text-crema/80">
-              Foto{" "}
-              <span className="font-normal text-crema/50">
-                (opcional, JPG, PNG o WebP de hasta 2 MB)
-              </span>
-            </p>
-            {previa && (
-              <img
-                src={previa}
-                alt="Vista previa de la foto del artículo"
-                className="max-h-48 rounded-xl border border-crema/20"
-              />
-            )}
-            <div className="flex flex-wrap gap-3">
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={elegirImagen}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => inputRef.current.click()}
-                className="px-4 py-1.5 rounded-full border border-crema/30 text-crema/80 hover:border-cielo hover:text-cielo text-sm font-bold transition"
-              >
-                📷 {previa ? "Cambiar foto" : "Agregar foto"}
-              </button>
-              {(imagen || fotoActual) && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="merch-precio"
+                  className="block text-sm font-bold text-crema/80 mb-1"
+                >
+                  Precio ($)
+                </label>
+                <input
+                  id="merch-precio"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={datos.precio}
+                  onChange={cambiar("precio")}
+                  required
+                  className={CAMPO}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="merch-stock"
+                  className="block text-sm font-bold text-crema/80 mb-1"
+                >
+                  Stock (unidades)
+                </label>
+                <input
+                  id="merch-stock"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={datos.stock}
+                  onChange={cambiar("stock")}
+                  required
+                  className={CAMPO}
+                />
+              </div>
+            </div>
+
+            {/* Foto */}
+            <div className="space-y-2">
+              <p className="text-sm font-bold text-crema/80">
+                Foto{" "}
+                <span className="font-normal text-crema/50">
+                  (opcional, JPG, PNG o WebP de hasta 2 MB)
+                </span>
+              </p>
+              {previa && (
+                <img
+                  src={previa}
+                  alt="Vista previa de la foto del artículo"
+                  className="max-h-48 rounded-xl border border-crema/20"
+                />
+              )}
+              <div className="flex flex-wrap gap-3">
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={elegirImagen}
+                  className="hidden"
+                />
                 <button
                   type="button"
-                  onClick={() => {
-                    setImagen(null);
-                    if (editando?.imagen_url) setQuitarFoto(true);
-                  }}
-                  className="px-4 py-1.5 rounded-full border border-mandarina/60 text-mandarina hover:bg-mandarina hover:text-tinta text-sm font-bold transition"
+                  onClick={() => inputRef.current.click()}
+                  className="px-4 py-1.5 rounded-full border border-crema/30 text-crema/80 hover:border-cielo hover:text-cielo text-sm font-bold transition"
                 >
-                  Quitar foto
+                  📷 {previa ? "Cambiar foto" : "Agregar foto"}
+                </button>
+                {(imagen || fotoActual) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImagen(null);
+                      if (editando?.imagen_url) setQuitarFoto(true);
+                    }}
+                    className="px-4 py-1.5 rounded-full border border-mandarina/60 text-mandarina hover:bg-mandarina hover:text-tinta text-sm font-bold transition"
+                  >
+                    Quitar foto
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <p role="alert" className="text-mandarina text-sm">
+                {error}
+              </p>
+            )}
+            {aviso && (
+              <p role="status" className="text-cielo text-sm font-bold">
+                {aviso}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="submit"
+                disabled={guardando}
+                className="px-6 py-2.5 rounded-full bg-fucsia hover:bg-chicle text-tinta font-bold disabled:opacity-50 transition"
+              >
+                {guardando
+                  ? "Guardando..."
+                  : editando
+                    ? "Guardar cambios"
+                    : "Publicar artículo"}
+              </button>
+              {editando && (
+                <button
+                  type="button"
+                  onClick={limpiar}
+                  className="px-6 py-2.5 rounded-full border border-crema/30 text-crema/80 hover:border-crema font-bold transition"
+                >
+                  Cancelar edición
                 </button>
               )}
             </div>
-          </div>
+          </form>
 
-          {error && (
-            <p role="alert" className="text-mandarina text-sm">
-              {error}
-            </p>
-          )}
-          {aviso && (
-            <p role="status" className="text-cielo text-sm font-bold">
-              {aviso}
-            </p>
-          )}
+          {/* Lista */}
+          <section id="lista-merch" className="space-y-4 scroll-mt-24">
+            <h2 className="text-2xl font-black">
+              Mis <span className="text-fucsia">artículos</span>{" "}
+              <span className="text-base font-bold text-crema/60">
+                ({articulos.length})
+              </span>
+            </h2>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="submit"
-              disabled={guardando}
-              className="px-6 py-2.5 rounded-full bg-fucsia hover:bg-chicle text-tinta font-bold disabled:opacity-50 transition"
-            >
-              {guardando
-                ? "Guardando..."
-                : editando
-                  ? "Guardar cambios"
-                  : "Publicar artículo"}
-            </button>
-            {editando && (
-              <button
-                type="button"
-                onClick={limpiar}
-                className="px-6 py-2.5 rounded-full border border-crema/30 text-crema/80 hover:border-crema font-bold transition"
-              >
-                Cancelar edición
-              </button>
-            )}
-          </div>
-        </form>
-
-        {/* Lista */}
-        <section className="space-y-3">
-          <h2 className="text-2xl font-black">
-            Mis <span className="text-fucsia">artículos</span>{" "}
-            <span className="text-base font-bold text-crema/60">
-              ({articulos.length})
-            </span>
-          </h2>
-
-          {cargando ? (
-            <p className="text-crema/60 animate-pulse">Cargando...</p>
-          ) : articulos.length === 0 ? (
-            <p className="bg-crema/5 border border-crema/20 rounded-2xl p-6 text-center text-crema/70">
-              Todavía no cargaste ningún artículo.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {articulos.map((a) => (
-                <li
-                  key={a.id_articulo}
-                  className={`bg-crema/5 border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 ${
-                    editando?.id_articulo === a.id_articulo
-                      ? "border-cielo"
-                      : "border-crema/20"
-                  }`}
-                >
-                  <ImagenArticulo
-                    url={a.imagen_url}
-                    descripcion={a.imagen_descripcion || a.nombre}
-                    clases="w-20 h-20 rounded-xl shrink-0"
-                  />
-                  <div className="flex-grow min-w-0">
-                    <p className="font-bold text-lg leading-tight truncate">
-                      {a.nombre}
-                    </p>
-                    <p className="text-sol font-bold">
-                      {formatearPrecio(a.precio)}
-                    </p>
-                    <p
-                      className={`text-xs font-bold ${
-                        a.stock === 0 ? "text-mandarina" : "text-crema/60"
+            {cargando ? (
+              <p className="text-crema/60 animate-pulse">Cargando...</p>
+            ) : articulos.length === 0 ? (
+              <p className="bg-crema/5 border border-crema/20 rounded-2xl p-6 text-center text-crema/70">
+                Todavía no cargaste ningún artículo.
+              </p>
+            ) : (
+              <>
+                <ul className="grid gap-4 sm:grid-cols-2">
+                  {pag.visibles.map((a) => (
+                    <li
+                      key={a.id_articulo}
+                      className={`bg-crema/5 border rounded-2xl overflow-hidden flex flex-col ${
+                        editando?.id_articulo === a.id_articulo
+                          ? "border-cielo"
+                          : "border-crema/20"
                       }`}
                     >
-                      {a.stock === 0 ? "Agotado" : `Stock: ${a.stock}`}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 text-sm font-bold">
-                    <button
-                      onClick={() => empezarEdicion(a)}
-                      className="text-cielo hover:text-crema"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => eliminar(a)}
-                      className="text-mandarina hover:underline"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                      <div className="relative">
+                        <ImagenArticulo
+                          url={a.imagen_url}
+                          descripcion={a.imagen_descripcion || a.nombre}
+                          clases="w-full aspect-[4/3]"
+                        />
+                        {a.stock === 0 && (
+                          <span className="absolute top-2 left-2 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase bg-tinta/85 border border-mandarina text-mandarina">
+                            Agotado
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-4 flex flex-col gap-1 flex-grow">
+                        <p className="font-bold text-lg leading-tight line-clamp-2">
+                          {a.nombre}
+                        </p>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="text-sol font-black text-lg">
+                            {formatearPrecio(a.precio)}
+                          </p>
+                          <p
+                            className={`text-xs font-bold ${
+                              a.stock === 0 ? "text-mandarina" : "text-crema/60"
+                            }`}
+                          >
+                            {a.stock === 0 ? "Sin stock" : `Stock: ${a.stock}`}
+                          </p>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-bold">
+                          <button
+                            onClick={() => empezarEdicion(a)}
+                            className="border border-cielo text-cielo hover:bg-cielo hover:text-tinta py-2 rounded-full transition"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => eliminar(a)}
+                            className="border border-mandarina text-mandarina hover:bg-mandarina hover:text-tinta py-2 rounded-full transition"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <Paginacion
+                  pagina={pag.pagina}
+                  total={pag.total}
+                  desde={pag.desde}
+                  hasta={pag.hasta}
+                  cantidad={articulos.length}
+                  etiqueta="artículos"
+                  onCambiar={pag.setPagina}
+                  anclaId="lista-merch"
+                />
+              </>
+            )}
+          </section>
+        </div>
       </main>
       <Footer />
     </div>

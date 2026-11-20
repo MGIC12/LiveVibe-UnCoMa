@@ -2,13 +2,13 @@
 
 /* ---------- Paleta LiveVibe (graffiti) ---------- */
 @theme {
-  --color-tinta: #0F0D14;     /* fondo principal y texto sobre colores vivos */
-  --color-crema: #FFF4E3;     /* texto sobre fondo oscuro */
-  --color-fucsia: #FF2E93;    /* primario: botones */
-  --color-sol: #FFC62E;       /* precios, estrellas, destacados */
-  --color-cielo: #3DB4F2;     /* links, íconos y hover */
-  --color-mandarina: #FF7A1A; /* tags y detalles de energía */
-  --color-chicle: #FF9ACB;    /* fondos suaves y recomendaciones */
+  --color-tinta: #0f0d14; /* fondo principal y texto sobre colores vivos */
+  --color-crema: #fff4e3; /* texto sobre fondo oscuro */
+  --color-fucsia: #ff2e93; /* primario: botones */
+  --color-sol: #ffc62e; /* precios, estrellas, destacados */
+  --color-cielo: #3db4f2; /* links, íconos y hover */
+  --color-mandarina: #ff7a1a; /* tags y detalles de energía */
+  --color-chicle: #ff9acb; /* fondos suaves y recomendaciones */
 }
 
 /* ---------- Base global ---------- */
@@ -50,19 +50,16 @@
   0% {
     transform: translateX(0);
   }
-  /* Se desplaza exactamente la mitad del contenedor (que será nuestra primera lista) */
   100% {
     transform: translateX(-50%);
   }
 }
 
 .animate-infinite-scroll {
-  /* 30 segundos es un tiempo cómodo, 'linear' hace que no acelere ni frene, 'infinite' lo repite por siempre */
   animation: infinite-scroll 30s linear infinite;
-  width: max-content; /* Necesario para que el contenedor abarque todos los elementos en una sola línea */
+  width: max-content;
 }
 
-/* Pausar el movimiento al pasar el mouse (Mejor Experiencia de Usuario) */
 .animate-infinite-scroll:hover {
   animation-play-state: paused;
 }
@@ -75,5 +72,27 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes corazon-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.corazon-pop {
+  animation: corazon-pop 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .corazon-pop {
+    animation: none;
   }
 }

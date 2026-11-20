@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
 import Insignia from "./Insignia";
 import Comentarios from "./Comentarios";
+import { IconoCorazon, IconoComentario } from "./IconosSociales";
 import { useAuth } from "../../context/AuthContext";
 import { API, urlImagen } from "../utils/api";
 import { tiempoRelativo } from "../utils/tiempo";
@@ -31,6 +32,7 @@ export default function TarjetaPublicacion({
   const [cantComentarios, setCantComentarios] = useState(
     publicacion.cant_comentarios,
   );
+  const [animarCorazon, setAnimarCorazon] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -49,6 +51,7 @@ export default function TarjetaPublicacion({
       if (!res.ok)
         throw new Error(data.error || "No se pudo guardar tu me gusta");
       setLikes({ cant: data.cant_likes, mio: data.me_gusto });
+      if (data.me_gusto) setAnimarCorazon(true);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -78,12 +81,15 @@ export default function TarjetaPublicacion({
   // Botón de "me gusta": cambia según quién mira
   const contador = (
     <>
-      <span>{likes.mio ? "❤️" : "🤍"}</span>
-      <span>{likes.cant}</span>
+      <IconoCorazon
+        lleno={likes.mio}
+        animar={animarCorazon}
+        onAnimationEnd={() => setAnimarCorazon(false)}
+      />
+      <span className="text-sm font-semibold tabular-nums">{likes.cant}</span>
     </>
   );
-  const base =
-    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition";
+  const base = "inline-flex items-center gap-2 p-1.5 rounded-lg transition";
 
   let botonMeGusta;
   if (puedeInteractuar && !esMia) {
@@ -92,10 +98,9 @@ export default function TarjetaPublicacion({
         onClick={alternarMeGusta}
         disabled={guardando}
         aria-pressed={likes.mio}
+        aria-label={likes.mio ? "Quitar me gusta" : "Me gusta"}
         className={`${base} disabled:opacity-50 ${
-          likes.mio
-            ? "bg-fucsia/20 text-fucsia"
-            : "text-crema/70 hover:bg-crema/10 hover:text-fucsia"
+          likes.mio ? "text-crema" : "text-crema/80 hover:text-crema/50"
         }`}
       >
         {contador}
@@ -106,7 +111,8 @@ export default function TarjetaPublicacion({
       <Link
         to="/login"
         title="Iniciá sesión para dar me gusta"
-        className={`${base} text-crema/70 hover:bg-crema/10`}
+        aria-label="Iniciá sesión para dar me gusta"
+        className={`${base} text-crema/80 hover:text-crema/50`}
       >
         {contador}
       </Link>
@@ -115,7 +121,7 @@ export default function TarjetaPublicacion({
     // El autor (y las cuentas que no pueden reaccionar) solo ven la cantidad
     botonMeGusta = (
       <span
-        className={`${base} text-crema/60`}
+        className={`${base} text-crema/50`}
         title={
           esMia
             ? "No podés dar me gusta a tu propia publicación"
@@ -177,19 +183,20 @@ export default function TarjetaPublicacion({
 
       {/* Acciones */}
       <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
           {botonMeGusta}
           <button
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
+            aria-label={`Comentarios (${cantComentarios})`}
             className={`${base} ${
-              abierto
-                ? "bg-cielo/20 text-cielo"
-                : "text-crema/70 hover:bg-crema/10 hover:text-cielo"
+              abierto ? "text-crema" : "text-crema/80 hover:text-crema/50"
             }`}
           >
-            <span>💬</span>
-            <span>{cantComentarios}</span>
+            <IconoComentario lleno={abierto} />
+            <span className="text-sm font-semibold tabular-nums">
+              {cantComentarios}
+            </span>
           </button>
         </div>
 
