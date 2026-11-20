@@ -51,6 +51,13 @@ router.post("/register", async (req, res) => {
       .status(400)
       .json({ error: "El tipo de cuenta debe ser fan o artista" });
   }
+  if (
+    typeof email !== "string" ||
+    email.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())
+  ) {
+    return res.status(400).json({ error: "El email no es válido" });
+  }
   if (contrasenia.length < 8) {
     return res
       .status(400)

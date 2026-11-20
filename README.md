@@ -18,8 +18,8 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
 ## Características Principales
 
 1. **Catálogo y reserva de eventos**
-   * Descubrir próximos conciertos con filtros por género y ciudad, y buscador general.
-   * Reserva y cancelación de entradas; el artista crea, edita y cancela sus eventos (con imagen).
+   * Descubrir próximos conciertos con filtros interactivos por género y país (con la cantidad de eventos de cada opción), y buscador general que combina palabras (por ejemplo, "rock argentina").
+   * Reserva de hasta 10 entradas por evento y cancelación mientras el evento no haya ocurrido; el artista crea, edita y cancela sus eventos (con imagen). Solo las cuentas de fan pueden reservar.
    * Detalle del evento con datos reales, mapa, "Cómo llegar" (auto, transporte público o a pie), perfil del artista y acceso a su merch.
    * "Agregar al calendario": descarga un archivo .ics de la reserva, con recordatorio un día antes.
 
@@ -27,6 +27,8 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
    * Perfiles de fans y de artistas (foto, biografía, canción favorita), seguidores y novedades.
    * Feed con publicaciones (texto e imagen), comentarios y "me gusta"; página de Comunidad en columnas.
    * Notificaciones (nuevo seguidor, novedades de artistas).
+   * Pantalla de bienvenida para fans nuevos: eligen sus géneros favoritos y artistas para seguir, y eso alimenta las recomendaciones. Se puede cambiar después desde el perfil.
+   * Avisos con toasts y estados de carga en las pantallas principales.
 
 3. **Insignias de asistencia**
    * El fan gana *Aficionado* (1 concierto), *Fanático* (5) u *Obsesionado* (10) según los eventos a los que asistió.
@@ -38,7 +40,7 @@ Este proyecto es desarrollado como **Trabajo Final** para la **Tecnicatura Unive
    * Estados de la compra: pago pendiente, en preparación, en camino, recibida o cancelada. El pago pendiente vence a los 7 días y devuelve el stock.
 
 5. **Inteligencia Artificial (Google Gemini)**
-   * **Asistente virtual** con herramientas: busca eventos reales, muestra tus reservas y te prepara una reserva que se concreta solo cuando tocás "Confirmar reserva". Recuerda el contexto de la conversación.
+   * **Asistente virtual** con herramientas: busca eventos reales, muestra tus reservas y te prepara una reserva que se concreta solo cuando tocás "Confirmar reserva". Recuerda el contexto de la conversación y ofrece consultas rápidas sugeridas.
    * **Recomendador personalizado**: arma tu perfil con los artistas que seguís, los conciertos a los que fuiste, tus compras de merch y tu biografía, y explica por qué te recomienda cada evento. Si la IA no responde, usa un puntaje con las mismas señales.
    * **Soundtrack por evento**: cinco temas afines generados por IA; se guardan en la base para no repetir la llamada.
 

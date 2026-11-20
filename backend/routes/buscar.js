@@ -13,7 +13,11 @@ router.get("/", async (req, res) => {
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     if (!q) return res.json([]);
 
-    const contiene = `%${escaparLike(q)}%`;
+    // Cada palabra tiene que aparecer en algún campo: "rock argentina" cruza género y país
+    const palabras = q
+      .split(/\s+/)
+      .slice(0, 5)
+      .map((p) => `%${escaparLike(p)}%`);
     const empieza = `${escaparLike(q)}%`; // para mostrar primero los que empiezan igual
 
     // Las tres búsquedas corren a la vez
@@ -24,11 +28,11 @@ router.get("/", async (req, res) => {
                 to_char(fecha, 'YYYY-MM-DD') AS fecha, 'evento' AS tipo_resultado
            FROM evento
           WHERE estado = 'activo'
-            AND (nombre ILIKE $1 OR genero ILIKE $1 OR pais ILIKE $1
-                 OR ciudad ILIKE $1 OR lugar ILIKE $1)
+            AND (nombre || ' ' || COALESCE(genero, '') || ' ' || COALESCE(pais, '') || ' '
+                 || COALESCE(ciudad, '') || ' ' || COALESCE(lugar, '')) ILIKE ALL($1::text[])
           ORDER BY (nombre ILIKE $2) DESC, (fecha < CURRENT_DATE), fecha ASC
           LIMIT $3`,
-        [contiene, empieza, LIMITE],
+        [palabras, empieza, LIMITE],
       ),
 
       // 2. ARTISTAS: por nombre artístico, usuario, género o nacionalidad
@@ -39,11 +43,11 @@ router.get("/", async (req, res) => {
            FROM artista a
            JOIN usuario u ON u.nombre_usuario = a.nombre_usuario
            LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
-          WHERE a.nombre_artistico ILIKE $1 OR a.nombre_usuario ILIKE $1
-             OR a.genero ILIKE $1 OR a.nacionalidad ILIKE $1
+          WHERE (a.nombre_artistico || ' ' || a.nombre_usuario || ' ' || COALESCE(a.genero, '')
+                 || ' ' || COALESCE(a.nacionalidad, '')) ILIKE ALL($1::text[])
           ORDER BY (a.nombre_artistico ILIKE $2) DESC, a.nombre_artistico
           LIMIT $3`,
-        [contiene, empieza, LIMITE],
+        [palabras, empieza, LIMITE],
       ),
 
       // 3. USUARIOS (fans): por nombre de usuario
@@ -53,10 +57,10 @@ router.get("/", async (req, res) => {
            FROM usuario u
            JOIN fan f ON f.nombre_usuario = u.nombre_usuario
            LEFT JOIN imagen i ON i.id_imagen = u.id_imagen
-          WHERE u.nombre_usuario ILIKE $1
+          WHERE u.nombre_usuario ILIKE ALL($1::text[])
           ORDER BY (u.nombre_usuario ILIKE $2) DESC, u.nombre_usuario
           LIMIT $3`,
-        [contiene, empieza, LIMITE],
+        [palabras, empieza, LIMITE],
       ),
     ]);
 
