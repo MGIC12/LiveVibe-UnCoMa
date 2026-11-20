@@ -4,6 +4,7 @@ const router = express.Router();
 const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
 const { notificarSuscriptores, notificarUsuario } = require("../middleware/notificaciones");
+const { MAX_ENTRADAS_POR_RESERVA, leerCantidad, textoEntradas } = require("../utils/reservas");
 
 // ---------- Utilidades ----------
 
@@ -227,7 +228,7 @@ router.get("/mios", verificarToken, requerirRol("artista"), async (req, res) => 
                 WHERE id_evento = e.id_evento) AS precio_desde,
               (SELECT COALESCE(SUM(stock), 0)::int FROM entrada
                 WHERE id_evento = e.id_evento) AS entradas_disponibles,
-              (SELECT COUNT(*)::int FROM reserva r
+              (SELECT COALESCE(SUM(r.cantidad), 0)::int FROM reserva r
                 WHERE r.id_evento = e.id_evento AND r.estado <> 'cancelada') AS reservas,
               CASE
                 WHEN e.estado = 'cancelado' THEN 'cancelado'
@@ -334,13 +335,20 @@ router.post("/", verificarToken, requerirRol("artista"), async (req, res) => {
 
 // ---------- Reservar ----------
 
-// POST /api/eventos/:id/reservar - Un usuario reserva una entrada
+// POST /api/eventos/:id/reservar - Un fan reserva una o varias entradas. Body: { cantidad? } (1 por defecto)
 router.post("/:id/reservar", verificarToken, requerirRol("fan"), async (req, res) => {
   const { id } = req.params;
   if (!/^\d+$/.test(id)) {
     return res.status(404).json({ error: "Evento no existe" });
   }
   const fan = req.user.nombre_usuario;
+
+  const cantidad = leerCantidad(req.body?.cantidad);
+  if (cantidad === null) {
+    return res
+      .status(400)
+      .json({ error: `Podés reservar entre 1 y ${MAX_ENTRADAS_POR_RESERVA} entradas.` });
+  }
 
   const client = await pool.connect();
   try {
@@ -369,29 +377,39 @@ router.post("/:id/reservar", verificarToken, requerirRol("fan"), async (req, res
 
     // Reserva nueva, o reactiva una que el fan había cancelado
     const { rows: reserva } = await client.query(
-      `INSERT INTO reserva (id_evento, nombre_usuario, estado)
-       VALUES ($1, $2, 'confirmada')
+      `INSERT INTO reserva (id_evento, nombre_usuario, estado, cantidad)
+       VALUES ($1, $2, 'confirmada', $3)
        ON CONFLICT (id_evento, nombre_usuario)
-       DO UPDATE SET estado = 'confirmada', fecha_reserva = NOW()
+       DO UPDATE SET estado = 'confirmada', cantidad = EXCLUDED.cantidad, fecha_reserva = NOW()
        WHERE reserva.estado = 'cancelada'
        RETURNING *`,
-      [id, fan],
+      [id, fan, cantidad],
     );
     if (reserva.length === 0) {
       await client.query("ROLLBACK");
       return res.status(400).json({ error: "Ya tenés una reserva para este evento." });
     }
 
-    // Descuenta una entrada, solo si queda stock
+    // Descuenta las entradas, solo si alcanza el stock
     const { rows: entrada } = await client.query(
-      `UPDATE entrada SET stock = stock - 1
-        WHERE id_evento = $1 AND tipo_acceso = 'General' AND stock > 0
+      `UPDATE entrada SET stock = stock - $2
+        WHERE id_evento = $1 AND tipo_acceso = 'General' AND stock >= $2
         RETURNING stock`,
-      [id],
+      [id, cantidad],
     );
     if (entrada.length === 0) {
+      const { rows: resto } = await client.query(
+        "SELECT COALESCE(SUM(stock), 0)::int AS quedan FROM entrada WHERE id_evento = $1 AND tipo_acceso = 'General'",
+        [id],
+      );
       await client.query("ROLLBACK"); // también deshace la reserva recién insertada
-      return res.status(409).json({ error: "Las entradas están agotadas." });
+      const quedan = resto[0].quedan;
+      return res.status(409).json({
+        error:
+          quedan === 0
+            ? "Las entradas están agotadas."
+            : `Solo quedan ${quedan} ${quedan === 1 ? "entrada disponible" : "entradas disponibles"}.`,
+      });
     }
 
     await client.query("COMMIT");
@@ -401,7 +419,7 @@ router.post("/:id/reservar", verificarToken, requerirRol("fan"), async (req, res
       await notificarUsuario(
         evento.nombre_artista,
         "nueva_reserva",
-        `${fan} reservó una entrada para ${evento.nombre}`,
+        `${fan} reservó ${textoEntradas(cantidad)} para ${evento.nombre}`,
         { idEvento: Number(id), origen: fan },
       );
       if (entrada[0].stock === 0) {
@@ -414,7 +432,10 @@ router.post("/:id/reservar", verificarToken, requerirRol("fan"), async (req, res
       }
     }
 
-    res.status(201).json({ mensaje: "Reserva confirmada", reserva: reserva[0] });
+    res.status(201).json({
+      mensaje: cantidad === 1 ? "Reserva confirmada" : `Reserva confirmada: ${cantidad} entradas`,
+      reserva: reserva[0],
+    });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al reservar:", error);

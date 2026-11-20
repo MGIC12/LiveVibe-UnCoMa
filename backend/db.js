@@ -155,6 +155,10 @@ CREATE TABLE IF NOT EXISTS reserva (
     UNIQUE(id_evento, nombre_usuario)
 );
 
+-- Una reserva puede ser de varias entradas (hasta 10 de una vez)
+ALTER TABLE reserva
+  ADD COLUMN IF NOT EXISTS cantidad INT NOT NULL DEFAULT 1 CHECK (cantidad BETWEEN 1 AND 10);
+
 CREATE TABLE IF NOT EXISTS notificacion (
   id_notificacion     SERIAL      PRIMARY KEY,
   nombre_destinatario VARCHAR(30) NOT NULL

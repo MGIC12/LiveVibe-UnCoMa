@@ -8,7 +8,7 @@ router.get("/mis-reservas", verificarToken, async (req, res) => {
   try {
     // Los datos del evento se leen en el momento: si el artista los cambia, se ven solos
     const { rows } = await pool.query(
-      `SELECT r.id_reserva, r.estado, r.fecha_reserva,
+      `SELECT r.id_reserva, r.estado, r.fecha_reserva, r.cantidad,
               e.id_evento, e.nombre AS evento_nombre, e.lugar, e.ciudad,
               e.estado AS evento_estado,
               to_char(e.fecha, 'YYYY-MM-DD') AS evento_fecha,
@@ -41,7 +41,7 @@ router.put("/:id/cancelar", verificarToken, async (req, res) => {
 
     // Se bloquea la reserva: dos clics seguidos no pueden devolver la entrada dos veces
     const { rows } = await client.query(
-      `SELECT r.estado, r.nombre_usuario, r.id_evento,
+      `SELECT r.estado, r.nombre_usuario, r.id_evento, r.cantidad,
               e.estado AS evento_estado,
               e.fecha < (NOW() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date AS ya_ocurrio
          FROM reserva r
@@ -78,10 +78,10 @@ router.put("/:id/cancelar", verificarToken, async (req, res) => {
       [id],
     );
 
-    // La entrada vuelve a quedar disponible
+    // Las entradas de la reserva vuelven a quedar disponibles
     await client.query(
-      "UPDATE entrada SET stock = stock + 1 WHERE id_evento = $1 AND tipo_acceso = 'General'",
-      [reserva.id_evento],
+      "UPDATE entrada SET stock = stock + $2 WHERE id_evento = $1 AND tipo_acceso = 'General'",
+      [reserva.id_evento, reserva.cantidad],
     );
 
     await client.query("COMMIT");

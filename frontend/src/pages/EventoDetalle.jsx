@@ -11,6 +11,8 @@ import { primeraMayuscula } from "../utils/tiempo";
 import { descargarICS } from "../utils/calendario";
 import Avatar from "../components/Avatar";
 import MapaEvento from "../components/MapaEvento";
+import SelectorCantidad from "../components/SelectorCantidad";
+import { maximoReservable, textoEntradas } from "../utils/reservas";
 import { EsqueletoEvento } from "../components/Esqueleto";
 
 const EventoDetalle = () => {
@@ -26,6 +28,8 @@ const EventoDetalle = () => {
 
   const [isReserving, setIsReserving] = useState(false);
   const [reservationSuccess, setReservationSuccess] = useState(false);
+  const [cantidad, setCantidad] = useState(1); // entradas que quiere reservar
+  const [reservadas, setReservadas] = useState(1); // entradas de la reserva ya confirmada
   const [errorMessage, setErrorMessage] = useState("");
 
   // Cancelación del evento (solo el artista dueño)
@@ -94,15 +98,22 @@ const EventoDetalle = () => {
     try {
       const response = await fetch(`${API}/api/eventos/${id}/reservar`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cantidad }),
       });
 
       const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
+        setReservadas(cantidad);
         setReservationSuccess(true);
       } else {
-        setErrorMessage(data.error || "Hubo un problema al procesar tu reserva.");
+        setErrorMessage(
+          data.error || "Hubo un problema al procesar tu reserva.",
+        );
       }
     } catch (error) {
       console.error("Error de conexión:", error);
@@ -122,7 +133,8 @@ const EventoDetalle = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "No se pudo cancelar el evento");
+      if (!res.ok)
+        throw new Error(data.error || "No se pudo cancelar el evento");
 
       // La página se actualiza sin recargar
       setEvento((actual) => ({ ...actual, estado: "cancelado" }));
@@ -154,12 +166,15 @@ const EventoDetalle = () => {
   // La base manda la fecha como "2026-10-20T00:00:00.000Z": nos quedamos con el día
   // y lo armamos como fecha local, para que no se corra al día anterior.
   const dia = String(evento.fecha).slice(0, 10);
-  const fechaFormateada = new Date(`${dia}T00:00:00`).toLocaleDateString("es-AR", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const fechaFormateada = new Date(`${dia}T00:00:00`).toLocaleDateString(
+    "es-AR",
+    {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    },
+  );
 
   const cancelado = evento.estado === "cancelado";
   const yaOcurrio = dia < new Date().toLocaleDateString("en-CA");
@@ -224,26 +239,47 @@ const EventoDetalle = () => {
     // Flujo normal para Fans o usuarios no logueados (que serán redirigidos)
     const agotado = evento.entradas_disponibles === 0;
     const bloqueado = isReserving || cancelado || yaOcurrio || agotado;
+    const maxEntradas = maximoReservable(evento.entradas_disponibles);
+    const cantidadValida = Math.min(cantidad, maxEntradas);
     acciones = (
-      <button
-        onClick={handleReserva}
-        disabled={bloqueado}
-        className={`font-bold py-4 px-10 rounded-full transition shadow-xl text-lg flex justify-center items-center gap-3 ${
-          bloqueado
-            ? "bg-crema/10 cursor-not-allowed text-crema/50"
-            : "bg-fucsia hover:bg-chicle text-tinta transform hover:scale-105"
-        }`}
-      >
-        {cancelado
-          ? "Evento cancelado"
-          : yaOcurrio
-            ? "Evento finalizado"
-            : agotado
-              ? "Entradas agotadas"
-              : isReserving
-                ? "Procesando..."
-                : "Reservar entrada"}
-      </button>
+      <div className="flex flex-col items-start gap-3">
+        {!bloqueado && (
+          <SelectorCantidad
+            valor={cantidadValida}
+            max={maxEntradas}
+            onChange={(n) => setCantidad(Math.min(Math.max(n, 1), maxEntradas))}
+          />
+        )}
+        <button
+          onClick={handleReserva}
+          disabled={bloqueado}
+          className={`font-bold py-4 px-10 rounded-full transition shadow-xl text-lg flex justify-center items-center gap-3 ${
+            bloqueado
+              ? "bg-crema/10 cursor-not-allowed text-crema/50"
+              : "bg-fucsia hover:bg-chicle text-tinta transform hover:scale-105"
+          }`}
+        >
+          {cancelado
+            ? "Evento cancelado"
+            : yaOcurrio
+              ? "Evento finalizado"
+              : agotado
+                ? "Entradas agotadas"
+                : isReserving
+                  ? "Procesando..."
+                  : cantidadValida === 1
+                    ? "Reservar entrada"
+                    : `Reservar ${textoEntradas(cantidadValida)}`}
+        </button>
+        {!bloqueado && evento.precio_desde != null && cantidadValida > 1 && (
+          <p className="text-sm text-crema/70">
+            Total estimado:{" "}
+            <strong className="text-sol">
+              {formatearPrecio(evento.precio_desde * cantidadValida)}
+            </strong>
+          </p>
+        )}
+      </div>
     );
   }
 
@@ -261,7 +297,9 @@ const EventoDetalle = () => {
               </h2>
               <p className="text-crema/70 mb-8 text-lg">
                 Ya tenés tu lugar asegurado para{" "}
-                <strong className="text-crema uppercase">{evento.nombre}</strong>
+                <strong className="text-crema uppercase">
+                  {evento.nombre}
+                </strong>
                 {evento.nombre_artista &&
                   ` de ${evento.artista_nombre || evento.nombre_artista}`}
                 .
@@ -280,6 +318,12 @@ const EventoDetalle = () => {
                   <span className="text-crema/70 text-xl">📅</span>
                   <p className="font-semibold text-lg text-cielo">
                     {primeraMayuscula(fechaFormateada)} {evento.hora_apertura}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-crema/70 text-xl">🎟️</span>
+                  <p className="font-semibold text-lg">
+                    {textoEntradas(reservadas)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -356,7 +400,6 @@ const EventoDetalle = () => {
                 </div>
 
                 <div className="px-1">
-
                   {evento.nombre_artista && (
                     <Link
                       to={`/artista/${encodeURIComponent(evento.nombre_artista)}`}
@@ -407,7 +450,10 @@ const EventoDetalle = () => {
                     )}
 
                     {errorCancelar && (
-                      <p className="w-full text-mandarina text-sm mt-2" role="alert">
+                      <p
+                        className="w-full text-mandarina text-sm mt-2"
+                        role="alert"
+                      >
                         {errorCancelar}
                       </p>
                     )}
@@ -423,7 +469,11 @@ const EventoDetalle = () => {
                     </p>
                   </div>
 
-                  <MapaEvento lugar={evento.lugar} ciudad={evento.ciudad} pais={evento.pais} />
+                  <MapaEvento
+                    lugar={evento.lugar}
+                    ciudad={evento.ciudad}
+                    pais={evento.pais}
+                  />
                 </div>
               </div>
 
@@ -431,21 +481,38 @@ const EventoDetalle = () => {
               <div className="lg:w-1/3">
                 <div className="bg-tinta/80 backdrop-blur-md rounded-2xl p-6 border border-crema/20 sticky top-24 shadow-2xl space-y-6">
                   <div>
-                    <h4 className="font-black text-crema text-xl mb-4">Datos del evento</h4>
+                    <h4 className="font-black text-crema text-xl mb-4">
+                      Datos del evento
+                    </h4>
                     <dl className="space-y-3 text-sm">
                       {[
                         ["Género", evento.genero],
-                        ["Ciudad", [evento.ciudad, evento.pais].filter(Boolean).join(", ")],
+                        [
+                          "Ciudad",
+                          [evento.ciudad, evento.pais]
+                            .filter(Boolean)
+                            .join(", "),
+                        ],
                         ["Lugar", evento.lugar],
-                        ["Apertura de puertas", evento.hora_apertura ? `${String(evento.hora_apertura).slice(0, 5)} hs` : null],
+                        [
+                          "Apertura de puertas",
+                          evento.hora_apertura
+                            ? `${String(evento.hora_apertura).slice(0, 5)} hs`
+                            : null,
+                        ],
                         ["Clasificación", evento.clasificacion],
                         ["Gira", evento.gira],
                       ]
                         .filter(([, valor]) => valor)
                         .map(([etiqueta, valor]) => (
-                          <div key={etiqueta} className="flex justify-between gap-4">
+                          <div
+                            key={etiqueta}
+                            className="flex justify-between gap-4"
+                          >
                             <dt className="text-crema/60">{etiqueta}</dt>
-                            <dd className="font-bold text-crema text-right">{valor}</dd>
+                            <dd className="font-bold text-crema text-right">
+                              {valor}
+                            </dd>
                           </div>
                         ))}
                     </dl>
@@ -461,7 +528,10 @@ const EventoDetalle = () => {
                         className="flex items-center gap-3 group"
                       >
                         <Avatar
-                          usuario={{ nombre_usuario: evento.artista_nombre || evento.nombre_artista }}
+                          usuario={{
+                            nombre_usuario:
+                              evento.artista_nombre || evento.nombre_artista,
+                          }}
                           clases="w-12 h-12 text-lg"
                         />
                         <span className="font-black text-crema text-lg group-hover:text-cielo transition">
@@ -480,7 +550,8 @@ const EventoDetalle = () => {
                             to={`/artista/${encodeURIComponent(evento.nombre_artista)}#merch`}
                             className="w-full text-center bg-fucsia/15 hover:bg-fucsia/30 text-fucsia font-bold py-3 rounded-full border border-fucsia/40 transition text-sm"
                           >
-                            🛍️ Ver merch de {evento.artista_nombre || evento.nombre_artista}
+                            🛍️ Ver merch de{" "}
+                            {evento.artista_nombre || evento.nombre_artista}
                           </Link>
                         )}
                       </div>
@@ -517,14 +588,17 @@ const EventoDetalle = () => {
                                 <span className="block text-crema font-medium group-hover:text-cielo transition">
                                   {t.titulo}
                                 </span>
-                                <span className="block text-crema/60 text-sm">{t.artista}</span>
+                                <span className="block text-crema/60 text-sm">
+                                  {t.artista}
+                                </span>
                               </span>
                             </a>
                           </li>
                         ))}
                       </ul>
                       <p className="text-[11px] text-crema/40 mt-4">
-                        Generado con IA: puede equivocarse. Cada tema abre una búsqueda en YouTube.
+                        Generado con IA: puede equivocarse. Cada tema abre una
+                        búsqueda en YouTube.
                       </p>
                     </div>
                   )}

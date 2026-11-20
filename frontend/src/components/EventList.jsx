@@ -152,9 +152,9 @@ const EventList = () => {
                               to={`/artista/${evento.creador_usuario || evento.nombre_artista}`}
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-fucsia hover:text-white bg-fucsia/10 hover:bg-fucsia/30 border border-fucsia/20 px-3 py-1 rounded-full transition-all"
-                              title={`Ver perfil de ${evento.nombre_artista}`}
+                              title={`Ver perfil de ${evento.artista_nombre || evento.nombre_artista}`}
                             >
-                              <span>🎤</span> {evento.nombre_artista}
+                              <span>🎤</span> {evento.artista_nombre || evento.nombre_artista}
                             </Link>
                           </div>
                         )}
