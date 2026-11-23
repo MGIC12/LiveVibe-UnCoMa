@@ -6,6 +6,13 @@ const express = require("express");
 const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
 const { devolverStock, vencerCompras } = require("../utils/compras");
+const {
+  avisarCompraNueva,
+  avisarPago,
+  avisarCancelacion,
+  avisarEnvio,
+  avisarSinStock,
+} = require("../utils/notificacionesMerch");
 
 const router = express.Router();
 router.use(verificarToken);
@@ -201,6 +208,8 @@ router.post("/", requerirRol("fan"), async (req, res) => {
       `${SELECT_COMPRA} WHERE c.id_compra = ANY($1::int[]) ORDER BY c.id_compra`,
       [creadas],
     );
+    await avisarCompraNueva(compras); // al artista
+    await avisarSinStock(ids, usuario); // a quienes lo tienen en el carrito (menos al comprador)
     res.status(201).json(compras);
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
@@ -221,7 +230,7 @@ const NOMBRE_ESTADO = {
   recibida: "recibida",
 };
 
-function transicion({ quien, desde, hasta, verbo }) {
+function transicion({ quien, desde, hasta, verbo, despues }) {
   return async (req, res) => {
     const { id } = req.params;
     if (!entero(id)) {
@@ -284,6 +293,7 @@ function transicion({ quien, desde, hasta, verbo }) {
         `${SELECT_COMPRA} WHERE c.id_compra = $1`,
         [id],
       );
+      if (despues) await despues(compras[0]); // el aviso, ya con la compra guardada
       res.json(compras[0]);
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
@@ -304,6 +314,7 @@ router.put(
     desde: ["pago_pendiente"],
     hasta: "en_preparacion",
     verbo: "pagar",
+    despues: avisarPago,
   }),
 );
 
@@ -316,6 +327,7 @@ router.put(
     desde: ["pago_pendiente", "en_preparacion"],
     hasta: "cancelada",
     verbo: "cancelar",
+    despues: avisarCancelacion,
   }),
 );
 
@@ -340,6 +352,7 @@ router.put(
     desde: ["en_preparacion"],
     hasta: "en_camino",
     verbo: "enviar",
+    despues: avisarEnvio,
   }),
 );
 

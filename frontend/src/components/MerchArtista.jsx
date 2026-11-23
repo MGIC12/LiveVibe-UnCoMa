@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ImagenArticulo from "./ImagenArticulo";
 import Paginacion from "./Paginacion";
+import ModalConfirmacion from "./ModalConfirmacion";
 import { usePaginacion } from "../utils/paginacion";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
@@ -36,6 +37,10 @@ export default function MerchArtista({ artista }) {
   const [mensajes, setMensajes] = useState({}); // id_articulo -> { ok, texto }
   const [orden, setOrden] = useState("destacados");
   const [soloDisponibles, setSoloDisponibles] = useState(false);
+
+  // NUEVO: la compra que está esperando confirmación ({ articulo, cantidad }) y si se está haciendo
+  const [pendiente, setPendiente] = useState(null);
+  const [comprando, setComprando] = useState(false);
 
   // Lo que se muestra: filtrado, ordenado y repartido en páginas
   const filtrados = useMemo(() => {
@@ -108,15 +113,15 @@ export default function MerchArtista({ artista }) {
     }
   }
 
-  async function comprarAhora(a) {
-    const n = cantidadDe(a);
-    if (
-      !window.confirm(
-        `¿Comprar ${n} × ${a.nombre} por ${formatearPrecio(a.precio * n)}?`,
-      )
-    ) {
-      return;
-    }
+  // NUEVO, paso 1: "Comprar ahora" solo abre la ventana de confirmación
+  function pedirConfirmacion(a) {
+    setPendiente({ articulo: a, cantidad: cantidadDe(a) });
+  }
+
+  // NUEVO, paso 2: el fan confirmó en la ventana, recién ahora se hace la compra
+  async function comprarAhora() {
+    const { articulo: a, cantidad: n } = pendiente;
+    setComprando(true);
     try {
       await pedirMerch("/compras", token, {
         metodo: "POST",
@@ -126,6 +131,9 @@ export default function MerchArtista({ artista }) {
     } catch (e) {
       avisar(a.id_articulo, false, e.message);
       cargar(); // el stock pudo haber cambiado
+      setPendiente(null);
+    } finally {
+      setComprando(false);
     }
   }
 
@@ -252,7 +260,7 @@ export default function MerchArtista({ artista }) {
                       </label>
                       <div className="flex flex-col gap-2">
                         <button
-                          onClick={() => comprarAhora(a)}
+                          onClick={() => pedirConfirmacion(a)}
                           className="w-full bg-fucsia hover:bg-chicle text-tinta font-bold py-2 rounded-full transition text-sm"
                         >
                           Comprar ahora
@@ -300,6 +308,23 @@ export default function MerchArtista({ artista }) {
         etiqueta="artículos"
         onCambiar={pag.setPagina}
         anclaId="merch"
+      />
+
+      {/* NUEVO: ventana de confirmación de la compra */}
+      <ModalConfirmacion
+        abierto={Boolean(pendiente)}
+        titulo="Confirmar compra"
+        mensaje={
+          pendiente
+            ? `¿Comprar ${pendiente.cantidad} × ${pendiente.articulo.nombre} por ${formatearPrecio(
+                pendiente.articulo.precio * pendiente.cantidad,
+              )}? La compra queda con el pago pendiente: la pagás desde Mis compras en el plazo de 1 semana.`
+            : ""
+        }
+        textoConfirmar="Comprar"
+        procesando={comprando}
+        onConfirmar={comprarAhora}
+        onCancelar={() => setPendiente(null)}
       />
     </section>
   );

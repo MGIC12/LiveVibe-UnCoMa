@@ -3,6 +3,10 @@ const pool = require("../db");
 const { verificarToken, requerirRol } = require("../middleware/auth");
 const recibirImagen = require("../middleware/recibirImagen");
 const { subirImagen, borrarImagenGuardada } = require("../utils/imagenes");
+const {
+  avisarSinStock,
+  avisarArticuloEliminado,
+} = require("../utils/notificacionesMerch");
 
 const router = express.Router();
 
@@ -210,8 +214,9 @@ router.put(
     if (error) return res.status(400).json({ error });
 
     // El artículo tiene que existir y ser del artista con sesión
+    // (se trae también el stock de antes, para saber si ahora se agotó)
     const { rows: previo } = await pool.query(
-      `SELECT a.nombre_artista, a.id_imagen, im.url, im.public_id
+      `SELECT a.nombre_artista, a.stock, a.id_imagen, im.url, im.public_id
          FROM articulo a
          LEFT JOIN imagen im ON im.id_imagen = a.id_imagen
         WHERE a.id_articulo = $1`,
@@ -276,6 +281,11 @@ router.put(
       // Y recién después se borra su archivo
       if (reemplazada) await borrarImagenGuardada(previo[0]);
 
+      // AVISO: si el stock pasó de tener unidades a 0, se avisa a quienes lo tienen en el carrito
+      if (previo[0].stock > 0 && datos.stock === 0) {
+        await avisarSinStock([Number(id)]);
+      }
+
       const { rows: editado } = await pool.query(
         `${SELECT_ARTICULO} WHERE a.id_articulo = $1`,
         [id],
@@ -308,11 +318,17 @@ router.delete(
     try {
       await client.query("BEGIN");
 
+      // AVISO: quiénes lo tienen en el carrito. Hay que saberlo ANTES de borrar
+      const { rows: enCarritos } = await client.query(
+        "SELECT DISTINCT nombre_usuario FROM carrito_item WHERE id_articulo = $1",
+        [id],
+      );
+
       // La condición del dueño va dentro del DELETE: es una sola operación atómica
       const { rows } = await client.query(
         `DELETE FROM articulo
         WHERE id_articulo = $1 AND nombre_artista = $2
-        RETURNING id_imagen`,
+        RETURNING id_imagen, nombre`,
         [id, req.user.nombre_usuario],
       );
 
@@ -337,9 +353,19 @@ router.delete(
         );
         imagen = r.rows[0] ?? null;
       }
+
       await client.query("COMMIT");
 
+      // Se borra el archivo de la foto, ya con todo confirmado
       if (imagen) await borrarImagenGuardada(imagen);
+
+      // AVISO: a quienes lo tenían en el carrito
+      await avisarArticuloEliminado({
+        artista: req.user.nombre_usuario,
+        nombreArticulo: rows[0].nombre,
+        fans: enCarritos.map((f) => f.nombre_usuario),
+      });
+
       res.json({ id_articulo: Number(id) });
     } catch (error) {
       await client.query("ROLLBACK");

@@ -15,11 +15,12 @@ const ToastContext = createContext({
 const DURACION_MS = 4500;
 const MAX_VISIBLES = 4;
 
+// Los avisos son un panel oscuro con el borde del color que corresponde (paleta del sitio)
 const ESTILOS = {
-  exito: { clases: "border-emerald-400/60 bg-emerald-950/90 text-emerald-100", icono: "✅" },
-  error: { clases: "border-red-400/60 bg-red-950/90 text-red-100", icono: "⚠️" },
-  aviso: { clases: "border-sol/60 bg-yellow-950/90 text-yellow-100", icono: "💡" },
-  info: { clases: "border-cielo/60 bg-sky-950/90 text-sky-100", icono: "ℹ️" },
+  exito: { clases: "border-cielo bg-tinta/95 text-crema", icono: "✅" },
+  error: { clases: "border-mandarina bg-tinta/95 text-crema", icono: "⚠️" },
+  aviso: { clases: "border-sol bg-tinta/95 text-crema", icono: "💡" },
+  info: { clases: "border-crema/40 bg-tinta/95 text-crema", icono: "ℹ️" },
 };
 
 export function ToastProvider({ children }) {

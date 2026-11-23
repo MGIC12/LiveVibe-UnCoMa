@@ -1,6 +1,7 @@
 // Al comprar se descuenta el stock; si la compra se cancela o vence sin pagarse,
 // las unidades vuelven al stock.
 const pool = require("../db");
+const { avisarVencimientos } = require("./notificacionesMerch");
 
 // Devuelve al stock los artículos de las compras indicadas.
 async function devolverStock(client, idsCompra) {
@@ -21,6 +22,7 @@ async function devolverStock(client, idsCompra) {
 // y devuelven el stock. Devuelve cuántas venció.
 async function vencerCompras() {
   const client = await pool.connect();
+  let vencidas = [];
   try {
     await client.query("BEGIN");
     const { rows } = await client.query(
@@ -34,13 +36,17 @@ async function vencerCompras() {
       rows.map((r) => r.id_compra),
     );
     await client.query("COMMIT");
-    return rows.length;
+    vencidas = rows.map((r) => r.id_compra);
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
   }
+
+  // Los avisos van después de confirmar: cada compra se vence una sola vez, así que no se repiten
+  await avisarVencimientos(vencidas);
+  return vencidas.length;
 }
 
 async function vencerComprasSeguro() {
