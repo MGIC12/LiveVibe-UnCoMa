@@ -29,7 +29,7 @@ const FeedInicio = () => {
 
       <FeedComunidad
         soloArtistas
-        max={5}
+        max={3}
         encabezado={
           <h3 className="text-2xl font-bold border-b border-crema/20 pb-2">
             NOVEDADES DE ARTISTAS

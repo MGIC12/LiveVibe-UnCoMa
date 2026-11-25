@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
 import Insignia from "./Insignia";
+import EditorTexto from "./EditorTexto";
 import { useAuth } from "../../context/AuthContext";
 import { API } from "../utils/api";
 import { tiempoRelativo } from "../utils/tiempo";
+import { puedeEditar } from "../utils/edicion";
 
 const MAX_COMENTARIO = 300;
 
@@ -93,7 +95,11 @@ function Comentario({
   respondiendoA,
   setRespondiendoA,
   onResponder,
+  onEditar,
 }) {
+  const { usuario } = useAuth();
+  const [editando, setEditando] = useState(false);
+
   const esAutor = c.nombre_autor === autorPublicacion;
   const respondiendo = respondiendoA === c.id_comentario;
 
@@ -102,6 +108,10 @@ function Comentario({
   const ruta = `${c.rol_autor === "artista" ? "/artista" : "/usuario"}/${encodeURIComponent(
     c.nombre_autor,
   )}`;
+
+  // Solo el autor, y solo durante las primeras 24 horas (el servidor lo vuelve a comprobar)
+  const puedeEditarlo =
+    usuario?.nombre_usuario === c.nombre_autor && puedeEditar(c.fecha_hora);
 
   return (
     <div className="flex gap-3">
@@ -132,23 +142,57 @@ function Comentario({
             )}
             <span className="text-xs text-crema/50">
               {tiempoRelativo(c.fecha_hora)}
+              {c.fecha_edicion && (
+                <span title={`Editado ${tiempoRelativo(c.fecha_edicion)}`}>
+                  {" "}
+                  (editado)
+                </span>
+              )}
             </span>
           </div>
-          <p className="text-sm text-crema/90 whitespace-pre-line break-words">
-            {c.contenido}
-          </p>
+
+          {editando ? (
+            <div className="mt-2">
+              <EditorTexto
+                valorInicial={c.contenido}
+                maximo={MAX_COMENTARIO}
+                etiqueta="Editar comentario"
+                onGuardar={async (texto) => {
+                  await onEditar(c.id_comentario, texto);
+                  setEditando(false);
+                }}
+                onCancelar={() => setEditando(false)}
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-crema/90 whitespace-pre-line break-words">
+              {c.contenido}
+            </p>
+          )}
         </div>
 
-        {puedeResponder && (
-          <button
-            onClick={() =>
-              setRespondiendoA(respondiendo ? null : c.id_comentario)
-            }
-            className="text-xs font-bold text-cielo hover:text-crema transition px-2"
-          >
-            Responder
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {puedeResponder && (
+            <button
+              onClick={() =>
+                setRespondiendoA(respondiendo ? null : c.id_comentario)
+              }
+              aria-label={`Responder a ${nombre}`}
+              className="text-xs font-bold text-cielo hover:text-crema transition px-2"
+            >
+              Responder
+            </button>
+          )}
+          {puedeEditarlo && !editando && (
+            <button
+              onClick={() => setEditando(true)}
+              aria-label={`Editar tu comentario: ${c.contenido.slice(0, 30)}`}
+              className="text-xs font-bold text-cielo hover:text-crema transition px-2"
+            >
+              Editar
+            </button>
+          )}
+        </div>
 
         {respondiendo && (
           <FormularioComentario
@@ -225,12 +269,33 @@ export default function Comentarios({
     onNuevoComentario();
   }
 
+  // Edita el texto de un comentario propio (si falla, el editor muestra el error)
+  async function editar(idComentario, contenido) {
+    const res = await fetch(
+      `${API}/api/publicaciones/${idPublicacion}/comentarios/${idComentario}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ contenido }),
+      },
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok)
+      throw new Error(data.error || "No se pudo editar el comentario");
+
+    setVersion((v) => v + 1);
+  }
+
   const propsComentario = {
     autorPublicacion,
     puedeResponder: puedeInteractuar,
     respondiendoA,
     setRespondiendoA,
     onResponder: enviar,
+    onEditar: editar,
   };
 
   return (

@@ -14,14 +14,15 @@ const router = express.Router();
 const MAX_CONTENIDO = 500;
 const MAX_COMENTARIO = 300;
 
+const HORAS_EDICION = 24;
+
 // Quiénes pueden publicar, comentar y dar "me gusta"
 const PUEDEN_INTERACTUAR = ["fan", "artista"];
 
 // Las publicaciones se devuelven siempre con el mismo formato.
 // $1 es el usuario que mira (puede ser null si es un visitante).
 const SELECT_PUBLICACION = `
-  SELECT p.id_publicacion, p.nombre_autor, p.contenido, p.fecha_publicacion,
-         u.rol AS rol_autor,
+  SELECT p.id_publicacion, p.nombre_autor, p.contenido, p.fecha_publicacion, p.fecha_edicion,
          a.nombre_artistico, fa.insignia AS autor_insignia,
          av.url AS autor_foto_url, av.descripcion AS autor_foto_descripcion,
          im.url AS imagen_url, im.descripcion AS imagen_descripcion,
@@ -266,7 +267,7 @@ router.get("/:id/comentarios", async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT c.id_comentario, c.id_comentario_padre, c.nombre_autor,
-              c.contenido, c.fecha_hora,
+              c.contenido, c.fecha_hora, c.fecha_edicion,
               u.rol AS rol_autor, a.nombre_artistico, fa.insignia,
               i.url AS foto_url, i.descripcion AS foto_descripcion
          FROM comentario c
@@ -372,6 +373,127 @@ router.post(
           .json({ error: "La publicación o el comentario ya no existen" });
       }
       console.error("Error al crear el comentario:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  },
+);
+
+// ---------- Editar (solo el autor, durante las primeras 24 horas) ----------
+
+// Valida el texto nuevo. Devuelve { contenido } o { error }.
+function validarTexto(valor, maximo, mensajeVacio, mensajeLargo) {
+  const contenido = typeof valor === "string" ? valor.trim() : "";
+  if (!contenido) return { error: mensajeVacio };
+  if ([...contenido].length > maximo) return { error: mensajeLargo };
+  return { contenido };
+}
+
+// PATCH /api/publicaciones/:id - Edita el texto de la propia publicación
+// Body: { contenido }
+router.patch("/:id", verificarToken, requerirRol(...PUEDEN_INTERACTUAR), async (req, res) => {
+  const { id } = req.params;
+  if (!idValido(id)) {
+    return res.status(404).json({ error: "Publicación no encontrada" });
+  }
+
+  const { contenido, error } = validarTexto(
+    req.body?.contenido,
+    MAX_CONTENIDO,
+    "La publicación no puede estar vacía",
+    `La publicación puede tener hasta ${MAX_CONTENIDO} caracteres`,
+  );
+  if (error) return res.status(400).json({ error });
+
+  const autor = req.user.nombre_usuario;
+  try {
+    // El autor y el plazo se comprueban dentro del UPDATE: es una sola operación
+    const r = await pool.query(
+      `UPDATE publicacion
+          SET contenido = $1, fecha_edicion = NOW()
+        WHERE id_publicacion = $2
+          AND nombre_autor = $3
+          AND NOW() - fecha_publicacion < make_interval(hours => $4::int)`,
+      [contenido, id, autor, HORAS_EDICION],
+    );
+
+    if (r.rowCount === 0) {
+      // No se modificó nada: ¿no existe, no es suya, o ya pasó el plazo?
+      const { rows } = await pool.query(
+        "SELECT nombre_autor FROM publicacion WHERE id_publicacion = $1",
+        [id],
+      );
+      if (!rows[0]) return res.status(404).json({ error: "Publicación no encontrada" });
+      if (rows[0].nombre_autor !== autor) {
+        return res.status(403).json({ error: "Solo el autor puede editar su publicación" });
+      }
+      return res
+        .status(403)
+        .json({ error: `Solo se puede editar durante las primeras ${HORAS_EDICION} horas` });
+    }
+
+    // Se devuelve con el mismo formato que la lista, así la pantalla la actualiza directo
+    const { rows } = await pool.query(`${SELECT_PUBLICACION} WHERE p.id_publicacion = $2`, [
+      autor,
+      id,
+    ]);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error al editar la publicación:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// PATCH /api/publicaciones/:id/comentarios/:idComentario - Edita el propio comentario
+// Body: { contenido }
+router.patch(
+  "/:id/comentarios/:idComentario",
+  verificarToken,
+  requerirRol(...PUEDEN_INTERACTUAR),
+  async (req, res) => {
+    const { id, idComentario } = req.params;
+    if (!idValido(id) || !idValido(idComentario)) {
+      return res.status(404).json({ error: "Comentario no encontrado" });
+    }
+
+    const { contenido, error } = validarTexto(
+      req.body?.contenido,
+      MAX_COMENTARIO,
+      "El comentario no puede estar vacío",
+      `El comentario puede tener hasta ${MAX_COMENTARIO} caracteres`,
+    );
+    if (error) return res.status(400).json({ error });
+
+    const autor = req.user.nombre_usuario;
+    try {
+      const r = await pool.query(
+        `UPDATE comentario
+            SET contenido = $1, fecha_edicion = NOW()
+          WHERE id_comentario = $2
+            AND id_publicacion = $3
+            AND nombre_autor = $4
+            AND NOW() - fecha_hora < make_interval(hours => $5::int)
+        RETURNING id_comentario, id_comentario_padre, nombre_autor,
+                  contenido, fecha_hora, fecha_edicion`,
+        [contenido, idComentario, id, autor, HORAS_EDICION],
+      );
+
+      if (r.rowCount === 0) {
+        const { rows } = await pool.query(
+          "SELECT nombre_autor FROM comentario WHERE id_comentario = $1 AND id_publicacion = $2",
+          [idComentario, id],
+        );
+        if (!rows[0]) return res.status(404).json({ error: "Comentario no encontrado" });
+        if (rows[0].nombre_autor !== autor) {
+          return res.status(403).json({ error: "Solo el autor puede editar su comentario" });
+        }
+        return res
+          .status(403)
+          .json({ error: `Solo se puede editar durante las primeras ${HORAS_EDICION} horas` });
+      }
+
+      res.json(r.rows[0]);
+    } catch (error) {
+      console.error("Error al editar el comentario:", error);
       res.status(500).json({ error: "Error interno del servidor" });
     }
   },

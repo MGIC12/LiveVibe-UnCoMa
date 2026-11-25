@@ -13,13 +13,32 @@ const TIPOS = {
   evento_nuevo: { icono: "🎤", titulo: "Evento nuevo" },
   evento_modificado: { icono: "✏️", titulo: "Evento modificado" },
   evento_cancelado: { icono: "⚠️", titulo: "Evento cancelado" },
+  venta_nueva: { icono: "🛍️", titulo: "Nueva compra" },
+  venta_pagada: { icono: "💸", titulo: "Pago recibido" },
+  venta_cancelada: { icono: "❌", titulo: "Compra cancelada" },
+  compra_enviada: { icono: "📦", titulo: "Compra enviada" },
+  compra_vencida: { icono: "⌛", titulo: "Compra vencida" },
+  merch_sin_stock: { icono: "⚠️", titulo: "Sin stock" },
+  merch_eliminado: { icono: "🗑️", titulo: "Artículo eliminado" },
 };
 
 function destino(n) {
+  // Cada aviso de merchandising lleva siempre a la misma pantalla
+  const DESTINOS_MERCH = {
+    venta_nueva: "/mis-ventas",
+    venta_pagada: "/mis-ventas",
+    venta_cancelada: "/mis-ventas",
+    compra_enviada: "/mis-compras",
+    compra_vencida: "/mis-compras",
+    merch_sin_stock: "/carrito",
+    merch_eliminado: "/carrito",
+  };
+  
   if (n.id_evento) return `/evento/${n.id_evento}`;
   if ((n.tipo === "nuevo_seguidor" || n.tipo === "nueva_publicacion") && n.nombre_origen) {
     return `/usuario/${encodeURIComponent(n.nombre_origen)}`;
   }
+  if (DESTINOS_MERCH[n.tipo]) return DESTINOS_MERCH[n.tipo];
   return null;
 }
 

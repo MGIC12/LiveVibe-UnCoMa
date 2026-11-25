@@ -3,10 +3,14 @@ import { Link } from "react-router-dom";
 import Avatar from "./Avatar";
 import Insignia from "./Insignia";
 import Comentarios from "./Comentarios";
+import EditorTexto from "./EditorTexto";
 import { IconoCorazon, IconoComentario } from "./IconosSociales";
 import { useAuth } from "../../context/AuthContext";
 import { API, urlImagen } from "../utils/api";
 import { tiempoRelativo } from "../utils/tiempo";
+import { puedeEditar } from "../utils/edicion";
+
+const MAX_CONTENIDO = 500;
 
 export default function TarjetaPublicacion({
   publicacion,
@@ -37,6 +41,14 @@ export default function TarjetaPublicacion({
   const [guardando, setGuardando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState("");
+
+  // El texto se guarda acá para poder mostrarlo editado sin volver a pedir la lista
+  const [contenido, setContenido] = useState(publicacion.contenido);
+  const [fechaEdicion, setFechaEdicion] = useState(publicacion.fecha_edicion);
+  const [editando, setEditando] = useState(false);
+
+  // Solo el autor, y solo durante las primeras 24 horas (el servidor lo vuelve a comprobar)
+  const puedeEditarla = esMia && puedeEditar(publicacion.fecha_publicacion);
 
   // Da o quita el me gusta. El servidor decide el resultado, y la pantalla lo muestra
   async function alternarMeGusta() {
@@ -76,6 +88,25 @@ export default function TarjetaPublicacion({
       setGuardando(false);
       setConfirmando(false);
     }
+  }
+
+  // Guarda el texto editado. Si falla, el editor muestra el mensaje del error.
+  async function guardarEdicion(nuevoTexto) {
+    const res = await fetch(`${API}/api/publicaciones/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ contenido: nuevoTexto }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok)
+      throw new Error(data.error || "No se pudo editar la publicación");
+
+    setContenido(data.contenido);
+    setFechaEdicion(data.fecha_edicion);
+    setEditando(false);
   }
 
   // Botón de "me gusta": cambia según quién mira
@@ -163,14 +194,30 @@ export default function TarjetaPublicacion({
           </div>
           <p className="text-xs text-crema/50">
             {tiempoRelativo(publicacion.fecha_publicacion)}
+            {fechaEdicion && (
+              <span title={`Editada ${tiempoRelativo(fechaEdicion)}`}>
+                {" "}
+                · editada
+              </span>
+            )}
           </p>
         </div>
       </div>
 
-      {/* Contenido */}
-      <p className="text-crema/90 whitespace-pre-line break-words leading-relaxed">
-        {publicacion.contenido}
-      </p>
+      {/* Contenido: el texto, o el editor si se está editando */}
+      {editando ? (
+        <EditorTexto
+          valorInicial={contenido}
+          maximo={MAX_CONTENIDO}
+          etiqueta="Editar publicación"
+          onGuardar={guardarEdicion}
+          onCancelar={() => setEditando(false)}
+        />
+      ) : (
+        <p className="text-crema/90 whitespace-pre-line break-words leading-relaxed">
+          {contenido}
+        </p>
+      )}
 
       {publicacion.imagen_url && (
         <img
@@ -220,12 +267,22 @@ export default function TarjetaPublicacion({
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setConfirmando(true)}
-              className="px-3 py-1.5 rounded-full text-sm font-bold text-crema/60 hover:text-mandarina hover:bg-mandarina/10 transition"
-            >
-              🗑️ Eliminar
-            </button>
+            <div className="flex items-center gap-1">
+              {puedeEditarla && !editando && (
+                <button
+                  onClick={() => setEditando(true)}
+                  className="px-3 py-1.5 rounded-full text-sm font-bold text-crema/60 hover:text-cielo hover:bg-cielo/10 transition"
+                >
+                  ✏️ Editar
+                </button>
+              )}
+              <button
+                onClick={() => setConfirmando(true)}
+                className="px-3 py-1.5 rounded-full text-sm font-bold text-crema/60 hover:text-mandarina hover:bg-mandarina/10 transition"
+              >
+                🗑️ Eliminar
+              </button>
+            </div>
           ))}
       </div>
 

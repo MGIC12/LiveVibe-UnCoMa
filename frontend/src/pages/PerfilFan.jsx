@@ -9,6 +9,7 @@ import Publicaciones from "../components/Publicaciones";
 import { useAuth } from "../../context/AuthContext";
 import BotonesSeguimiento from "../components/BotonesSeguimiento";
 import { API } from "../utils/api";
+import CancionFavorita from "../components/CancionFavorita";
 
 // Marco común: Navbar, contenido y Footer
 function Marco({ children }) {
@@ -189,20 +190,11 @@ export default function PerfilFan() {
         </p>
       </section>
 
-      <section className="bg-crema/5 border border-crema/20 rounded-2xl p-6">
-        <h2 className="text-xs font-bold text-cielo uppercase tracking-wider mb-2">
-          Canción favorita
-        </h2>
-        <p className="text-crema/90 font-medium">
-          {perfil.cancion_favorita ? (
-            <>🎵 {perfil.cancion_favorita}</>
-          ) : (
-            <span className="text-crema/40 italic font-normal">
-              Todavía no eligió una canción favorita.
-            </span>
-          )}
-        </p>
-      </section>
+      <CancionFavorita
+        cancion={perfil.cancion_favorita}
+        esMiPerfil={esMiPerfil}
+        onGuardada={(nueva) => setPerfil((p) => ({ ...p, cancion_favorita: nueva }))}
+      />
 
       <Publicaciones
         key={perfil.nombre_usuario}

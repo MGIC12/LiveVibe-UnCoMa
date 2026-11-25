@@ -194,4 +194,23 @@ router.delete("/foto", verificarToken, async (req, res) => {
   }
 });
 
+// PUT /api/perfil/cancion -> el fan cambia su canción favorita (si la deja vacía, se quita)
+router.put("/cancion", verificarToken, requerirRol("fan"), async (req, res) => {
+  const cancion = texto(req.body?.cancion_favorita);
+  if (cancion.length > 150) {
+    return res.status(400).json({ error: "La canción favorita puede tener hasta 150 caracteres" });
+  }
+
+  try {
+    await pool.query("UPDATE fan SET cancion_favorita = $1 WHERE nombre_usuario = $2", [
+      cancion || null,
+      req.user.nombre_usuario,
+    ]);
+    res.json({ cancion_favorita: cancion || null });
+  } catch (error) {
+    console.error("Error al guardar la canción favorita:", error);
+    res.status(500).json({ error: "Error del servidor" });
+  }
+});
+
 module.exports = router;

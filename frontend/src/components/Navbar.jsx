@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useCarrito } from "../../context/CarritoContext";
 import MenuDesplegable from "./MenuDesplegable";
 import IconoCarrito from "./IconoCarrito";
+import ModalConfirmacion from "./ModalConfirmacion";
 
 const Navbar = () => {
   const { usuario, logout } = useAuth();
@@ -17,8 +18,9 @@ const Navbar = () => {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Estado para el término de búsqueda (Feature 7)
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
+
+  const [confirmandoSalida, setConfirmandoSalida] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +34,7 @@ const Navbar = () => {
     logout();
     navigate("/");
     setMenuAbierto(false);
+    setConfirmandoSalida(false);
   }
 
   // Función para ejecutar la búsqueda al presionar Enter
@@ -227,7 +230,7 @@ const Navbar = () => {
                   </Link>
 
                   <button
-                    onClick={handleLogout}
+                    onClick={() => setConfirmandoSalida(true)}
                     className="px-4 py-1.5 rounded-full bg-crema/10 border border-crema/25 text-crema hover:border-fucsia hover:text-fucsia transition-colors"
                   >
                     Salir
@@ -392,7 +395,7 @@ const Navbar = () => {
               </Link>
 
               <button
-                onClick={handleLogout}
+                onClick={() => setConfirmandoSalida(true)}
                 className="w-full text-left block px-3 py-2 text-base font-bold text-fucsia hover:bg-crema/10 rounded-md"
               >
                 Cerrar sesión
@@ -420,6 +423,15 @@ const Navbar = () => {
           )}
         </div>
       </div>
+      <ModalConfirmacion
+        abierto={confirmandoSalida}
+        titulo="¿Cerrar sesión?"
+        mensaje="Vas a tener que volver a iniciar sesión para reservars, publicar o ver tus notificaciones."
+        textoConfirmar="Cerrar sesión"
+        textoCancelar="Cancelar"
+        onConfirmar={handleLogout}
+        onCancelar={() => setConfirmandoSalida(false)}
+      />
     </nav>
   );
 };

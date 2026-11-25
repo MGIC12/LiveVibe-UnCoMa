@@ -185,7 +185,9 @@ BEGIN
     ALTER TABLE notificacion ADD CONSTRAINT notificacion_tipo_check
       CHECK (tipo IN ('nuevo_seguidor', 'nueva_reserva', 'entradas_agotadas',
                       'evento_nuevo', 'evento_modificado', 'evento_cancelado',
-                      'nueva_publicacion'));
+                      'nueva_publicacion', 'venta_nueva', 'venta_pagada', 'venta_cancelada',
+                      'compra_enviada', 'compra_vencida',
+                      'merch_sin_stock', 'merch_eliminado'));
   END IF;
 END $$;
 
@@ -217,6 +219,9 @@ CREATE TABLE IF NOT EXISTS comentario (
   contenido           TEXT        NOT NULL CHECK (char_length(contenido) BETWEEN 1 AND 300),
   fecha_hora          TIMESTAMP   NOT NULL DEFAULT NOW()
 );
+-- Cuándo se editó por última vez (queda vacío si nunca se editó)
+ALTER TABLE publicacion ADD COLUMN IF NOT EXISTS fecha_edicion TIMESTAMP;
+ALTER TABLE comentario  ADD COLUMN IF NOT EXISTS fecha_edicion TIMESTAMP;
 
 CREATE INDEX IF NOT EXISTS idx_comentario_publicacion
   ON comentario (id_publicacion, fecha_hora);

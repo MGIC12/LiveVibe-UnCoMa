@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ImagenArticulo from "../components/ImagenArticulo";
+import ModalConfirmacion from "../components/ModalConfirmacion";
 import { useAuth } from "../../context/AuthContext";
 import { EsqueletoLista } from "../components/Esqueleto";
 import { useCarrito } from "../../context/CarritoContext";
@@ -18,6 +19,10 @@ export default function Carrito() {
   const [seleccion, setSeleccion] = useState(new Set()); // ids de artículos marcados
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+
+  // NUEVO: la compra que está esperando confirmación ({ articulos, cantidad, total }) y si se está haciendo
+  const [confirmacion, setConfirmacion] = useState(null);
+  const [comprando, setComprando] = useState(false);
 
   async function cargar() {
     try {
@@ -66,28 +71,31 @@ export default function Carrito() {
     }
   }
 
-  async function comprar(articulos) {
+  // NUEVO, paso 1: los botones de comprar solo abren la ventana de confirmación
+  function pedirConfirmacion(articulos) {
     const items = carrito.items.filter((i) =>
       articulos.includes(i.id_articulo),
     );
     const total = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
-    if (
-      !window.confirm(
-        `¿Comprar ${items.length} artículo(s) por ${formatearPrecio(total)}?`,
-      )
-    ) {
-      return;
-    }
+    setConfirmacion({ articulos, cantidad: items.length, total });
+  }
+
+  // NUEVO, paso 2: el fan confirmó en la ventana, recién ahora se hace la compra
+  async function comprar() {
+    setComprando(true);
     try {
       await pedirMerch("/compras", token, {
         metodo: "POST",
-        cuerpo: { desde_carrito: true, articulos },
+        cuerpo: { desde_carrito: true, articulos: confirmacion.articulos },
       });
       refrescar();
       navigate("/mis-compras");
     } catch (e) {
       setError(e.message);
       cargar();
+      setConfirmacion(null);
+    } finally {
+      setComprando(false);
     }
   }
 
@@ -228,7 +236,7 @@ export default function Carrito() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => comprar([...seleccion])}
+                  onClick={() => pedirConfirmacion([...seleccion])}
                   disabled={seleccion.size === 0}
                   className="flex-1 border border-fucsia text-fucsia hover:bg-fucsia hover:text-tinta font-bold py-3 rounded-full transition disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fucsia"
                 >
@@ -238,7 +246,7 @@ export default function Carrito() {
                     : ""}
                 </button>
                 <button
-                  onClick={() => comprar(todos)}
+                  onClick={() => pedirConfirmacion(todos)}
                   className="flex-1 bg-fucsia hover:bg-chicle text-tinta font-bold py-3 rounded-full transition"
                 >
                   Comprar todo
@@ -253,6 +261,25 @@ export default function Carrito() {
         )}
       </main>
       <Footer />
+
+      {/* NUEVO: ventana de confirmación de la compra */}
+      <ModalConfirmacion
+        abierto={Boolean(confirmacion)}
+        titulo="Confirmar compra"
+        mensaje={
+          confirmacion
+            ? `¿Comprar ${confirmacion.cantidad} artículo${
+                confirmacion.cantidad === 1 ? "" : "s"
+              } por ${formatearPrecio(
+                confirmacion.total,
+              )}? La compra queda con el pago pendiente: la pagás desde Mis compras en el plazo de 1 semana.`
+            : ""
+        }
+        textoConfirmar="Comprar"
+        procesando={comprando}
+        onConfirmar={comprar}
+        onCancelar={() => setConfirmacion(null)}
+      />
     </div>
   );
 }
